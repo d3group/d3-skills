@@ -19,12 +19,20 @@ Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abst
 
 ## Available Skills
 
-| Skill | Description | Resources |
-|-------|-------------|-----------|
-| [d3-abstract](skills/d3-abstract/) | Abstracts, extended abstracts, one-pagers and research updates as A4 PDFs | LaTeX template, style checker |
-| [d3-poster](skills/d3-poster/) | A0 conference posters from a paper, an Overleaf submodule or a repo of results | baposter class, TikZ recipes, two-agent review |
-| [d3-presentation](skills/d3-presentation/) | Presentations as LaTeX Beamer PDFs or interactive HTML decks with step builds | Beamer theme, HTML deck engine, overflow audit |
-| [d3-explainer](skills/d3-explainer/) | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
+| Skill | Version | Description | Resources |
+|-------|---------|-------------|-----------|
+| [d3-abstract](skills/d3-abstract/) | 1.0.0 | Abstracts, extended abstracts, one-pagers and research updates as A4 PDFs | LaTeX template, style checker |
+| [d3-poster](skills/d3-poster/) | 1.0.0 | A0 conference posters from a paper, an Overleaf submodule or a repo of results | baposter class, TikZ recipes, two-agent review |
+| [d3-presentation](skills/d3-presentation/) | 1.0.0 | Presentations as LaTeX Beamer PDFs or interactive HTML decks with step builds | Beamer theme, HTML deck engine, overflow audit |
+| [d3-explainer](skills/d3-explainer/) | 0.9.0 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
+
+## Versions and releasing
+
+Each skill has its own version in `.claude-plugin/marketplace.json` (semantic versioning: patch for fixes, minor for new
+capabilities, major for changes that break existing projects). Users receive an update only when that number changes, so
+a release is: edit the skill, bump its `version` in the manifest and in the table above, run `claude plugin validate .`,
+commit, push. Users then run `/plugin marketplace update d3-skills`. `d3-explainer` is at 0.9.0 until it has been used
+on a few real projects.
 
 ## Requirements
 
