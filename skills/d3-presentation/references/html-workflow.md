@@ -28,7 +28,7 @@ from d3deck import *
 meta(title='Action title', subtitle='Optional', date='Date and Location',
      presenter='Author Name', chair='Chair of Information Systems and Business Analytics',
      sections=['Introduction', 'Methodology', 'Results', 'Conclusion'],
-     tracker=False, numbering='all')
+     tracker=False, numbering='all', reveal='hide')
 
 titleslide()
 agenda()
@@ -88,7 +88,7 @@ Layout helpers in the stylesheet: `.grid2`, `.grid3`, `.grid4`.
 
 ## 5. Step builds
 
-A step reveals something that is already laid out. Elements are ghosted (15 percent opacity, grayscale) until their step and are never removed, so nothing moves between steps.
+A step reveals something that is already laid out. Elements of later steps are invisible until their step and keep their place, so nothing moves between steps and the slide stays calm. `meta(..., reveal='ghost')` shows them as pale ghosts instead (15 percent opacity), for the rare deck where the audience should see the structure coming; `data-soft="1"` dims a single element to 42 percent in either mode.
 
 ```python
 onecol('Three mechanisms explain the effect', '''
@@ -149,7 +149,7 @@ onecol('Backup: ...', crumb(('Ch. 5', 'ch5'), ('Descriptives', None)) + link('ch
 
 ## 10. Build
 
-`uv run slides.py`. The build fails loudly on: a slide before `meta()`, `section(n)` outside the section list, an unresolved or duplicate mark, a missing figure, a PDF figure without `pdftoppm`, `chevrons` with fewer than 2 or more than 5 phases, a timeline range outside 0..1. It warns on `display:none` and on more than 7 sections.
+`uv run slides.py`. The build fails loudly on: a slide before `meta()`, `section(n)` outside the section list, an unresolved or duplicate mark, a missing figure, a PDF figure without `pdftoppm`, `chevrons` with fewer than 2 or more than 5 phases, a timeline range outside 0..1. It warns on `display:none`, on more than 7 sections, and on what makes a deck look cluttered: more than 4 steps on a slide, one step per bullet, more than about 75 body words or 6 bullets, more than two kinds of visual component on one slide, and builds on more than 40 percent of the content slides. Resolve these warnings; they are the difference between a calm and a busy deck.
 
 ## 11. Verify
 

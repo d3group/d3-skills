@@ -20,13 +20,13 @@ agenda()
 # ── SECTION 1: BASIC SLIDES ─────────────────────────────────────────────
 section(1)
 
-onecol('One-column slides carry one message and reveal it in steps', '''
+onecol('One-column slides carry one message, with at most one build', '''
 <ul>
  <li>Every slide title is a complete sentence that states the message</li>
- <li data-s="1">Bullets stay grammatically parallel and short</li>
- <li data-s="2">Steps ghost content instead of hiding it, so nothing on the slide moves</li>
- <li data-s="3">''' + highlight('The one orange element is the point of the slide') + '''</li>
-</ul>''', steps=4, notes='Walk through the four rules; pause after the third.',
+ <li>Bullets stay grammatically parallel and short</li>
+ <li>Later steps stay hidden and keep their place, so nothing on the slide moves</li>
+ <li data-s="1">''' + highlight('The one orange element is the point of the slide') + '''</li>
+</ul>''', steps=2, notes='Three rules at once, then the point of the slide as the one build.',
        src='Rules for one-column slides')
 
 twocol('Two columns compare two things side by side',
@@ -87,9 +87,9 @@ twocol('Embedded figures keep their aspect ratio',
        columnheader('Reading the chart') + '''
 <ul>
  <li>Bars are yearly forecast accuracy</li>
+ <li>The container matches the figure ratio, so annotations stay anchored</li>
  <li data-s="1">2024 carries the intervention and the one orange bar</li>
- <li data-s="2">The container matches the figure ratio, so annotations stay anchored</li>
-</ul>''', steps=3, src='Figure with stepped commentary')
+</ul>''', steps=2, src='Figure with one build: the reading of the chart')
 
 onecol('Stat cards reveal a grid one cell at a time with a scrim', '''
 <div class="grid2" style="height:100%;position:relative">

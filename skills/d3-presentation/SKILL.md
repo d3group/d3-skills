@@ -35,6 +35,17 @@ Ask once, before anything else, unless the user already named both. Ask both par
 - Review words: "no review", "quick", "cheap" or "short on tokens" mean light; "review it" means standard; "full review" or "thorough" mean full. Nothing said means standard.
 - Then proceed and do not ask again.
 
+## Step 1: The storyline belongs to the user
+
+A deck fails when the narrative is not the presenter's own. So the narrative is settled before any slide exists, in one exchange:
+
+1. **Ask for theirs first.** "Do you already have a storyline in mind? Give it to me in a few sentences or as a list of sections, in any form, and I will build the deck on it. Or I propose one." Also ask, only if not already clear: audience, time slot, and the one thing the audience should remember.
+2. **If they give one, keep it.** Restate it as the sequence of action titles (one complete sentence per slide), keep their order and emphasis, and point out at most two gaps or jumps as questions. Do not reorder their story into a framework they did not ask for.
+3. **If they want a proposal, offer two that differ in kind,** each as a title-only outline of 6 to 12 action titles with one line on why one would choose it. Typical pairs: answer first (result, then evidence, then method) versus build-up (problem, approach, result); or chronological project story versus argument by claims. Recommend one.
+4. **Approval gate.** The user picks, edits, or replaces. Save the approved titles to `<name>/storyline.md` with audience, time, and the one takeaway; the deck's slide titles must match it, and later change requests to the narrative start there. Re-ask only if the user changes the storyline.
+
+If nobody can answer (batch run), take the better of your two proposals, record that choice and the reason at the top of `storyline.md`, and continue.
+
 ## CRITICAL: Project structure
 
 > **ALWAYS create a dedicated subfolder for each presentation**, for both formats. LaTeX writes auxiliary files (`.aux`, `.log`, `.nav`, ...) and HTML writes `dist/` and `shots/`. Never create a presentation in the project root.
@@ -46,7 +57,7 @@ Folder name: 1 to 3 lowercase words joined by `_` (for example `ai_healthcare`, 
 1. **Create the subfolder.** HTML: `uv run <skill-dir>/assets/html/init.py <name>` creates it with everything inside. LaTeX: `mkdir <name>`.
 2. **Assemble the assets.** LaTeX: `mkdir <name>/assets && cp -r <skill-dir>/assets/latex/* <skill-dir>/assets/fonts <name>/assets/`. HTML: done by `init.py`.
 3. **Read the style guide:** [references/style-guide.md](references/style-guide.md), including the Wording section and, for HTML, the Step builds section.
-4. **Plan:** understand audience and purpose, write the outline as action titles first, ask clarifying questions before generating.
+4. **Agree on the storyline** (Step 1 above). No slide is written before the user has set or approved it.
 5. **Write the deck** following the workflow reference for the format.
 6. **Build.** LaTeX: `xelatex <name>.tex` twice (three times with `contentnumbering`). HTML: `uv run slides.py`.
 7. **Verify** at the chosen review depth (below).
@@ -93,7 +104,8 @@ HTML adds step builds (`steps=`, `data-s`, `scrim()`), speaker notes (`notes=`),
 
 - **Action titles**: every slide title is a complete sentence stating the message; the titles alone must read as the argument.
 - **Parallel lists**: bullets are grammatically parallel.
-- **One message per slide.**
+- **One message per slide, one visual idea per slide.** A figure, a row of stat cards, a process flow and a code box each get their own slide.
+- **Builds are the exception.** Most slides are static. Use a step build only where the argument needs sequencing, reveal a cluster or a region (never bullet by bullet), and keep to 2 or 3 steps. Later steps are invisible until revealed and keep their place, so nothing moves. The build warns about slides that look busy; treat each warning as a request to simplify.
 - **Viewport**: content never overlaps the header, the footer, or the margins. In HTML, the body box crops overflow and the audit reports it.
 - **Key messages**: bold orange text (`\textbf{\textcolor{d3-orange}{...}}` or `highlight()`), never a colored box.
 
@@ -111,9 +123,9 @@ Automated checks come first in every depth. LaTeX: the compile log shows no erro
 
 **full.** Spawn **two reviewer subagents** in parallel.
 
-**Agent 1, content reviewer.** Reads the source and scores 0 to 10: horizontal flow (slide to slide), vertical flow (content supports the title), didactic structure, consistency, and the wording rules above. Output: scores plus specific suggestions.
+**Agent 1, content reviewer.** Reads `storyline.md` and the source and scores 0 to 10: fidelity to the approved storyline (titles, order, emphasis), horizontal flow (slide to slide), vertical flow (content supports the title), didactic structure, consistency, and the wording rules above. Output: scores plus specific suggestions.
 
-**Agent 2, visual design reviewer.** Inspects the rendered output. PDF: the pages. HTML: the contact sheets first, individual step shots in `shots/` only for slides it flags, and the overflow report. Scores 0 to 10: layout (nothing overlaps the frame, nothing cropped), alignment, colors (brand tokens only), figures (sized, no chart junk), visual appeal (squint test); for HTML also that every step reveals something.
+**Agent 2, visual design reviewer.** Inspects the rendered output. PDF: the pages. HTML: the contact sheets first, individual step shots in `shots/` only for slides it flags, and the overflow report. Scores 0 to 10: calm (one visual idea per slide, whitespace, builds only where the argument needs them, no bullet-by-bullet reveals), layout (nothing overlaps the frame, nothing cropped), alignment, colors (brand tokens only), figures (sized, no chart junk), visual appeal (squint test); for HTML also that every step reveals something.
 
 **Loop:** run both, collect scores; any category below 9 means fix, rebuild, re-verify; repeat until every category is 9 or better.
 

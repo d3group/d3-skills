@@ -56,9 +56,13 @@ def _strip(s):
 
 
 def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, sections=(),
-         tracker=False, numbering='all', lang='en'):
+         tracker=False, numbering='all', lang='en', reveal='hide'):
     """Deck metadata; call once before the first slide. Resets the deck. date is stored for the
-    manifest only, like \\date in LaTeX; put it into the subtitle if it should appear."""
+    manifest only, like \\date in LaTeX; put it into the subtitle if it should appear.
+    reveal='hide' (default): content of later steps is invisible until its step, and keeps its place, so nothing moves.
+    reveal='ghost': later steps are shown as pale grey ghosts; use it only when the audience should see the structure coming."""
+    if reveal not in ('hide', 'ghost'):
+        raise ValueError("reveal must be 'hide' or 'ghost'")
     if numbering not in ('all', 'content'):
         raise ValueError("numbering must be 'all' or 'content'")
     sections = list(sections)
@@ -66,7 +70,7 @@ def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, section
         warnings.warn(f'{len(sections)} sections; agenda and tracker are designed for at most 7')
     D.reset()
     D.meta = dict(title=title, subtitle=subtitle, date=date, presenter=presenter, chair=chair,
-                  sections=sections, tracker=bool(tracker), numbering=numbering, lang=lang)
+                  sections=sections, tracker=bool(tracker), numbering=numbering, lang=lang, reveal=reveal)
     return D.meta
 
 
@@ -268,6 +272,25 @@ def fonts_css(font_dir=None):
 
 # ── rendering ────────────────────────────────────────────────────────────
 
+def _calm(i, s, inner):
+    """Warn about what makes a slide look busy. One idea, one visual, few builds."""
+    name = f'slide {i + 1} ({_strip(s.title)[:40]!r})'
+    text = _strip(re.sub(r'<(pre|svg|style)\b.*?</\1>', ' ', inner, flags=re.S))
+    words, bullets = len(text.split()), inner.count('<li')
+    kinds = [k for k, pat in (('figure', r'<img|class="fig'), ('stat cards', r'class="(stat|bignum)'), ('chevrons', r'class="chev'),
+                              ('timeline', r'class="tl\b|class="tl"'), ('code box', r'<pre'), ('table', r'<table')) if re.search(pat, inner)]
+    if s.steps > 4:
+        warnings.warn(f'{name}: {s.steps} steps. More than 4 builds on one slide reads as fidgeting; split the slide or reveal clusters')
+    if s.steps > 1 and bullets and s.steps >= bullets >= 3:
+        warnings.warn(f'{name}: one step per bullet. Reveal a cluster, a column or a region, or show the list at once')
+    if words > 75:
+        warnings.warn(f'{name}: {words} words in the body. Over about 60 the audience reads instead of listening; cut, or move detail to the backup')
+    if bullets > 6:
+        warnings.warn(f'{name}: {bullets} bullets; keep to 3 to 5, or split the slide')
+    if len(kinds) > 2:
+        warnings.warn(f'{name}: {", ".join(kinds)} on one slide. One visual idea per slide; give each its own slide')
+
+
 def render_slides():
     """-> (section html list, manifest list, jump tab html, hub index or -1)."""
     m = D.meta
@@ -278,6 +301,8 @@ def render_slides():
         inner = s.inner() if callable(s.inner) else s.inner
         if 'display:none' in inner.replace(' ', ''):
             warnings.warn(f'slide {i + 1} ({_strip(s.title)[:40]!r}) uses display:none; ghost it with data-s instead')
+        if s.kind == 'content' and not (D.backup_at is not None and i >= D.backup_at):
+            _calm(i, s, inner)
         dots = ('<div class="stepdots">' + '<i></i>' * s.steps + '</div>') if s.steps > 1 else ''
         in_backup = D.backup_at is not None and i >= D.backup_at
         if s.kind in ('title', 'thankyou'):
@@ -343,7 +368,7 @@ def build(name, out=None, embed_fonts=True, notes=True):
 <style>{nav.CSS}</style>
 <style>{presenter.CSS}</style>
 <style>{extra}</style>
-</head><body>
+</head><body class="{'reveal-ghost' if m.get('reveal') == 'ghost' else 'reveal-hide'}">
 <div id="bar"></div>
 <button id="play" title="Present fullscreen (F)">&#9654; Present</button>
 <div id="pexit"><kbd>Esc</kbd> exit &nbsp; <kbd>&rarr;</kbd> step &nbsp; <kbd>&darr;</kbd> slide</div>
@@ -360,5 +385,9 @@ def build(name, out=None, embed_fonts=True, notes=True):
     with open(out, 'w', encoding='utf-8') as fh:
         fh.write(doc)
     total_steps = sum(s.steps for s in D.slides)
+    content = [x for x in D.slides if x.kind == 'content']
+    built = [x for x in content if x.steps > 1]
+    if len(content) >= 6 and len(built) > 0.4 * len(content):
+        warnings.warn(f'{len(built)} of {len(content)} content slides use step builds. Builds are for the few slides whose argument needs sequencing; a deck where most slides build feels restless')
     print(f'{len(D.slides)} slides · {total_steps} steps · {len(doc) / 1e6:.2f} MB → {out}')
     return out

@@ -31,7 +31,8 @@ html,body{height:100%;background:#0B0D10;overflow:hidden;-webkit-font-smoothing:
 /* ══ ghosting: the build device. Never display:none, never reflow. ══ */
 [data-s]{transition:opacity .42s cubic-bezier(.4,0,.2,1),filter .42s,color .42s,background .42s,
  border-color .42s,transform .42s}
-.gh{opacity:.15;filter:grayscale(1)}
+.gh{opacity:0}                                   /* later steps are invisible and keep their place */
+body.reveal-ghost .gh{opacity:.15;filter:grayscale(1)}   /* opt-in: meta(reveal='ghost') */
 .gh-soft{opacity:.42;filter:grayscale(.8)}
 .scrim{position:absolute;background:rgba(255,255,255,.6997);pointer-events:none;z-index:4;
  transition:opacity .4s cubic-bezier(.4,0,.2,1)}

@@ -100,9 +100,9 @@ Create a new folder for each presentation:
 - All presentation files live in that folder
 
 ### Planning
-1. Understand the audience and purpose
-2. Create outline with action titles first
-3. Ask clarifying questions before generating
+1. Settle the storyline with the user first (SKILL.md, Step 1): their narrative if they have one, otherwise a choice between two proposals. Save it as `storyline.md`
+2. Understand the audience, the time slot, and the one takeaway
+3. The approved action titles are the outline; slides are written to them
 
 ### Checklist
 
@@ -142,6 +142,15 @@ Prose must read as written by the presenter.
 - Concrete numbers instead of "large-scale"; one condition clause instead of an adjective stack.
 
 ## 5. Step builds (HTML)
+
+**Restraint first.** A calm deck has mostly static slides. Builds, stat cards, chevrons, timelines and annotated figures are strong devices; used on every slide they cancel each other out and the deck looks cluttered.
+
+- At most about one slide in three uses a build, and a build has 2 or 3 steps (the build warns above 4, and when over 40 percent of the content slides build).
+- One visual idea per slide: do not combine a figure with stat cards with a process flow. Whitespace is part of the slide.
+- Body text up to about 60 words and 3 to 5 bullets; the rest goes into the speaker notes or the backup.
+- At most one annotated or animated figure per section; it is the high point of that section.
+- Later steps are hidden by default and keep their place (`meta(reveal='hide')`). Use `reveal='ghost'` only when the audience should see the structure that is coming, for example a grid that fills cell by cell.
+
 
 - One step is one idea. Step k+1 answers a question step k raised.
 - No bullet-by-bullet reveals. Reveal a cluster, a column, or a region.
