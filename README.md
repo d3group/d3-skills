@@ -15,7 +15,7 @@ Claude Code skills of the Data Driven Decisions (D3) group for research communic
 4. Select **Install for you (user scope)**
 5. Restart Claude Code
 
-Or install directly: `/plugin install d3-explainer-skill@d3-skills` (likewise `d3-abstract-skill`, `d3-poster-skill`, `d3-presentation-skill`). Update later with `/plugin marketplace update d3-skills`.
+Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abstract`, `d3-poster`, `d3-presentation`). Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Update later with `/plugin marketplace update d3-skills`.
 
 ## Available Skills
 

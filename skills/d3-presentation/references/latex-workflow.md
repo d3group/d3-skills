@@ -25,7 +25,7 @@ my-presentation/          <-- Create this folder FIRST
 ## Workflow
 
 1. **Create subfolder**: `mkdir <presentation-name>` - DO THIS FIRST!
-2. **Assemble assets**: `mkdir <name>/assets && cp -r <skill>/assets/latex/* <skill>/assets/fonts <name>/assets/` (the `.sty` expects `assets/d3-beamer.sty`, `assets/Slide_template.pdf`, `assets/fonts/` next to the `.tex` file)
+2. **Assemble assets**: `mkdir <name>/assets && cp -r <skill-dir>/assets/latex/* <skill-dir>/assets/fonts <name>/assets/` (the `.sty` expects `assets/d3-beamer.sty`, `assets/Slide_template.pdf`, `assets/fonts/` next to the `.tex` file)
 3. **Read the style guide**: [style-guide.md](style-guide.md), including the Wording section
 4. **Create .tex file**: In the subfolder, use the template structure below
 5. **Compile**: Run `xelatex <filename>.tex` twice (required for hyperlinks and TikZ positioning)

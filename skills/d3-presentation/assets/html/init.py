@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """Scaffold a D3 HTML talk folder.
 
-    uv run <skill>/assets/html/init.py my_talk              # creates ./my_talk
-    uv run <skill>/assets/html/init.py my_talk --dest ~/x   # creates ~/x/my_talk
+    uv run <skill-dir>/assets/html/init.py my_talk              # creates ./my_talk
+    uv run <skill-dir>/assets/html/init.py my_talk --dest ~/x   # creates ~/x/my_talk
 
 The folder gets slides.py (a starter deck), figures/ and d3deck/ with the Inter
 fonts and the logos inside, so `uv run slides.py` builds anywhere and the talk

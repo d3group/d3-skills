@@ -12,6 +12,8 @@ description: |
 
 # D3 Presentations
 
+> **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-presentation`; copied by hand: `~/.claude/skills/d3-presentation`). Substitute the real path in every command.
+
 Two output formats, one slide vocabulary, one set of rules.
 
 | | PDF (LaTeX Beamer) | Interactive HTML |
@@ -41,8 +43,8 @@ Folder name: 1 to 3 lowercase words joined by `_` (for example `ai_healthcare`, 
 
 ## Workflow (both formats)
 
-1. **Create the subfolder.** HTML: `uv run <skill>/assets/html/init.py <name>` creates it with everything inside. LaTeX: `mkdir <name>`.
-2. **Assemble the assets.** LaTeX: `mkdir <name>/assets && cp -r <skill>/assets/latex/* <skill>/assets/fonts <name>/assets/`. HTML: done by `init.py`.
+1. **Create the subfolder.** HTML: `uv run <skill-dir>/assets/html/init.py <name>` creates it with everything inside. LaTeX: `mkdir <name>`.
+2. **Assemble the assets.** LaTeX: `mkdir <name>/assets && cp -r <skill-dir>/assets/latex/* <skill-dir>/assets/fonts <name>/assets/`. HTML: done by `init.py`.
 3. **Read the style guide:** [references/style-guide.md](references/style-guide.md), including the Wording section and, for HTML, the Step builds section.
 4. **Plan:** understand audience and purpose, write the outline as action titles first, ask clarifying questions before generating.
 5. **Write the deck** following the workflow reference for the format.

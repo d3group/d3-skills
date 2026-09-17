@@ -17,7 +17,7 @@ my_talk/
 ## 1. Scaffold
 
 ```bash
-uv run <skill>/assets/html/init.py my_talk        # creates ./my_talk with a starter slides.py
+uv run <skill-dir>/assets/html/init.py my_talk        # creates ./my_talk with a starter slides.py
 ```
 
 ## 2. Anatomy of slides.py
