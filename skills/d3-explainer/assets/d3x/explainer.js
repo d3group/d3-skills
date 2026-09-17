@@ -553,6 +553,7 @@ function Flow(id, spec) {
   var W = fig.classList.contains('wide') ? 960 : 720, cw = W / cols, nw = Math.min(190, cw - 34), nh = 56, ch = spec.rowHeight || 96, Hh = rows * ch + 20, lanes = {};
   var box = H('div', 'figbox'), cap = fig.querySelector('figcaption'); fig.insertBefore(box, cap);
   var stage = H('div', 'stage flow', box), svg = S('svg', {viewBox: '0 0 ' + W + ' ' + Hh, role: 'img', 'aria-label': cap ? cap.textContent.trim().slice(0, 140) : id}, stage);
+  svg.style.minWidth = Math.round(W * 0.89) + 'px';       // on a phone the diagram scrolls sideways instead of shrinking; wide diagrams need proportionally more
   var defs = S('defs', {}, svg), mk = id + '-arrow';
   S('path', {d: 'M0 0L8 4L0 8z', fill: THEME.ink3}, S('marker', {id: mk, viewBox: '0 0 8 8', refX: 7.5, refY: 4, markerWidth: 7, markerHeight: 7, orient: 'auto'}, defs));
   // edges that travel in the gap below a row get their own lane, so that they do not draw over each other

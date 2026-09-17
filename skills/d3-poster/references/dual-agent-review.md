@@ -2,6 +2,10 @@
 
 Full reviewer agent prompts, iteration loop, and the rationale for the 4-round cap. Load this file when you're about to dispatch the dual-agent verification (after Pass 2 of the multi-pass build is complete). SKILL.md has a short pointer to this file in the Dual-Agent Verification section.
 
+## Which depth
+
+`light`: this file is not needed. `standard`: run both reviewers once, apply the fixes, recompile, rerun the automated checks, report; no second round. `full`: the iteration loop below.
+
 ## How to dispatch
 
 Use the `Agent` tool with `subagent_type=Explore` (Read + Bash, no edit/write powers — exactly right for a reviewer). Dispatch BOTH agents in parallel (single message, two tool calls) so the user doesn't wait twice.
@@ -108,7 +112,7 @@ Fixes I'll apply now:
 
 If either Overall is < 9, automatically apply the fixes (read the cited file:line, edit, recompile, re-render) and run another round. If both Overall >= 9, stop and write the final scores into `final/README.md`.
 
-## Iteration loop (capped at 4 rounds)
+## Iteration loop (`full` only, capped at 4 rounds)
 
 1. Dispatch both agents in parallel
 2. Print BOTH reports verbatim in chat

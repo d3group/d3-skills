@@ -561,7 +561,9 @@ class Builder:
             self.raw[f.name] = text
             m = re.match(r"\s*(?:<!--.*?-->\s*)*<section\b([^>]*)>", text, flags=re.S)
             if not m or not text.rstrip().endswith("</section>"):
-                self.rep.error(f"{where}: a section file must be exactly one <section id=... data-nav=...> ... </section>")
+                tail = text.rstrip()[-60:].replace("\n", " ")
+                self.rep.error(f"{where}: a section file must be exactly one <section id=... data-nav=...> ... </section>, with every figure and <script> inside it. "
+                               + ("The file does not start with <section ...>." if not m else f"It ends with '{tail}' instead of </section>: move what follows the closing tag inside the section."))
                 continue
             attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', m.group(1)))
             sid = attrs.get("id")

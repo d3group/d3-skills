@@ -32,7 +32,7 @@ Ask once, before anything else, unless the user already named both. Ask both par
 > **Review depth.** `light`: automated checks only (compile log or overflow audit), no reviewer agents, almost no extra tokens. `standard` (default): one reviewer agent reads the source and the rendered pages or contact sheets once, one fix round; roughly doubles the cost of writing the deck. `full`: two reviewer agents (content and visual) loop until every category scores 9 of 10; typically two to four times the writing cost, more with iterations.
 
 - Format words: ".tex", "Beamer", "LaTeX", "PDF" mean LaTeX; "HTML", "interactive", "browser", "steps", "animation", "web" mean HTML.
-- Review words: "no review" or "quick" mean light; "review it" means standard; "full review" or "thorough" mean full. Nothing said means standard.
+- Review words: "no review", "quick", "cheap" or "short on tokens" mean light; "review it" means standard; "full review" or "thorough" mean full. Nothing said means standard.
 - Then proceed and do not ask again.
 
 ## CRITICAL: Project structure

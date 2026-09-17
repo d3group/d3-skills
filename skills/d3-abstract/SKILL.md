@@ -311,7 +311,7 @@ Every `Print:` line goes to the chat and gets appended to `progress.md`.
    ### [HH:MM:SS] Phase 3: Validate
    - [ ] Checker passes (0 errors)
    - [ ] Visual validation passed
-   - [ ] Dual review passed (both scores at least 9/10)
+   - [ ] Review done at the chosen depth (light | standard | full)
 
    ### [HH:MM:SS] Phase 4: Deliver
    - [ ] SUMMARY.md created
@@ -427,13 +427,25 @@ Work page by page:
    5. Font sizes stay fixed. Cut content
    6. Recompile and rerun the checker
 
-5. **Dual review** (see below). Both scores must reach 9/10.
+5. **Review at the chosen depth** (see Review Depth and Dual Review below): `light` none, `standard` one round, `full` until both scores reach 9/10.
 
-6. **Clean up** after the dual review has passed: `rm -rf review/`
+6. **Clean up** after the review is done: `rm -rf review/`
 
-7. Print: `[HH:MM:SS] VALIDATED: [N] pages, checker PASS, content [X]/10, visual [Y]/10`
+7. Print: `[HH:MM:SS] VALIDATED: [N] pages, checker PASS, review [light | standard | full], content [X]/10, visual [Y]/10` (scores only when reviewers ran)
 
-### Dual Review
+### Review Depth
+
+**Review depth.** Three levels; the user picks one in words, otherwise use `standard` and say so in one line ("Review: standard. Say 'light' to skip the reviewer agents.").
+
+| Depth | What runs | Token cost |
+|---|---|---|
+| `light` | The automated checks of this phase and your own look at the rendered pages. No reviewer agents. | almost none |
+| `standard` (default) | The two reviewer agents below, in parallel, one round. Apply their fixes, recompile, rerun the automated checks. No second review. | about 100k tokens, largely independent of document length |
+| `full` | The two reviewers in a loop until both scores are at least 9, at most 4 rounds; then hand the remaining findings to the user. | two to four times `standard` |
+
+"quick", "no review", "light", "short on tokens", "cheap" mean `light`. "thorough", "full review", "submission-ready" mean `full`. In `light`, replace the reviewers by one pass of your own over both rubrics and list what you checked.
+
+### Dual Review (standard and full)
 
 Dispatch two review subagents in parallel through the Agent or Task tool. Give each one the paths of the page images, the path of the `.tex` file, and its rubric. Each returns a score from 0 to 10 and a list of concrete fixes. Without a subagent tool, run the two reviews yourself one after the other, each with its own rubric only.
 
@@ -457,7 +469,7 @@ Scoring: 10 means no findings. 9 means cosmetic findings only. Every violated ru
 - Infoboxes, cards, placeholders, and tables fit their column
 - Whitespace: no large gaps and no cramped sections
 
-**Iteration loop:** if either score is below 9, implement the listed fixes in the current version, recompile, rerun the checker with `--render review`, and send both reviewers the new images. Repeat until both scores are at least 9.
+**After the reviewers return.** `standard`: implement the listed fixes, recompile, rerun the checker, and stop; report the scores and what was fixed. `full`: if either score is below 9, implement the fixes, recompile, rerun the checker with `--render review`, and send both reviewers the new images; repeat until both scores are at least 9 or 4 rounds have passed, then give the user the remaining findings.
 
 ### Phase 4: Deliver
 
@@ -668,7 +680,7 @@ List 2 to 5 questions and write them into LaTeX after the user approves or edits
 - [ ] Every page image inspected
 - [ ] Columns balanced and top-aligned, fill between 75% and 95% on full pages
 - [ ] Header, footer, fonts, and colors correct (formulas use the default math font)
-- [ ] Dual review passed with both scores at least 9/10
+- [ ] Review done at the chosen depth: `light` own pass listed; `standard` one reviewer round applied; `full` both scores at least 9/10
 
 ## Quick Reference
 
@@ -686,6 +698,6 @@ List 2 to 5 questions and write them into LaTeX after the user approves or edits
 12. **Content integrity**: numbers and references from the user's material, added statements listed for the user
 13. **Only D3 colors**: no new `\definecolor`, no hex codes
 14. **Run the checker** after every full compile (`--submission` for submissions), then inspect every page image
-15. **Dual review**: content and visual reviewers, both at least 9/10
+15. **Review depth**: `light` (checks only), `standard` (two reviewers, one round, default), `full` (loop to 9/10, at most 4 rounds)
 16. **Versions**: v1, v2, v3, never overwrite
 17. **Examples**: `example-update.tex` (1 page) and `example-extended-abstract.tex` (2 pages)

@@ -74,7 +74,7 @@ title       = "{title}"
 title_html  = ""                  # optional: the hero title with one accented word, e.g. "How long to look before you <em>leap</em>"
 eyebrow     = "project explainer · for the authors"
 subtitle    = ""                  # the lede: what the page builds up and what the reader can do afterwards
-authors     = []
+authors     = []                  # names as on the paper (see \\author in the .tex); shown in the contents card
 status      = ""                  # e.g. "Working draft, model v3" (shown in the header)
 depth       = "{depth}"          # focus | overview | standard | deep: sets the word and figure budget the build reports against
 repo        = "{repo}"            # repository root: relative to this folder, or an absolute path
@@ -169,6 +169,8 @@ def main() -> int:
     (target / ".gitignore").write_text("review/\nfigures/.cache/\nscan.md\n", encoding="utf-8")
     if len(candidates) > 1:
         print(f"NOTE several papers found: {candidates}. Using {paper_dirs}. Ask the author which one the explainer is about; rerun with --paper <folder> to switch.")
+    if name in ("repo", "project", "code", "src", "main"):
+        print(f"NOTE the output name defaults to the repository folder name ('{name}'); set a telling `name` in explainer.toml, it becomes dist/<name>.html")
     print(f"created {target}\n  explainer.toml  paper={paper_dirs[:3]} vault={vaults[:1]} macros_from={macro_files[:3]}\n  brief.md        fill it, get it approved, then write sections/NN-slug.html\n"
           f"  build:  uv run {target.name}/d3x/build.py --draft      check:  uv run {target.name}/d3x/check.py --shots")
     return 0

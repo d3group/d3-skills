@@ -21,10 +21,25 @@ Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abst
 
 | Skill | Version | Description | Resources |
 |-------|---------|-------------|-----------|
-| [d3-abstract](skills/d3-abstract/) | 1.0.0 | Abstracts, extended abstracts, one-pagers and research updates as A4 PDFs | LaTeX template, style checker |
-| [d3-poster](skills/d3-poster/) | 1.0.0 | A0 conference posters from a paper, an Overleaf submodule or a repo of results | baposter class, TikZ recipes, two-agent review |
-| [d3-presentation](skills/d3-presentation/) | 1.0.0 | Presentations as LaTeX Beamer PDFs or interactive HTML decks with step builds | Beamer theme, HTML deck engine, overflow audit |
-| [d3-explainer](skills/d3-explainer/) | 0.9.0 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
+| [d3-abstract](skills/d3-abstract/) | 1.1.0 | Abstracts, extended abstracts, one-pagers and research updates as A4 PDFs | LaTeX template, style checker |
+| [d3-poster](skills/d3-poster/) | 1.1.0 | A0 conference posters from a paper, an Overleaf submodule or a repo of results | baposter class, TikZ recipes, two-agent review |
+| [d3-presentation](skills/d3-presentation/) | 1.0.1 | Presentations as LaTeX Beamer PDFs or interactive HTML decks with step builds | Beamer theme, HTML deck engine, overflow audit |
+| [d3-explainer](skills/d3-explainer/) | 0.9.1 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
+
+## Review depth: how many tokens a run spends
+
+Every skill checks its output automatically (compile log, overflow and layout audits, source-pointer validation) and can
+then have reviewer agents look at it. The reviewers are where the tokens go, so the depth is your choice. Say it in your
+request ("light review", "I'm short on tokens", "full review"); otherwise the default runs.
+
+| Depth | What runs | Use when |
+|---|---|---|
+| `light` | Automated checks plus Claude's own pass over the review rubric. No reviewer agents. | You are short on tokens, or the document is a quick internal draft |
+| `standard` (default) | Reviewer agents, one round, fixes applied. d3-abstract and d3-poster: two reviewers (content, visual). d3-presentation: one reviewer. d3-explainer: two reviewers (one merged reviewer with `single`) | Normal use |
+| `full` | Reviewers loop until every score is 9 of 10, capped at three to four rounds | Submission-ready output |
+
+A reviewer costs roughly 50k tokens regardless of document size, so `standard` adds about 50 to 150k tokens and `full` a
+multiple of that; `light` adds almost nothing.
 
 ## Versions and releasing
 

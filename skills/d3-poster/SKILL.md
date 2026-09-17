@@ -26,7 +26,7 @@ The skill body below is the workflow; long reference material lives in `referenc
 | `references/extraction.md` | About to extract content from a paper (any tier). Has the tier-by-tier extraction commands, PDF figure extraction (vector-first), low-res raster protocol, on-disk format priority, architecture-figure interview. |
 | `references/tikz-recipes.md` | About to draw a figure from scratch in TikZ. Has 4 verified-compiling recipes (block diagram, pipeline, layered architecture, comparison) plus general TikZ rules. |
 | `references/error-handling.md` | Compile errors or visible rendering bugs. Has the 6 known issues (missing class, missing fonts, siunitx `\d` conflict, headershade case bug, Calibri error, silent clipping). |
-| `references/dual-agent-review.md` | About to run the dual-agent review after Pass 2. Has the full reviewer prompts, iteration loop (capped at 4), score-to-README protocol. |
+| `references/dual-agent-review.md` | Review depth is `standard` or `full` (see Review). Has the reviewer prompts, the iteration loop for `full` (capped at 4 rounds), score-to-README protocol. |
 | `references/macros-and-styling.md` | Writing the poster body and need to confirm macro names, color values, font sizes, table conventions. |
 
 ## Template files and assets
@@ -539,18 +539,19 @@ baposter does NOT push overflow to a new page like the article class — **it si
 5. **Never shrink fonts.** Cut content.
 6. Recompile and re-render.
 
-## Dual-agent verification
+## Review
 
-After visual validation passes, run a two-agent review. Both agents inspect the rendered PNG. **Surface their scores and feedback to the user in chat**, not just in a print line — the user needs to see what was checked, what passed, what failed, and what was changed each iteration.
+**Review depth.** Three levels; the user picks one in words, otherwise use `standard` and say so in one line ("Review: standard. Say 'light' to skip the reviewer agents.").
 
-Load `references/dual-agent-review.md` for:
+| Depth | What runs | Token cost |
+|---|---|---|
+| `light` | The automated checks (compile log, page count, clipping checklist) and your own look at the rendered pages. No reviewer agents. | almost none |
+| `standard` (default) | The two reviewer agents below, in parallel, one round. Apply their fixes, recompile, rerun the automated checks. No second review. | about 100k tokens, largely independent of document length |
+| `full` | The two reviewers in a loop until both scores are at least 9, at most 4 rounds; then hand the remaining findings to the user. | two to four times `standard` |
 
-- Full reviewer agent prompt templates (Content Reviewer, Visual Design Reviewer)
-- Orchestrator summary template
-- Iteration loop (capped at 4 rounds — see file for cap rationale)
-- Final scores → `final/README.md` template
+"quick", "no review", "light", "short on tokens", "cheap" mean `light`. "thorough", "full review", "submission-ready" mean `full`. In `light`, replace the reviewers by one pass of your own over both rubrics and list what you checked.
 
-Dispatch both agents in parallel (single message, two `Agent` tool calls with `subagent_type=Explore`). Paste both reports verbatim, then a one-paragraph summary with Verdict (Ship | Iterate). If Iterate, apply fixes and run another round until both Overall ≥ 9, or 4 rounds elapse.
+For `standard` and `full`, load `references/dual-agent-review.md`: it has the two reviewer prompts (Content, Visual Design), the orchestrator summary template, and the score-to-README protocol. Dispatch both agents in parallel (single message, two `Agent` tool calls with `subagent_type=Explore`); both inspect the rendered PNG. **Surface their scores and feedback to the user in chat**: what was checked, what passed, what failed, what was changed. `standard` stops after one round of fixes; `full` iterates until both Overall scores are at least 9, or 4 rounds elapse.
 
 ## Editing & versioning
 
@@ -646,7 +647,7 @@ Before marking a poster complete:
 - [ ] No "Overfull \hbox" warnings > 50pt
 
 **Review**
-- [ ] Dual-agent verification run; Content score ≥ 9/10, Visual score ≥ 9/10
+- [ ] Review done at the chosen depth: `light` checks and own pass listed; `standard` one reviewer round applied; `full` Content and Visual scores ≥ 9/10
 - [ ] `final/README.md` written with date, title, venue, scores
 
 ## Decision points
@@ -664,6 +665,7 @@ Before marking a poster complete:
 - **Captions on figures** — off by default; ask only if mentioned (e.g., venue requirement)
 - **Bibliography filtering** — which 3-5 references to feature in the Literature paragraph
 - **Knowledge enrichment** — vault recall / NotebookLM / both / skip (only when the request is high-level)
+- **Review depth** — do not ask; use `standard` unless the user's words pick `light` or `full`, and say which one runs
 
 ### Decide independently
 
