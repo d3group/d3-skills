@@ -4,9 +4,9 @@
 # ///
 """Scaffold (or refresh) an explainer project inside a research repository.
 
-    uv run ~/.claude/skills/d3-explainer/scripts/init.py                     # creates ./explainer in the current repo
-    uv run ~/.claude/skills/d3-explainer/scripts/init.py path/to/explainer --name my_project
-    uv run ~/.claude/skills/d3-explainer/scripts/init.py path/to/explainer --refresh   # only replace d3x/ with the skill's current engine
+    uv run <skill-dir>/scripts/init.py                     # creates ./explainer in the current repo
+    uv run <skill-dir>/scripts/init.py path/to/explainer --name my_project
+    uv run <skill-dir>/scripts/init.py path/to/explainer --refresh   # only replace d3x/ with the skill's current engine
 
 Creates: explainer.toml (prefilled from the repository), brief.md (the content brief to get approved), sections/, figures/,
 data/, review/, and d3x/ (the engine: build.py, check.py, stylesheet, runtime, KaTeX, fonts). The folder is self-contained:

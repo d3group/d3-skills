@@ -13,6 +13,8 @@ description: |
 
 # D3 Poster (Conference / Research)
 
+> **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-poster`; copied by hand: `~/.claude/skills/d3-poster`). Substitute the real path in every command.
+
 Create professional A0-portrait research posters with D3 (Data Driven Decisions) and University of Würzburg branding. Builds on the `baposter` class for a grid layout, with a thin D3 reskin (`d3-poster.sty`) that overrides the brand color, adds the D3 logo, and ports the `\highlight` / `\keypoint` / `infobox` / `card` macros from `d3-abstract`. **Compiles with XeLaTeX or LuaLaTeX for Inter font; falls back to pdfLaTeX with Helvetica clone.**
 
 ## Reference files (loaded on demand)
@@ -30,7 +32,7 @@ The skill body below is the workflow; long reference material lives in `referenc
 ## Template files and assets
 
 ```
-~/.claude/skills/d3-poster/
+<skill-dir>/
 ├── SKILL.md                    # this file
 ├── baposter.cls                # class file (copied to each project's drafts/)
 ├── example-poster.tex          # reference example -- DO NOT copy into user projects
@@ -99,8 +101,8 @@ Setup commands:
 ```bash
 POSTER_DIR=<resolved-path>/poster
 mkdir -p "$POSTER_DIR/drafts" "$POSTER_DIR/final"
-cp    ~/.claude/skills/d3-poster/baposter.cls "$POSTER_DIR/drafts/baposter.cls"
-cp -r ~/.claude/skills/d3-poster/assets       "$POSTER_DIR/drafts/assets"
+cp    <skill-dir>/baposter.cls "$POSTER_DIR/drafts/baposter.cls"
+cp -r <skill-dir>/assets       "$POSTER_DIR/drafts/assets"
 # Do NOT copy example-poster.tex -- it stays at the skill root.
 ```
 

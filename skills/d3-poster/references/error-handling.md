@@ -11,7 +11,7 @@ Lookup this file when you hit a LaTeX error or a visible-but-silent rendering is
 **Fix:** `baposter.cls` must sit at the project root (next to `poster.tex`, not under `assets/`). Re-copy:
 
 ```bash
-cp ~/.claude/skills/d3-poster/baposter.cls ./baposter.cls
+cp <skill-dir>/baposter.cls ./baposter.cls
 ```
 
 ## 2. Font not found (Inter)
@@ -62,7 +62,7 @@ We patch this in the user's poster, not in baposter.cls, because the .cls is ven
 
 **Cause:** Using an unpatched `baposter.cls` from the upstream repo. Upstream ships hardcoded `\setmainfont[Path=fonts/]{calibri.ttf}` which is both proprietary and missing.
 
-**Fix:** Use the vendored copy at `~/.claude/skills/d3-poster/baposter.cls` — its Calibri block has been removed in favor of `d3-poster.sty`'s Inter setup.
+**Fix:** Use the vendored copy at `<skill-dir>/baposter.cls` — its Calibri block has been removed in favor of `d3-poster.sty`'s Inter setup.
 
 ## 6. Box content clipped (no LaTeX error, but visible in PNG)
 

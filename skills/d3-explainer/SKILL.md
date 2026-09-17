@@ -11,6 +11,8 @@ description: |
 
 # D3 Explainer (interactive HTML, for the authors themselves)
 
+> **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-explainer`; copied by hand: `~/.claude/skills/d3-explainer`). Substitute the real path in every command.
+
 One offline HTML file that explains a research project to the people who are writing it: what the question is, which gap it closes, how the core idea works, how each derivation goes and why, where it all lives in the code, what the evidence shows, and what is still open. Interactive figures carry the intuition; the text stays close to the sources and says so.
 
 **The reader is the author and their co-authors.** That decides almost everything below:
@@ -52,7 +54,7 @@ Print a one-line timestamped status at each phase boundary, as the other D3 skil
 ### Phase 1: Map the project (read cheaply, in the right order)
 
 ```bash
-uv run ~/.claude/skills/d3-explainer/scripts/scan.py            # from the repo root; add --out explainer/scan.md to keep it
+uv run <skill-dir>/scripts/scan.py            # from the repo root; add --out explainer/scan.md to keep it
 ```
 
 The scan reports the input tier (A: code and paper, B: paper only, C: code only, D: PDF only, E: notes only), when the orientation documents, the paper and each code folder last changed (a stale `CLAUDE.md` or an abandoned approach shows up here), the paper outline with its equation labels, the largest code modules with symbol names and line numbers, embeddable result files, the vault with the author's own notes by folder, prior explainers, and a token estimate for everything. Print `INPUT TIER: X` and let the user override.
@@ -70,7 +72,7 @@ Optional enrichment, offered only when the gap or the project history is thin in
 ### Phase 2: Content brief, approved before any HTML
 
 ```bash
-uv run ~/.claude/skills/d3-explainer/scripts/init.py --depth standard --review standard   # creates ./explainer: explainer.toml, brief.md, sections/, d3x/
+uv run <skill-dir>/scripts/init.py --depth standard --review standard   # creates ./explainer: explainer.toml, brief.md, sections/, d3x/
 #   several papers in the repo: add --paper <folder>         explainer elsewhere: init.py <dir> --repo <repo root>
 ```
 
@@ -140,7 +142,7 @@ Give the path `explainer/dist/<name>.html` (one file, works offline, safe to ema
 
 The header of the page shows the commit it was built from. When paper or code moved on:
 
-1. Refresh the engine first; it is always safe and brings the newest diagnostics: `uv run ~/.claude/skills/d3-explainer/scripts/init.py explainer --refresh`.
+1. Refresh the engine first; it is always safe and brings the newest diagnostics: `uv run <skill-dir>/scripts/init.py explainer --refresh`.
 2. Run `uv run explainer/d3x/build.py`. It re-validates every pointer against the current repo and lists every place that needs attention: renamed labels and missing files as errors, functions that moved as warnings (the chip already follows the function name; update the number), code excerpts selected by line range with the line they now begin with. Switch such excerpts to `data-symbol`.
 3. Find what changed in substance. With git: `git log --oneline <built-commit>..HEAD -- <paper and src paths>`. Without git: the diagnostics plus `grep -n "\[\[" explainer/sections/*.html`. Moved code has often changed: reread each sentence next to a pointer the build flagged, and recheck quoted numbers against the result files.
 4. Edit the affected section files in place, rebuild, run `check.py`. Version with git, not with file names.

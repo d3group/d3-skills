@@ -12,12 +12,14 @@ description: |
 
 # D3 Abstract
 
+> **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-abstract`; copied by hand: `~/.claude/skills/d3-abstract`). Substitute the real path in every command.
+
 Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg branding. The default is one page. The user can choose two pages or more, for example for an extended abstract submission. The layout is slot-based: a `.tex` file fills a handful of macros, and each call of the page template produces one page with header, lead paragraph, two columns, and footer. Font: Inter. **Requires XeLaTeX. All Python runs through `uv`.**
 
 ## Files
 
 ```
-~/.claude/skills/d3-abstract/
+<skill-dir>/
 ├── SKILL.md
 ├── example-update.tex                # 1 page, internal weekly update
 ├── example-extended-abstract.tex     # 2 pages, submission with references
@@ -94,7 +96,7 @@ writing_outputs/YYYYMMDD_HHMMSS_<description>/
 ├── progress.md                  # progress log
 ├── SUMMARY.md                   # final summary and compile guide
 ├── drafts/
-│   ├── assets/                  # cp -r ~/.claude/skills/d3-abstract/assets drafts/assets
+│   ├── assets/                  # cp -r <skill-dir>/assets drafts/assets
 │   ├── figures/                 # optional, on the graphics path
 │   ├── outline.md               # the approved outline from Pass 0
 │   ├── v1_abstract.tex
@@ -389,7 +391,7 @@ Work page by page:
 2. **Run the checker** and render the page images:
 
    ```bash
-   uv run ~/.claude/skills/d3-abstract/scripts/check_abstract.py v1_abstract.tex --render review
+   uv run <skill-dir>/scripts/check_abstract.py v1_abstract.tex --render review
    ```
 
    Add `--submission` for a Submission Abstract.
@@ -605,7 +607,7 @@ Files that load `assets/d3-oneslider` were made with the former one-slider versi
 
 All Python in this skill runs through `uv`. Never call `pip install` or a bare `python3`.
 
-- Skill scripts carry inline metadata (PEP 723): `uv run ~/.claude/skills/d3-abstract/scripts/check_abstract.py ...`
+- Skill scripts carry inline metadata (PEP 723): `uv run <skill-dir>/scripts/check_abstract.py ...`
 - One-off snippets: `uv run --with <package> python -c "..."`
 - Figure scripts: `uv run --with matplotlib python make_figure.py`, saved as PDF into `drafts/figures/` (see `references/macros.md` for the D3 colors in matplotlib)
 

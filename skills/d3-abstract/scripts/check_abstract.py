@@ -6,8 +6,8 @@
 
 Run with uv (dependencies resolve from the inline metadata above):
 
-    uv run ~/.claude/skills/d3-abstract/scripts/check_abstract.py v1_abstract.tex
-    uv run ~/.claude/skills/d3-abstract/scripts/check_abstract.py v1_abstract.tex --render review
+    uv run <skill-dir>/scripts/check_abstract.py v1_abstract.tex
+    uv run <skill-dir>/scripts/check_abstract.py v1_abstract.tex --render review
 
 Exit code 0 means no errors (warnings may remain), 1 means at least one error.
 """

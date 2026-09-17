@@ -33,7 +33,7 @@ ls assets/logos/logo-wue.pdf assets/logos/logo-d3.pdf
 Load the style with the path prefix, `\usepackage{assets/d3-abstract}`, and copy the assets if they are missing:
 
 ```bash
-cp -r ~/.claude/skills/d3-abstract/assets ./assets
+cp -r <skill-dir>/assets ./assets
 ```
 
 The warning "You have requested package `assets/d3-abstract', but the package provides `d3-abstract'" is expected and harmless. The same holds for the hyperref rerun notice on the first compile.

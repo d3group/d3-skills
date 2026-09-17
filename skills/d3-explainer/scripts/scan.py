@@ -4,8 +4,8 @@
 # ///
 """Map a research repository for the d3-explainer skill: paper, code, results, vault, in one compact report.
 
-    uv run ~/.claude/skills/d3-explainer/scripts/scan.py                 # scans the current directory
-    uv run ~/.claude/skills/d3-explainer/scripts/scan.py path/to/repo --out explainer/scan.md
+    uv run <skill-dir>/scripts/scan.py                 # scans the current directory
+    uv run <skill-dir>/scripts/scan.py path/to/repo --out explainer/scan.md
 
 The report replaces a few dozen ls/grep/find calls. It names what exists, how big it is (in tokens, chars / 4),
 and what to read first. It never prints file contents beyond titles, abstracts, headings and symbol names.

@@ -5,7 +5,7 @@ The explainer is only as good as your understanding of the project, and understa
 ## 1. Run the scan first
 
 ```bash
-uv run ~/.claude/skills/d3-explainer/scripts/scan.py [repo] [--out explainer/scan.md]
+uv run <skill-dir>/scripts/scan.py [repo] [--out explainer/scan.md]
 ```
 
 One call, a few seconds, about 1 to 3k tokens of output. It lists: git state and submodules, input tier, when the orientation documents, the paper and each code folder last changed, each paper with title, abstract, outline, section files with token sizes, equation and section labels, macro files, whether an `.aux` exists; code volume by folder, entry points, the largest modules with `symbol:line`; result folders and small tables that can be embedded; vaults with their folders, key notes, and recent notes; prior explainers; orientation documents. Do not re-derive any of this with `ls` and `grep`.
