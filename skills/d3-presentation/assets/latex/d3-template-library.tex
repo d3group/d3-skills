@@ -1,0 +1,280 @@
+% D3 Template Library - Reusable diagram components
+% Include with: \input{assets/d3-template-library}
+% Version 2.0 - Improved chevrons and timelines
+
+% ============================================================================
+% CODE BOXES (using tcolorbox)
+% ============================================================================
+
+% Standard code box (navy border, light background)
+\newtcolorbox{codebox}{
+  colback=d3-navy!5,
+  colframe=d3-navy!50,
+  boxrule=0.5pt,
+  arc=2pt,
+  left=4pt,
+  right=4pt,
+  top=2pt,
+  bottom=2pt,
+  fontupper=\ttfamily\small
+}
+
+% Error code box (red border, light red background)
+\newtcolorbox{errorbox}{
+  colback=red!5,
+  colframe=red!50,
+  boxrule=0.5pt,
+  arc=2pt,
+  left=4pt,
+  right=4pt,
+  top=2pt,
+  bottom=2pt,
+  fontupper=\ttfamily\small
+}
+
+% Output/terminal box (dark background, light text)
+\newenvironment{terminalbox}{%
+  \begin{tcolorbox}[
+    colback=d3-navy!90,
+    colframe=d3-navy,
+    coltext=white,
+    boxrule=0.5pt,
+    arc=2pt,
+    left=4pt, right=4pt, top=2pt, bottom=2pt,
+    fontupper=\ttfamily\small
+  ]%
+}{%
+  \end{tcolorbox}%
+}
+
+% Code indentation helper (for Python-style indentation)
+\newcommand{\pyind}{\phantom{xxxx}}
+
+% ============================================================================
+% TIKZ DIAGRAM STYLES
+% ============================================================================
+
+\tikzset{
+  % Standard process box
+  d3box/.style={
+    rectangle,
+    rounded corners=2pt,
+    draw=d3-navy,
+    fill=d3-navy!10,
+    minimum width=2cm,
+    minimum height=0.9cm,
+    align=center,
+    font=\small
+  },
+  % Project/milestone box (highlighted)
+  d3project/.style={
+    rectangle,
+    rounded corners=2pt,
+    draw=d3-orange,
+    fill=d3-orange!15,
+    minimum width=2cm,
+    minimum height=0.9cm,
+    align=center,
+    font=\small\bfseries
+  },
+  % Circle node (for numbered steps)
+  d3circle/.style={
+    circle,
+    draw=d3-navy,
+    fill=d3-navy,
+    text=white,
+    minimum size=1.5em,
+    font=\small\bfseries,
+    inner sep=0pt
+  },
+  % Orange circle
+  d3circle-orange/.style={
+    circle,
+    draw=d3-orange,
+    fill=d3-orange,
+    text=white,
+    minimum size=1.5em,
+    font=\small\bfseries,
+    inner sep=0pt
+  },
+  % Arrow style
+  d3arrow/.style={
+    -{Stealth},
+    thick,
+    d3-navy
+  },
+  % Bidirectional arrow
+  d3biarrow/.style={
+    {Stealth}-{Stealth},
+    thick,
+    d3-orange
+  },
+  % Dashed arrow (for optional/conditional flows)
+  d3arrow-dashed/.style={
+    -{Stealth},
+    thick,
+    dashed,
+    d3-gray
+  }
+}
+
+% ============================================================================
+% ADDITIONAL COLORS FOR CHARTS
+% ============================================================================
+\definecolor{d3-teal}{RGB}{77,154,170}       % Teal - for timeline bars
+\definecolor{d3-yellow}{RGB}{216,222,111}    % Yellow - for timeline bars
+\definecolor{d3-peach}{RGB}{245,200,170}     % Peach/salmon - for timeline bars
+\definecolor{d3-lavender}{RGB}{197,202,233}  % Lavender - for timeline bars
+
+% ============================================================================
+% PROJECT TIMELINE (Solistiq-style)
+% ============================================================================
+% Usage:
+%   \begin{projecttimeline}{2025}{2028}
+%     \workpackage{WP1: Research \& Analysis}{d3-teal!60}{0}{0.5}{1}{M1}
+%     \workpackage{WP2: Development}{d3-yellow!80}{0.17}{0.67}{2}{M2}
+%   \end{projecttimeline}
+
+% Work package bar command (row 1 = bottom, ascending)
+% #1 = label, #2 = color, #3 = start (0-1), #4 = end (0-1), #5 = row (1=bottom), #6 = milestone label
+\newcommand{\workpackage}[6]{%
+  \pgfmathsetmacro{\ypos}{(#5 - 1) * 7 + 4}  % 7mm spacing, start at 4mm
+  \fill[#2] ({#3*\timelinewidth}, {\ypos mm}) rectangle ({#4*\timelinewidth}, {\ypos mm + 5mm});
+  \node[anchor=west, font=\fontsize{7}{9}\selectfont\bfseries, text=d3-navy]
+    at ({#3*\timelinewidth + 1mm}, {\ypos mm + 2.5mm}) {#1};
+  % Milestone diamond at end of bar
+  \node[diamond, fill=d3-navy, minimum size=3mm, inner sep=0pt]
+    at ({#4*\timelinewidth - 2mm}, {\ypos mm + 2.5mm}) {};
+  \node[anchor=west, font=\fontsize{6}{8}\selectfont, text=d3-navy]
+    at ({#4*\timelinewidth}, {\ypos mm + 2.5mm}) {#6};
+}
+
+% Main project timeline environment
+% #1 = start year, #2 = end year
+\newenvironment{projecttimeline}[2]{%
+  \def\startyear{#1}%
+  \def\endyear{#2}%
+  \pgfmathsetmacro{\totalyears}{#2 - #1}%
+  \def\timelinewidth{0.95\textwidth}%
+  \begin{tikzpicture}[remember picture]
+    % Main timeline axis
+    \draw[d3-navy, line width=1pt] (0,0) -- (\timelinewidth,0);
+    % Year markers and labels
+    \foreach \i in {0,...,\totalyears} {
+      \pgfmathsetmacro{\xpos}{\i * \timelinewidth / \totalyears}
+      \pgfmathtruncatemacro{\year}{#1 + \i}
+      \draw[d3-navy, line width=1pt] (\xpos pt, -2pt) -- (\xpos pt, 2pt);
+      \node[below, font=\fontsize{7}{9}\selectfont] at (\xpos pt, -3pt) {\year};
+    }
+}{%
+  \end{tikzpicture}%
+}
+
+% Milestone legend item
+\newcommand{\milestonelegend}[2]{%
+  \textbf{#1}\hspace{0.3em}#2%
+}
+
+% ============================================================================
+% CHEVRON PROCESS FLOWS (Solistiq-style polygon chevrons)
+% ============================================================================
+
+% Draw a single chevron polygon
+% #1 = x position, #2 = fill color, #3 = text color, #4 = line 1 text, #5 = line 2 text (bold)
+% Uses: \ah (arrow height), \cp (chevron point), \ag (gap adjustment), \aw (arrow width)
+\newcommand{\drawchevron}[5]{%
+  \fill[#2]
+    (#1, 0) -- ({#1 + \aw - \cp}, 0) -- ({#1 + \aw}, {\ah/2}) -- ({#1 + \aw - \cp}, {\ah}) -- (#1, {\ah}) -- ({#1 + \cp}, {\ah/2}) -- cycle;
+  \node[font=\fontsize{7}{9}\selectfont, text=#3, align=center, text depth=0pt]
+    at ({#1 + 0.37*\aw}, {0.7*\ah}) {#4\\\textbf{#5}};
+}
+
+% Two-phase chevron process
+% #1 = highlighted phase (1 or 2), #2-#3 = phase 1 label/title, #4-#5 = phase 2 label/title
+\newcommand{\twochevron}[5]{%
+  \begin{tikzpicture}
+    \def\ah{10mm}
+    \def\cp{5mm}
+    \def\gap{3mm}
+    \pgfmathsetlengthmacro{\ag}{\gap - \cp}
+    \pgfmathsetlengthmacro{\aw}{(\textwidth - 1*\ag) / 2}
+    % Phase 1
+    \ifnum#1=1
+      \drawchevron{0}                {d3-navy}{white}{#2}{#3}
+    \else
+      \drawchevron{0}                {d3-navy!15}{d3-navy}{#2}{#3}
+    \fi
+    % Phase 2
+    \ifnum#1=2
+      \drawchevron{\aw + \ag}        {d3-navy}{white}{#4}{#5}
+    \else
+      \drawchevron{\aw + \ag}        {d3-navy!15}{d3-navy}{#4}{#5}
+    \fi
+  \end{tikzpicture}%
+}
+
+% Three-phase chevron process
+\newcommand{\threechevron}[7]{%
+  \begin{tikzpicture}
+    \def\ah{10mm}
+    \def\cp{5mm}
+    \def\gap{3mm}
+    \pgfmathsetlengthmacro{\ag}{\gap - \cp}
+    \pgfmathsetlengthmacro{\aw}{(\textwidth - 2*\ag) / 3}
+    \ifnum#1=1 \drawchevron{0}{d3-navy}{white}{#2}{#3}
+    \else \drawchevron{0}{d3-navy!15}{d3-navy}{#2}{#3} \fi
+    \ifnum#1=2 \drawchevron{\aw + \ag}{d3-navy}{white}{#4}{#5}
+    \else \drawchevron{\aw + \ag}{d3-navy!15}{d3-navy}{#4}{#5} \fi
+    \ifnum#1=3 \drawchevron{2*\aw + 2*\ag}{d3-navy}{white}{#6}{#7}
+    \else \drawchevron{2*\aw + 2*\ag}{d3-navy!15}{d3-navy}{#6}{#7} \fi
+  \end{tikzpicture}%
+}
+
+% Four-phase chevron process
+\newcommand{\fourchevron}[9]{%
+  \begin{tikzpicture}
+    \def\ah{10mm}
+    \def\cp{5mm}
+    \def\gap{3mm}
+    \pgfmathsetlengthmacro{\ag}{\gap - \cp}
+    \pgfmathsetlengthmacro{\aw}{(\textwidth - 3*\ag) / 4}
+    \ifnum#1=1 \drawchevron{0}{d3-navy}{white}{#2}{#3}
+    \else \drawchevron{0}{d3-navy!15}{d3-navy}{#2}{#3} \fi
+    \ifnum#1=2 \drawchevron{\aw + \ag}{d3-navy}{white}{#4}{#5}
+    \else \drawchevron{\aw + \ag}{d3-navy!15}{d3-navy}{#4}{#5} \fi
+    \ifnum#1=3 \drawchevron{2*\aw + 2*\ag}{d3-navy}{white}{#6}{#7}
+    \else \drawchevron{2*\aw + 2*\ag}{d3-navy!15}{d3-navy}{#6}{#7} \fi
+    \ifnum#1=4 \drawchevron{3*\aw + 3*\ag}{d3-navy}{white}{#8}{#9}
+    \else \drawchevron{3*\aw + 3*\ag}{d3-navy!15}{d3-navy}{#8}{#9} \fi
+  \end{tikzpicture}%
+}
+
+% Five-phase chevron process
+\newcommand{\fivechevron}[9]{%
+  % Note: Takes 11 args total but LaTeX limits to 9, so we use a workaround
+  % Call as: \fivechevronaliased{highlight}{l1}{t1}{l2}{t2}{l3}{t3}{l4}{t4}{l5}{t5}
+  % For now, simplified version with single labels
+  \begin{tikzpicture}
+    \def\ah{10mm}
+    \def\cp{5mm}
+    \def\gap{3mm}
+    \pgfmathsetlengthmacro{\ag}{\gap - \cp}
+    \pgfmathsetlengthmacro{\aw}{(\textwidth - 4*\ag) / 5}
+    \ifnum#1=1 \drawchevron{0}{d3-navy}{white}{Phase 1:}{#2}
+    \else \drawchevron{0}{d3-navy!15}{d3-navy}{Phase 1:}{#2} \fi
+    \ifnum#1=2 \drawchevron{\aw + \ag}{d3-navy}{white}{Phase 2:}{#3}
+    \else \drawchevron{\aw + \ag}{d3-navy!15}{d3-navy}{Phase 2:}{#3} \fi
+    \ifnum#1=3 \drawchevron{2*\aw + 2*\ag}{d3-navy}{white}{Phase 3:}{#4}
+    \else \drawchevron{2*\aw + 2*\ag}{d3-navy!15}{d3-navy}{Phase 3:}{#4} \fi
+    \ifnum#1=4 \drawchevron{3*\aw + 3*\ag}{d3-navy}{white}{Phase 4:}{#5}
+    \else \drawchevron{3*\aw + 3*\ag}{d3-navy!15}{d3-navy}{Phase 4:}{#5} \fi
+    \ifnum#1=5 \drawchevron{4*\aw + 4*\ag}{d3-navy}{white}{Phase 5:}{#6}
+    \else \drawchevron{4*\aw + 4*\ag}{d3-navy!15}{d3-navy}{Phase 5:}{#6} \fi
+  \end{tikzpicture}%
+}
+
+% Legacy compatibility: \fourcolchevron (simple version with single labels)
+% Usage: \fourcolchevron{highlight_num}{Step1}{Step2}{Step3}{Step4}
+\newcommand{\fourcolchevron}[5]{%
+  \fourchevron{#1}{Step 1:}{#2}{Step 2:}{#3}{Step 3:}{#4}{Step 4:}{#5}%
+}

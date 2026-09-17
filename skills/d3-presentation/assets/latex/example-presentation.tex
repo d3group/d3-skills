@@ -1,0 +1,294 @@
+% D3 Template Library - Comprehensive Example
+% Compile with: xelatex template-library.tex (run twice)
+
+\documentclass[aspectratio=169]{beamer}
+
+% Core D3 styling (required)
+\usepackage{assets/d3-beamer}
+
+% Advanced components (code boxes, chevrons, timelines)
+\input{assets/d3-template-library}
+
+% ============================================
+% PRESENTATION METADATA
+% ============================================
+\title{D3 Template Library}
+\subtitle{Complete showcase of all slide types and components}
+\chair{Chair of Information Systems and Business Analytics}
+\presenter{Template Author}
+\date{February 2026}
+
+% Define sections (2-7 sections supported)
+\defsectionsfour{Basic Slides}{Code Boxes}{Chevrons}{Timelines}
+
+% ============================================
+% DOCUMENT
+% ============================================
+\begin{document}
+
+% ============================================
+% TITLE SLIDE
+% ============================================
+\titleslide
+
+% ============================================
+% AGENDA SLIDE
+% ============================================
+\showagenda
+
+% ============================================
+% SECTION 1: BASIC SLIDES
+% ============================================
+\showsection{1}
+
+\onecol{One-column slides present content in a single flow}{
+    This is a standard content slide with a single column layout.
+
+    \begin{itemize}
+        \item First bullet point with some explanation
+        \item Second bullet point with more details
+        \item Third point with \textbf{bold text} and \highlight{highlighted text}
+    \end{itemize}
+
+    \vspace{3mm}
+    \navybox{Navy box for key messages}
+    \hspace{3mm}
+    \textbf{\textcolor{d3-orange}{Orange text for emphasis}}
+}
+
+\twocol{Two-column slides enable side-by-side comparison}{
+    \columnheader{Left Column}
+
+    Content in the left column:
+    \begin{itemize}
+        \item Point one
+        \item Point two
+        \item Point three
+    \end{itemize}
+}{
+    \columnheader{Right Column}
+
+    Content in the right column:
+    \begin{itemize}
+        \item Another point
+        \item More content
+        \item Final item
+    \end{itemize}
+}
+
+\twocoltakeaway{Takeaway slides highlight the key insight for the audience}{
+    \columnheader{Analysis}
+
+    \begin{itemize}
+        \item Data point one
+        \item Analysis finding
+        \item Supporting evidence
+    \end{itemize}
+}{
+    \columnheader{Implications}
+
+    \begin{itemize}
+        \item Strategic recommendation
+        \item Action item
+        \item Expected outcome
+    \end{itemize}
+}{The takeaway message appears here in an orange box. Use this to emphasize the main point.}
+
+% ============================================
+% SECTION 2: CODE BOXES
+% ============================================
+\showsection{2}
+
+\twocol{Code boxes display programming content professionally}{
+    \textbf{Standard code box} (navy border):
+    \begin{codebox}
+def hello\_world():\\
+\pyind print("Hello!")
+    \end{codebox}
+
+    \vspace{3mm}
+    \textbf{Error box} (red border):
+    \begin{errorbox}
+ERROR: File not found
+    \end{errorbox}
+}{
+    \textbf{Terminal box} (dark background):
+    \begin{terminalbox}
+\$ python main.py\\
+Processing data...\\
+Done: 100 records
+    \end{terminalbox}
+
+    \vspace{3mm}
+    Use \texttt{\textbackslash pyind} for indentation in code boxes.
+}
+
+% ============================================
+% SECTION 3: CHEVRONS
+% ============================================
+\showsection{3}
+
+\onecol{Two-phase process flow}{
+    \vspace{4mm}
+    \twochevron{1}{Phase 1:}{Current focus}{Phase 2:}{Next phase}
+
+    \vspace{6mm}
+    {\small
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.48\textwidth}
+            \textit{Current phase:}
+            \begin{itemize}
+                \item Description of current phase activities
+                \item Key deliverables and milestones
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textit{Next phase:}
+            \begin{itemize}
+                \item Planned activities for the next phase
+                \item Expected outcomes and dependencies
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    }
+}
+
+\onecol{Three-phase process flow}{
+    \vspace{4mm}
+    \threechevron{2}{Phase 1:}{Discover}{Phase 2:}{Design}{Phase 3:}{Deliver}
+
+    \vspace{6mm}
+    {\small
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.32\textwidth}
+            \textit{Discover:}
+            \begin{itemize}
+                \item Research
+                \item Requirements
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.32\textwidth}
+            \textit{Design:}
+            \begin{itemize}
+                \item Architecture
+                \item Prototypes
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.32\textwidth}
+            \textit{Deliver:}
+            \begin{itemize}
+                \item Build
+                \item Deploy
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    }
+}
+
+\onecol{Four-phase process flow}{
+    \vspace{4mm}
+    \fourchevron{1}{Phase 1:}{Plan}{Phase 2:}{Build}{Phase 3:}{Test}{Phase 4:}{Deploy}
+
+    \vspace{6mm}
+    {\small
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.24\textwidth}
+            \textit{Plan:}
+            \begin{itemize}
+                \item Requirements
+                \item Architecture
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.24\textwidth}
+            \textit{Build:}
+            \begin{itemize}
+                \item Development
+                \item Integration
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.24\textwidth}
+            \textit{Test:}
+            \begin{itemize}
+                \item Validation
+                \item QA
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.24\textwidth}
+            \textit{Deploy:}
+            \begin{itemize}
+                \item Launch
+                \item Monitor
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    }
+}
+
+\onecol{Legacy fourcolchevron command (single labels)}{
+    \vspace{4mm}
+    \textbf{Step 1 highlighted:}
+    \vspace{2mm}
+
+    \fourcolchevron{1}{Discover}{Design}{Build}{Deploy}
+
+    \vspace{6mm}
+    \textbf{Step 3 highlighted:}
+    \vspace{2mm}
+
+    \fourcolchevron{3}{Discover}{Design}{Build}{Deploy}
+}
+
+% ============================================
+% SECTION 4: TIMELINES
+% ============================================
+\showsection{4}
+
+\onecol{Project timeline with work packages and milestones}{
+    \vspace{4mm}
+    \begin{center}
+    \begin{projecttimeline}{2025}{2028}
+        \workpackage{WP1: Research \& Analysis}{d3-teal!60}{0}{0.5}{1}{M1}
+        \workpackage{WP2: Development}{d3-yellow!80}{0.17}{0.67}{2}{M2}
+        \workpackage{WP3: Testing}{d3-peach!80}{0.33}{0.83}{3}{M3}
+        \workpackage{WP4: Deployment}{d3-lavender!80}{0.67}{1.0}{4}{M4}
+    \end{projecttimeline}
+    \end{center}
+
+    \vspace{4mm}
+    \textbf{Milestone legend:}
+    \begin{tabular}{@{}ll@{\hspace{8mm}}ll@{}}
+        \milestonelegend{M1}{Research complete} & \milestonelegend{M2}{Development complete} \\
+        \milestonelegend{M3}{Testing complete} & \milestonelegend{M4}{Project delivered}
+    \end{tabular}
+}
+
+\onecol{TikZ box styles for flowcharts}{
+    \vspace{2mm}
+    \begin{center}
+    \begin{tikzpicture}
+        \node[d3box] (input) at (0,0) {Input\\Data};
+        \node[d3box] (process) at (3.5,0) {Process\\Step};
+        \node[d3box] (analyze) at (7,0) {Analyze\\Results};
+        \node[d3project] (output) at (10.5,0) {Final\\Output};
+
+        \draw[d3arrow] (input) -- (process);
+        \draw[d3arrow] (process) -- (analyze);
+        \draw[d3arrow] (analyze) -- (output);
+
+        \node[below, font=\scriptsize, text=d3-gray] at (input.south) {d3box};
+        \node[below, font=\scriptsize, text=d3-gray] at (process.south) {d3box};
+        \node[below, font=\scriptsize, text=d3-gray] at (analyze.south) {d3box};
+        \node[below, font=\scriptsize, text=d3-orange] at (output.south) {d3project};
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{3mm}
+    \textbf{Available styles:} \texttt{d3box}, \texttt{d3project}, \texttt{d3arrow}, \texttt{d3circle}, \texttt{d3circle-orange}
+}
+
+% ============================================
+% THANK YOU SLIDE
+% ============================================
+\thankyouslide
+
+\end{document}

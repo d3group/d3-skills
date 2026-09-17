@@ -1,0 +1,66 @@
+<section id="core-idea" data-nav="Why 37 percent" data-kicker="Core idea" data-hud="4">
+  <h2>Skipping candidates buys a benchmark, and the price is that the best may be among them</h2>
+
+  <p>Start from a sentence: <strong>every candidate you skip makes your benchmark better and the chance that the best one is already gone larger.</strong> The rule fails in exactly two ways, and the cutoff trades one against the other. The figure shows the trade before the algebra does.</p>
+
+  <details class="predict"><summary>Before you drag: with $n = 20$, does skipping half of the candidates beat skipping a quarter?</summary>
+    <div class="in"><p>No, though only just: 0.359 against 0.366. Both are below the optimum of 0.384 at seven skipped. The curve is flat near its top and falls off steeply only at the extremes.</p></div>
+  </details>
+
+  <figure class="widget wide" id="fig-cutoff">
+    <figcaption><b>{fig}. The two ways to fail, and the success probability they leave.</b>
+      <span class="try">Drag the orange handle from a low to a high cutoff (the figure starts too impatient on purpose), then raise $n$.</span>
+      <span class="notice">At low cutoffs the rule settles too early, at high cutoffs the best has already been skipped. The best share lies between 30 and 40 % for short queues and settles at 37 %, and the exact curve lies above the limit $-x \ln x$ and falls to it as $n$ grows.</span>
+    </figcaption>
+  </figure>
+  <script>
+  (function () {
+    // exact success probability of the cutoff rule with s = r - 1 skipped candidates, paper Eq. (1)
+    function P(s, n) { if (s < 1) return 1 / n; var sum = 0, k; for (k = s + 1; k <= n; k++) sum += 1 / (k - 1); return s / n * sum; }
+    D3X.widget('fig-cutoff', {
+      toy: true, height: 330,
+      params: {
+        x: {label: 'share of candidates skipped', min: 0, max: 0.95, step: 0.01, value: 0.15, fmt: function (v) { return Math.round(v * 100) + ' %'; }},
+        n: {label: 'number of candidates $n$', min: 5, max: 200, step: 5, value: 20}
+      },
+      presets: {'Paper optimum 1/e': {x: 0.37}, 'Take the first': {x: 0}, 'Skip almost all': {x: 0.95}},
+      draw: function (p, ctx) {
+        var n = p.n, s = Math.min(n - 1, Math.round(p.x * n)), ps = P(s, n), best = 0, i, xs = [], ys = [];
+        for (i = 0; i < n; i++) { xs.push(i / n); ys.push(P(i, n)); if (P(i, n) > P(best, n)) best = i; }
+        var skipped = s / n, early = Math.max(0, 1 - ps - skipped);
+        var left = ctx.plot({cell: [0, 2], title: 'What happens at this cutoff', x: {bands: ['picked the best', 'best was skipped', 'settled too early']}, y: {domain: [0, 1], label: 'probability'}});
+        left.bars([ps, skipped, early], {colors: ['win', 'gone', 'early'], values: true, fmt: function (v) { return v.toFixed(2); }});
+        var right = ctx.plot({cell: [1, 2], title: 'Success probability', x: {domain: [0, 1], label: 'share of candidates skipped'}, y: {domain: [0, 0.5], label: 'probability of picking the best'}});
+        right.fn(function (x) { return x > 0 ? -x * Math.log(x) : 0; }, {color: 'idle', dash: true, label: 'limit −x ln x'});
+        right.line(xs, ys, {color: 'win', label: 'exact for this n'});
+        right.point(best / n, P(best, n), {color: 'win', label: 'best cutoff', dy: -12});
+        right.handle(skipped, ps, {setX: 'x', label: 'drag'});
+        ctx.readout('candidates skipped', s + ' of ' + n);
+        ctx.readout('best cutoff for this $n$', best + ' of ' + n + ' skipped (' + Math.round(100 * best / n) + ' %)');
+        ctx.readout('success probability', ps.toFixed(3));
+        ctx.readout('gap to the best cutoff', (P(best, n) - ps).toFixed(3), {accent: true});
+        ctx.note(s === best ? 'This is the exact optimum for $n = ' + n + '$: skip ' + best + ', then take the first record.'
+          : s < best ? 'Too impatient: the benchmark is weak, so the rule often settles for an early record. Skip ' + (best - s) + ' more.'
+          : 'Too patient: with probability ' + skipped.toFixed(2) + ' the best candidate is among those you skipped. Skip ' + (s - best) + ' fewer.');
+      }
+    });
+  })();
+  </script>
+
+  <h3>The same statement, derived</h3>
+  <div class="derivation" id="deriv-cutoff" data-title="From the success probability to 1/e">
+    <div class="dstep" data-why="Condition on the position $k$ of the best candidate, each with probability $1/n$. It is chosen exactly when nobody between $r$ and $k-1$ beats the benchmark, that is, when the best of the first $k-1$ sits among the $r-1$ skipped.">
+      <div class="eq" data-label="eq:prob"></div>
+    </div>
+    <div class="dstep" data-why="Let $n \to \infty$ with $x = r/n$ fixed. The sum is a Riemann sum of $1/t$ over $[x, 1]$. The figures plot the share skipped, $(r-1)/n$, which differs from $x$ by $1/n$ and coincides with it in the limit.">
+      $$\win{\Pn(r)} \;\longrightarrow\; \skip{x} \int_{\skip{x}}^1 \frac{dt}{t} \;=\; -\skip{x} \ln \skip{x}$$
+    </div>
+    <div class="dstep" data-why="Set the derivative to zero. $P''(x) = -1/x < 0$, so the stationary point is the maximum. [[paper:eq:limit]]">
+      $$P'(x) = -\ln \skip{x} - 1 = 0 \quad\Longrightarrow\quad \skip{x^\star} = 1/\e, \qquad \win{P(x^\star)} = 1/\e$$
+    </div>
+  </div>
+
+  <div class="note key"><span class="h">What to keep</span>
+    The optimum balances two failure probabilities, and the same number, $1/\e$, is both the share to skip and the chance of success in the limit. For finite $n$ the success probability lies above $1/\e$ and falls to it, which is why enumerating the exact optimum is worth the three lines of code. Only the first step uses the random arrival order; without that assumption nothing here holds.
+  </div>
+</section>

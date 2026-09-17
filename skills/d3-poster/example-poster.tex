@@ -1,0 +1,130 @@
+%! TEX program = xelatex
+% D3 Poster Example -- A0 portrait, 2-column baposter grid with D3 reskin.
+% Compile: xelatex poster.tex (no bibtex needed for this example)
+
+\documentclass[a0paper]{baposter}
+
+\usepackage{relsize}
+\usepackage{url}
+\usepackage{multicol}
+\usepackage{amsmath,amssymb}
+\usepackage{natbib}
+\usepackage{graphicx}
+
+\usepackage{assets/d3-poster}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+
+\begin{document}
+\typeout{D3 poster rendering started}
+
+\begin{poster}{
+  columns=2,
+  grid=false,
+  borderColor=uniblue,
+  headerColorOne=uniblue,
+  headerColorTwo=uniblue,
+  headerFontColor=white,
+  headerheight=11em,
+  boxColorOne=white,
+  boxpadding=1em,
+  headershape=rectangle,
+  headershade=plain,             % Required: baposter's default `shadeLR` is case-incorrect (lowercase
+                                 % choice list expects `shadelr`) and silently falls through to an empty
+                                 % handler, leaving headers unfilled. `plain` gives a solid headerColorOne fill.
+  headerfont=\Large\sffamily\bfseries,
+  textborder=none,
+  background=plain,
+  bgColorOne=white,
+  bgColorTwo=white,
+  headerborder=open,
+  boxshade=plain,
+  eyecatcher=false
+}
+%%% Eye Catcher (empty) %%%
+{}
+%%% Title -- single line, large, ragged-right (avoids ugly justified spacing
+%%% when the title wraps).  No subtitle by default.
+{\sffamily\bfseries\Huge\raggedright Dynamic Inventory Control with Weighted SAA}
+%%% Authors -- one line.
+{\vspace{0.6em}
+  Author Name, Data Driven Decisions Group\enspace|\enspace author@uni-wuerzburg.de}
+%%% Logos (bottom-right, aligned with author line)
+{\dthreelogos}
+
+%%% Motivation %%%
+\headerbox{Motivation}{name=Motivation,column=0,row=0}{
+  Periodic-review inventory control with fixed ordering cost is widely studied
+  for the single-period case, but the \highlight{multi-period rolling-horizon}
+  variant has remained data-poor. We apply weighted SAA to 460 SKUs of an
+  East-African pharmaceutical distributor -- the first end-to-end deployment
+  at this scale.
+}
+
+%%% Problem -- formal setup, fills column 0 to the bottom
+\headerbox{Problem}{name=Problem,column=0,below=Motivation,above=bottom}{
+  At each period $t = 1,\dots,T$, decide $q_t \geq 0$ before observing demand
+  $\xi_t$. Total cost:
+  \begin{equation*}
+    C(\vec{q},\vec{\xi},I_1) = \sum_{t=1}^{T}\bigl(c^o_t(q_t) + c^s_t(z_t,\xi_t)\bigr),
+  \end{equation*}
+  with $c^o_t(q) = K_t + u_t q$ for $q>0$ and newsvendor cost
+  $c^s_t(z,\xi) = h_t(z-\xi)^+ + b_t(\xi-z)^+$. Given features $\vec{x}$:
+  \begin{equation*}
+    \min_{q_1,\dots,q_T \geq 0} \mathbb{E}[C(\vec{q},\vec{\xi},I_1) \mid \vec{x}].
+  \end{equation*}
+
+  \keypoint{Closed-form $\mathbb{E}[\cdot\mid\vec{x}]$ is unavailable; we
+  estimate it with a weighted sample average trained on global data.}
+}
+
+%%% Approach -- top of column 1
+\headerbox{Approach}{name=Approach,column=1,row=0}{
+  \textbf{Weighted SAA.} Replace the conditional expectation with
+  $\sum_{i=1}^{N} w^{i}(\vec{x})\,C(\vec{q},\vec{\xi}^i,I_1)$, where weights
+  come from a globally-trained ML model applied locally per SKU.
+
+  \vspace{0.4ex}
+  \textbf{Rolling horizon.} Solve a $(\tau{+}1)$-period look-ahead at each $t$,
+  apply only $\hat{q}_t$, roll forward.
+
+  \begin{center}
+    \begin{tikzpicture}
+      \node[card gray, minimum width=0.95\linewidth, minimum height=6cm,
+            align=center, font=\sffamily\small]
+        {\color{d3-gray}Drop \texttt{method-overview.pdf} into \texttt{figures/}};
+    \end{tikzpicture}
+  \end{center}
+}
+
+%%% Empirical Results -- below Approach, fills column 1 to the bottom
+\headerbox{Empirical Results}{name=Results,column=1,below=Approach,above=bottom}{
+  \begin{tikzpicture}
+    \node[infobox] {\textbf{\color{d3-navy}\Large 30--36\%}\quad cost reduction vs.\ SAA};
+  \end{tikzpicture}
+
+  \vspace{0.6ex}
+  Out-of-sample on the last 13 weeks. Service levels $\{50\%, 75\%, 90\%\}$
+  correspond to $b_t \in \{1, 3, 9\}$.
+
+  \begin{tabular}{@{}l S[table-format=2.1] S[table-format=2.1] S[table-format=2.1] @{}}
+    \toprule
+    \textbf{Method} & {\textbf{50\%}} & {\textbf{75\%}} & {\textbf{90\%}} \\
+    \midrule
+    SAA            & 18.4 & 22.1 & 31.5 \\
+    \midrule
+    \textbf{WSAA (ours)}    & \highlight{12.7} & \highlight{15.3} & \highlight{21.8} \\
+    \textbf{WSAA-RO (ours)} & 13.1 & 15.9 & 22.4 \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.6ex}
+  \textbf{Literature.}\enspace
+  Bertsimas \& Kallus (2020, \textit{Management Science});
+  Ban \& Rudin (2019, \textit{Operations Research});
+  Notz \& Pibernik (2024, \textit{Management Science}).
+}
+
+\end{poster}
+\end{document}

@@ -1,0 +1,240 @@
+%! TEX program = xelatex
+% Example: two-page extended abstract (Submission Abstract pattern).
+% Illustrative content. Authors, numbers, and results are placeholders.
+% The references are real publications and show the expected format.
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage{parskip}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{assets/d3-abstract}
+
+\newcommand{\tittel}{Decision-Focused Learning for Battery Storage Scheduling}
+
+% Footer: target venue and page limit
+\renewcommand{\projektname}{\textbf{Extended abstract for OR 2026}\enspace|\enspace\textbf{Page limit: 2}}
+
+% Page contract: two pages, so two template calls below
+\renewcommand{\abstractpages}{2}
+
+\begin{document}
+\newgeometry{bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm}
+\pagestyle{empty}
+
+% ============================================================
+% Page 1: self-contained core (claim, approach, headline result)
+% ============================================================
+
+% Submission abstracts carry authors and affiliation in the subtitle
+\renewcommand{\undertittel}{A. Author, B. Author\enspace|\enspace Chair of Information Systems and Business Analytics, University of W\"urzburg}
+
+\renewcommand{\innledning}{%
+We train price forecasts for battery scheduling on the cost of the resulting
+dispatch decisions. On 24 months of day-ahead market data, the approach lowers
+normalized regret by \highlight{31\%} relative to a two-stage forecast with
+identical model capacity.}
+
+\renewcommand{\venstre}{%
+\sectionhead{Motivation}
+
+Operators of grid-scale batteries schedule charging and discharging one day
+ahead, based on forecasts of hourly electricity prices. Forecast models are
+commonly trained on mean squared error. The dispatch cost, however, depends on
+the ranking of hours within a day, and errors in hours near the charging
+threshold change the schedule most.
+
+Decision-focused learning trains the forecast on the downstream objective.
+Elmachtoub and Grigas [1] derive the convex SPO+ surrogate for linear
+objectives, and Donti et al. [2] differentiate through a stochastic program.
+Bertsimas and Kallus [3] study the related prescriptive setting with auxiliary
+data. Mandi et al. [4] survey the field and provide benchmarks. We study the
+storage scheduling problem, which adds inter-temporal state constraints.
+
+\sectionhead{Problem and Approach}
+
+Let $c \in \mathbb{R}^{24}$ denote hourly prices and $x$ the features
+available at bidding time. The operator solves
+\[
+  z^*(c) = \arg\min_{z \in \mathcal{Z}} \; c^\top z,
+\]
+where $\mathcal{Z}$ encodes power limits and the state-of-charge dynamics.
+A forecast $\hat{c} = f_\theta(x)$ incurs the regret
+$c^\top z^*(\hat{c}) - c^\top z^*(c)$.
+We minimize the SPO+ surrogate of this regret over $\theta$.
+
+\sectionhead{Training Procedure}
+
+\begin{enumerate}
+\item Pretrain $f_\theta$ on mean squared error for ten epochs.
+\item Solve the scheduling LP for each training day, warm-started from the
+  previous epoch's basis.
+\item Update $\theta$ with the SPO+ subgradient and repeat from step 2 until
+  the validation regret stops improving.
+\end{enumerate}
+
+\sectionhead{Data}
+
+Hourly day-ahead prices for the German bidding zone, January 2024 to December
+2025, with load, wind, and solar forecasts published before gate closure.
+}
+
+\renewcommand{\hoyre}{%
+\sectionhead{Headline Results}
+
+\begin{tikzpicture}
+\node[infobox] {\textbf{\color{d3-navy}\Large 24}\quad months of out-of-sample evaluation};
+\end{tikzpicture}
+
+\vspace{1ex}
+
+\begin{tikzpicture}
+\node[infobox] {\textbf{\color{d3-navy}\Large 58\%}\quad less solver time per epoch};
+\end{tikzpicture}
+
+\sectionhead{Comparison}
+
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l S[table-format=1.3] S[table-format=2.1] @{}}
+\toprule
+\textbf{Method} & {\textbf{Regret}} & {\textbf{RMSE}} \\
+\midrule
+% --- Comparison methods ---
+Two-stage (MSE)      & 0.118 & 9.4 \\
+Two-stage (quantile) & 0.109 & 9.9 \\
+\midrule
+% --- Ours ---
+\textbf{DFL, linear} & 0.094 & 11.2 \\
+\textbf{DFL, neural} & \highlight{0.081} & 10.7 \\
+\bottomrule
+\end{tabular*}
+
+\vspace{1ex}
+
+Regret is normalized by the optimal dispatch cost. RMSE in EUR/MWh. All models
+use the same features and the same number of parameters per class.
+
+\sectionhead{Contributions}
+
+\begin{enumerate}
+\item A decision-focused training procedure for storage scheduling with
+  state-of-charge constraints.
+\item A warm-start scheme that cuts the solver time per epoch by 58\%.
+\item An evaluation on 24 months of day-ahead prices with a rolling
+  out-of-sample protocol.
+\end{enumerate}
+
+\vspace{2ex}
+
+\sectionhead{Evaluation Design}
+
+Models are retrained monthly on a rolling 12-month window and evaluated on the
+following month. Page 2 reports the results by season and battery duration.
+
+\vspace{2ex}
+
+\keypoint{Training on dispatch cost lowers regret by 31\% while the forecast
+RMSE rises by 1.3 EUR/MWh.}
+}
+
+\input{assets/d3-abstract-template}
+
+% ============================================================
+% Page 2: continuation page (no lead paragraph, full-width table)
+% ============================================================
+
+\renewcommand{\undertittel}{Experiments, Discussion, and References}
+
+\renewcommand{\helbredde}{%
+\sectionhead{Regret by Season and Battery Duration}
+
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l
+  S[table-format=1.3] S[table-format=1.3] S[table-format=1.3] S[table-format=1.3]
+  S[table-format=1.3] S[table-format=1.3] @{}}
+\toprule
+& \multicolumn{3}{c}{\textbf{2-hour battery}} & \multicolumn{3}{c}{\textbf{4-hour battery}} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+\textbf{Method} & {\textbf{Winter}} & {\textbf{Summer}} & {\textbf{All}} & {\textbf{Winter}} & {\textbf{Summer}} & {\textbf{All}} \\
+\midrule
+Two-stage (MSE)      & 0.131 & 0.102 & 0.118 & 0.097 & 0.078 & 0.088 \\
+Two-stage (quantile) & 0.120 & 0.096 & 0.109 & 0.092 & 0.075 & 0.084 \\
+\midrule
+\textbf{DFL, linear} & 0.103 & 0.084 & 0.094 & 0.080 & 0.066 & 0.073 \\
+\textbf{DFL, neural} & 0.088 & 0.073 & \highlight{0.081} & 0.069 & 0.058 & \highlight{0.064} \\
+\bottomrule
+\end{tabular*}
+}
+
+\renewcommand{\venstre}{%
+\sectionhead{Experimental Protocol}
+
+We use hourly day-ahead prices for the German bidding zone from January 2024
+to December 2025, together with load, wind, and solar forecasts published
+before gate closure. Models are retrained monthly on a rolling 12-month window
+and evaluated on the following month. Each configuration runs with five random
+seeds, and the table reports the mean.
+
+The battery has a round-trip efficiency of 90\% and one full cycle per day.
+We consider durations of two and four hours at a fixed power rating.
+
+\sectionhead{Discussion}
+
+The regret reduction is largest in winter, when the daily price spread is wide
+and the ranking of evening hours determines most of the revenue. With a 4-hour
+battery the schedule covers more hours per day, single ranking errors carry
+less weight, and the gap between the methods narrows.
+
+The decision-focused models have a higher RMSE than the two-stage models. They
+shift accuracy toward the hours that determine the schedule, which is
+consistent with the analysis of the SPO+ loss in [1].
+
+\sectionhead{Computation}
+
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l S[table-format=3.0] S[table-format=1.1] @{}}
+\toprule
+\textbf{Setup} & {\textbf{Min/epoch}} & {\textbf{Factor}} \\
+\midrule
+Two-stage (MSE)     & 4   & 1.0 \\
+DFL, cold start     & 31  & 7.8 \\
+\textbf{DFL, warm start} & 13 & 3.2 \\
+\bottomrule
+\end{tabular*}
+
+\vspace{1ex}
+
+Training time per epoch on one GPU node. The factor is relative to the
+two-stage pipeline.
+}
+
+\renewcommand{\hoyre}{%
+\sectionhead{Scope}
+
+The scheduling model is a linear program with perfect foresight of the
+battery state. Degradation costs and intraday re-optimization are outside the
+scope of this study. All results refer to a price-taking operator.
+
+\sectionhead{Conclusion and Outlook}
+
+Training price forecasts on dispatch cost improves battery scheduling
+decisions on real market data at a moderate computational cost. Next, we add a
+degradation term to the objective, which turns the scheduling problem into a
+quadratic program, and we extend the evaluation to the intraday market.
+
+\sectionhead{References}
+
+\begin{reflist}
+\item Elmachtoub, A. N., Grigas, P. (2022). Smart ``Predict, then Optimize''.
+  \textit{Management Science} 68(1), 9--26.
+\item Donti, P. L., Amos, B., Kolter, J. Z. (2017). Task-based End-to-end Model
+  Learning in Stochastic Optimization. \textit{Advances in Neural Information
+  Processing Systems} 30.
+\item Bertsimas, D., Kallus, N. (2020). From Predictive to Prescriptive
+  Analytics. \textit{Management Science} 66(3), 1025--1044.
+\item Mandi, J., Kotary, J., Berden, S., Mulamba, M., Bucarey, V., Guns, T.,
+  Fioretto, F. (2024). Decision-Focused Learning: Foundations, State of the
+  Art, Benchmark and Future Opportunities. \textit{Journal of Artificial
+  Intelligence Research} 80.
+\end{reflist}
+}
+
+\input{assets/d3-abstract-template}
+
+\end{document}

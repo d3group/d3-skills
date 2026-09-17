@@ -1,0 +1,40 @@
+{
+  "name": "d3-skills",
+  "owner": {
+    "name": "Data Driven Decisions (D3) Group, University of Würzburg"
+  },
+  "metadata": {
+    "description": "Claude Code skills of the D3 group for research communication: abstracts, posters, presentations, and interactive project explainers in the D3 corporate design",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "d3-abstract-skill",
+      "description": "D3-branded abstracts, one-pagers and research updates as A4 PDFs (LaTeX)",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/d3-abstract"]
+    },
+    {
+      "name": "d3-poster-skill",
+      "description": "D3-branded A0 conference posters from a paper or repo (LaTeX, baposter)",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/d3-poster"]
+    },
+    {
+      "name": "d3-presentation-skill",
+      "description": "D3-branded presentations as LaTeX Beamer PDFs or interactive HTML decks",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/d3-presentation"]
+    },
+    {
+      "name": "d3-explainer-skill",
+      "description": "Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors",
+      "source": "./",
+      "strict": false,
+      "skills": ["./skills/d3-explainer"]
+    }
+  ]
+}

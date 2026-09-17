@@ -1,0 +1,24 @@
+<section id="big-picture" data-nav="The project in one screen" data-kicker="Orientation" data-hud="1">
+  <h2>The project in one screen</h2>
+
+  <p class="claim">Watch the first 37 % of the candidates without committing, then take the first one who beats them all: no other cutoff finds the best candidate more often, and the rule succeeds about 37 % of the time in a long queue, a little more often in a short one.</p>
+
+  <p>We see $n$ candidates one by one in random order and must accept or reject each on the spot. The repository states the exact success probability of the cutoff rule, derives the large-$n$ optimum, and checks both by simulation. [[paper:sec:model]] [[code:src/secretary.py:8 def success_probability]]</p>
+
+  <div class="kpis">
+    <div class="kpi accent"><div class="v">1/e ≈ 0.368</div><div class="l">optimal share to skip, and the success probability, as $n \to \infty$ [[paper:eq:limit]]</div></div>
+    <div class="kpi"><div class="v">0.384</div><div class="l">exact success probability at $n = 20$ with 7 skipped [[result:results/success.json|success.json]]</div></div>
+    <div class="kpi"><div class="v">20,000</div><div class="l">simulated arrival orders per cutoff [[paper:sec:sim]]</div></div>
+  </div>
+
+  <h3>Where prior work stops</h3>
+  <div class="tblwrap"><table class="gap">
+    <tr><th>Line of work</th><th>Success probability, exact</th><th>Optimal share as $n \to \infty$</th><th>Optimal cutoff for a given $n$</th><th>Checked by simulation</th></tr>
+    <tr><td>Classical analysis of the cutoff rule</td><td class="y">✓</td><td class="y">✓</td><td class="n">–</td><td class="n">–</td></tr>
+    <tr class="ours"><td>This project</td><td class="p">restated</td><td class="p">re-derived</td><td class="y">✓</td><td class="y">✓</td></tr>
+  </table></div>
+
+  <div class="note reading"><span class="h">My reading</span>
+    The paper has no related-work section yet. The first row is inferred from the abstract, which says the exact probability is restated; what the project adds is the enumerated optimum for a given $n$ and the simulation check. A payoff other than "best or nothing" is on the authors' list and in nobody's column yet. [[reading]]
+  </div>
+</section>

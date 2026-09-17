@@ -1,0 +1,96 @@
+<section id="code-and-evidence" data-nav="Code and evidence" data-kicker="Realization" data-hud="5">
+  <h2>How the code realizes it, and what the simulation shows</h2>
+
+  <p>The repository computes the same number twice, once from the formula and once by simulating queues, and the two routes meet only in the results file.</p>
+
+  <figure class="widget" id="fig-pipeline">
+    <figcaption><b>{fig}. Two routes to the same number.</b>
+      <span class="try">Select each box.</span>
+      <span class="notice">The formula route and the simulation route share no code, which is what makes their agreement in {fig:fig-results} evidence.</span>
+    </figcaption>
+  </figure>
+  <script>
+  D3X.flow('fig-pipeline', {
+    cols: 4, rowHeight: 92, rowLabels: ['simulation route', 'formula route'], select: 'rule',
+    nodes: [
+      {id: 'order', label: 'Random arrival order', sub: 'rng.random(n)', col: 0, row: 0, kind: 'data', detail: 'One simulated queue: $n$ scores drawn uniformly on $[0,1]$, which makes every arrival order equally likely and ties impossible. [[code:src/secretary.py:30 rng.random(n)]]'},
+      {id: 'rule', label: 'Apply the cutoff rule', sub: 'run_once', col: 1, row: 0, kind: 'code', detail: 'Benchmark from the first $r-1$ scores, then the first record wins. Returns whether that record is the overall best. [[code:src/secretary.py:20 def run_once]]'},
+      {id: 'share', label: 'Share of successes', sub: 'simulate', col: 2, row: 0, kind: 'code', detail: 'Mean over the simulated queues; the script fixes 20,000 per cutoff and one seed. [[code:src/secretary.py:29 def simulate]] [[code:src/secretary.py:34 default_rng(7)]] [[paper:sec:sim]]'},
+      {id: 'input', label: 'n and a cutoff r', sub: 'arguments', col: 0, row: 1, kind: 'data', detail: 'The formula route needs no data: only the queue length and the cutoff.'},
+      {id: 'formula', label: 'Exact probability', sub: 'success_probability', col: 1, row: 1, kind: 'model', detail: 'The closed form $\\Pn(r)$ of the paper, evaluated for every cutoff. [[code:src/secretary.py:8 def success_probability]] [[paper:eq:prob]]'},
+      {id: 'best', label: 'Best cutoff', sub: 'optimal_cutoff', col: 2, row: 1, kind: 'model', detail: 'Enumerates all $r$ and keeps the maximizer: exact for the given $n$, where the paper analyses the limit. [[code:src/secretary.py:15 def optimal_cutoff]]'},
+      {id: 'out', label: 'Results file', sub: 'results/success.json', col: 3, row: 0, kind: 'result', detail: 'Simulated and exact success rates for every cutoff at $n = 20$ and for every fifth cutoff at $n = 100$. [[result:results/success.json]]'}
+    ],
+    edges: [['order', 'rule'], ['rule', 'share'], ['share', 'out'], ['input', 'formula'], ['formula', 'best'], ['best', 'out']]
+  });
+  </script>
+
+  <p>The rule itself is one short function. Look at the comparison in the loop: the first score above the benchmark ends the search, whether or not it is the best. [[code:src/secretary.py:20 def run_once]]</p>
+  <pre class="code" data-src="src/secretary.py" data-symbol="def run_once" data-note="the cutoff rule"></pre>
+
+  <h3>Evidence from the repository</h3>
+  <figure class="widget" id="fig-results">
+    <figcaption><b>{fig}. Simulated against exact success rates, from <code>results/success.json</code>.</b>
+      <span class="try">Hover the curves, switch to $n = 100$, then show the difference.</span>
+      <span class="notice">Simulation and formula differ by at most 0.007, about two standard errors of a share estimated from 20,000 runs. For $n = 100$ the grid moves in steps of five, so the best stored point of the exact series (35 skipped, gray line) is not the true optimum (37 skipped).</span>
+    </figcaption>
+  </figure>
+  <script type="application/json" id="data-success" data-src="results/success.json"></script>
+  <script>
+  D3X.widget('fig-results', {
+    height: 300,
+    params: {n: {label: 'queue length', options: [{value: 'n20', label: 'n = 20'}, {value: 'n100', label: 'n = 100'}], value: 'n20'},
+             diff: {label: 'show simulated minus exact', value: false}},
+    draw: function (p, ctx) {
+      var R = D3X.data('data-success')[p.n], total = p.n === 'n20' ? 20 : 100, skipped = R.r.map(function (r) { return (r - 1) / total; });
+      var gi = 0; R.exact.forEach(function (v, i) { if (v > R.exact[gi]) gi = i; });
+      var plot = ctx.plot(p.diff
+        ? {x: {domain: [0, 1], label: 'share of candidates skipped'}, y: {domain: [-0.012, 0.012], label: 'simulated minus exact'}}
+        : {x: {domain: [0, 1], label: 'share of candidates skipped'}, y: {domain: [0, 0.5], label: 'probability, or share of runs, of picking the best'}, margin: {r: 96}});
+      if (p.diff) { plot.hline(0.0068, {label: '+2 standard errors'}); plot.hline(-0.0068, {label: '−2 standard errors', dy: 16});
+        plot.scatter(skipped, R.simulated.map(function (v, i) { return v - R.exact[i]; }), {color: 'ink', r: 3.5, label: 'simulated minus exact'}); }
+      else { plot.line(skipped, R.exact, {color: 'win', label: 'exact', end: true});
+        plot.scatter(skipped, R.simulated, {color: 'ink', r: 3.5, label: 'simulated'}); }
+      plot.vline((R.optimal_r - 1) / total, {label: 'exact optimum'});
+      if ((R.r[gi] - 1) !== R.optimal_r - 1) plot.vline((R.r[gi] - 1) / total, {label: 'best on the grid', anchor: 'end'});
+      var worst = Math.max.apply(null, R.exact.map(function (v, i) { return Math.abs(v - R.simulated[i]); }));
+      ctx.readout('largest gap, simulated vs. exact', worst.toFixed(3), {accent: true});
+      ctx.readout('exact optimum (skipped)', String(R.optimal_r - 1));
+      ctx.readout('best point of the exact series on the stored grid (skipped)', String(R.r[gi] - 1));
+    }
+  });
+  </script>
+
+  <h3>What a single queue looks like</h3>
+  <figure class="widget" id="fig-queue">
+    <figcaption><b>{fig}. One arrival order, one decision.</b>
+      <span class="try">Press <em>New queue</em> a few times, then press <em>Impatient: 10 %</em> and repeat.</span>
+      <span class="notice">At 37 % close to four in ten queues end with the best candidate; the tally over 400 fresh queues says so. At 10 % the rule usually stops at an early, mediocre record and the tally drops to about a quarter.</span>
+    </figcaption>
+  </figure>
+  <script>
+  D3X.widget('fig-queue', {
+    toy: true, height: 260, seed: 6,
+    params: {x: {label: 'share of candidates skipped', min: 0, max: 0.9, step: 0.01, value: 0.37, fmt: function (v) { return Math.round(v * 100) + ' %'; }},
+             n: {label: 'number of candidates $n$', min: 10, max: 60, step: 5, value: 30}},
+    presets: {'Paper: 37 %': {x: 0.37}, 'Impatient: 10 %': {x: 0.1}},
+    actions: {resample: 'New queue'},
+    draw: function (p, ctx) {
+      var r = ctx.rng(), n = p.n, s = Math.round(p.x * n), scores = [], pos = [], i, bench = -1, pick = -1, top = 0;
+      for (i = 0; i < n; i++) { scores.push(r()); pos.push(i + 1); if (scores[i] > scores[top]) top = i; }
+      for (i = 0; i < s; i++) bench = Math.max(bench, scores[i]);
+      for (i = s; i < n; i++) if (scores[i] > bench) { pick = i; break; }
+      var t = ctx.rng('tally'), wins = 0, q, j, b2, best2, pick2;
+      for (q = 0; q < 400; q++) { var sc = []; best2 = 0; for (j = 0; j < n; j++) { sc.push(t()); if (sc[j] > sc[best2]) best2 = j; }
+        b2 = -1; for (j = 0; j < s; j++) b2 = Math.max(b2, sc[j]); pick2 = -1; for (j = s; j < n; j++) if (sc[j] > b2) { pick2 = j; break; } if (pick2 === best2) wins++; }
+      var plot = ctx.plot({x: {domain: [0, n + 1], label: 'arrival position'}, y: {domain: [0, 1.08], label: 'score, uniform on [0, 1]'}});
+      if (s > 0) { plot.region(0, s + 0.5, {color: 'skip!14', opacity: 1}); plot.text(0.4, 0.03, 'skipped'); plot.hline(bench, {label: 'benchmark'}); }
+      plot.scatter(pos, scores, {color: 'idle', r: 4, label: 'candidate'});
+      if (pick === top) plot.point(top + 1, scores[top], {color: 'win', label: 'chosen = best', dy: -10});
+      else { plot.point(top + 1, scores[top], {color: pick < 0 ? 'gone' : 'ink', label: 'best', dy: -10}); if (pick >= 0) plot.point(pick + 1, scores[pick], {color: 'early', label: 'chosen', dy: 16}); }
+      ctx.readout('this queue', pick === top ? 'picked the best' : pick < 0 ? 'best was skipped' : 'settled too early', {accent: pick === top});
+      ctx.readout('picked the best in 400 fresh queues', (100 * wins / 400).toFixed(0) + ' %');
+    }
+  });
+  </script>
+</section>

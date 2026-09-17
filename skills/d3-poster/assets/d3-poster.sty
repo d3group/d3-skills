@@ -1,0 +1,186 @@
+% d3-poster.sty
+% D3-branded reskin for the baposter class.
+% Adds the D3 color palette, Inter font (XeLaTeX/LuaLaTeX), and the
+% \highlight / \keypoint / infobox / card macros that match
+% d3-abstract and d3-presentation.
+%
+% Usage:
+%   \documentclass[a0paper]{baposter}
+%   \usepackage{assets/d3-poster}
+%
+% Engine: prefers XeLaTeX or LuaLaTeX (for Inter via fontspec).
+% Falls back gracefully to pdflatex with Helvetica-like sans (TeX Gyre Heros).
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{d3-poster}[2026/05/14 D3 Poster Reskin for baposter]
+
+% ====================
+% Engine detection (iftex is preloaded on modern TeX Live)
+% ====================
+\RequirePackage{iftex}
+
+% ====================
+% D3 Color Palette
+% (Override baposter's uniblue with d3-navy so headers/borders/rules
+%  inherit the D3 brand without forking baposter.cls.)
+% ====================
+\definecolor{d3-navy}{RGB}{21,63,135}
+\definecolor{d3-orange}{HTML}{f29100}
+\definecolor{d3-gray}{RGB}{128,128,128}
+\definecolor{d3-lightblue}{RGB}{200,220,240}
+\definecolor{d3-darkblue}{RGB}{10,40,100}
+
+% Redefine uniblue (already defined by baposter.cls) to match d3-navy.
+\AtBeginDocument{%
+  \definecolor{uniblue}{RGB}{21,63,135}%
+}
+
+% ====================
+% Font Setup
+% Inter via fontspec under XeLaTeX/LuaLaTeX; TeX Gyre Heros under pdfLaTeX.
+% ====================
+\ifxetex
+  \RequirePackage{fontspec}
+  \setsansfont{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-Regular,
+    BoldFont = Inter_18pt-Bold,
+    ItalicFont = Inter_18pt-Italic,
+    BoldItalicFont = Inter_18pt-BoldItalic
+  ]
+  \setmainfont{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-Regular,
+    BoldFont = Inter_18pt-Bold,
+    ItalicFont = Inter_18pt-Italic,
+    BoldItalicFont = Inter_18pt-BoldItalic
+  ]
+  \newfontfamily{\titlefont}{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-SemiBold,
+    BoldFont = Inter_18pt-Bold
+  ]
+  \renewcommand{\familydefault}{\sfdefault}
+\else\ifluatex
+  \RequirePackage{fontspec}
+  \setsansfont{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-Regular,
+    BoldFont = Inter_18pt-Bold,
+    ItalicFont = Inter_18pt-Italic,
+    BoldItalicFont = Inter_18pt-BoldItalic
+  ]
+  \setmainfont{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-Regular,
+    BoldFont = Inter_18pt-Bold,
+    ItalicFont = Inter_18pt-Italic,
+    BoldItalicFont = Inter_18pt-BoldItalic
+  ]
+  \newfontfamily{\titlefont}{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-SemiBold,
+    BoldFont = Inter_18pt-Bold
+  ]
+  \renewcommand{\familydefault}{\sfdefault}
+\else
+  % pdfLaTeX fallback: Helvetica-like.
+  \RequirePackage[scaled]{helvet}
+  \renewcommand{\familydefault}{\sfdefault}
+  \newcommand{\titlefont}{\sffamily\bfseries}
+\fi\fi
+
+% ====================
+% Additional packages used in poster bodies
+% ====================
+\RequirePackage{tikz}
+\usetikzlibrary{shapes,positioning,calc}
+\RequirePackage{booktabs}
+% siunitx wants to (re)define \d (differential) but the LaTeX kernel already
+% defines \d as the dot-below accent. Releasing the kernel binding before
+% loading siunitx avoids "Command \d already defined" under baposter.cls.
+% Posters rarely need the dot-below accent; if you do, use \textdotbelow{} or
+% reload babel with the appropriate locale.
+\let\d\relax
+\RequirePackage{siunitx}
+\RequirePackage{enumitem}
+\setlist[itemize]{nosep, leftmargin=1.2em}
+\setlist[enumerate]{nosep, leftmargin=1.5em}
+
+\graphicspath{{./figures/}{./assets/logos/}{./logos/}{./assets/}}
+
+% ====================
+% Highlight Macros (same semantics as d3-abstract)
+% ====================
+\providecommand{\highlight}[1]{{\color{d3-orange}\textbf{#1}}}
+
+\providecommand{\keypoint}[1]{%
+  \begin{tikzpicture}
+    \node[fill=d3-navy!8, inner sep=10pt, text width=\linewidth-24pt] (kp) {%
+      {\color{d3-navy}\sffamily #1}%
+    };
+    \draw[d3-navy, line width=3pt] (kp.north west) -- (kp.south west);
+  \end{tikzpicture}%
+}
+
+% ====================
+% TikZ Card / Infobox Styles
+% Same names as d3-abstract for cross-skill consistency.
+% ====================
+\tikzset{
+  card/.style={fill=d3-lightblue, inner sep=10pt},
+  card gray/.style={fill=black!4, inner sep=10pt},
+  card highlight/.style={fill=d3-navy!8, inner sep=12pt},
+  card alert/.style={
+    fill=d3-orange!8,
+    inner sep=10pt,
+    append after command={
+      (\tikzlastnode.north west) edge[line width=4pt, d3-orange] (\tikzlastnode.south west)
+    }
+  },
+  infobox/.style={
+    fill=d3-lightblue,
+    minimum height=1.6cm,
+    text width=\linewidth-26pt,
+    align=center,
+    inner sep=10pt,
+    append after command={
+      (\tikzlastnode.north west) edge[line width=4pt, d3-navy] (\tikzlastnode.south west)
+    }
+  },
+  tag/.style={fill=d3-navy!10, inner sep=4pt, font=\small},
+}
+
+% ====================
+% D3 Title Logo Macro
+% Drop into the {Logo} cell of \begin{poster}{...}{eyecatcher}{title}{authors}{logo}.
+% Renders WUE logo (left) and DataDrivenDecisions logo (right) at poster scale.
+% ====================
+% baposter reserves a fixed-width cell for the logo. We render the two D3
+% logos side-by-side, bottom-aligned with the author/affiliation line, so they
+% don't overpower the title or push the title text down. Use minipage[b] to
+% anchor the baseline at the bottom of the logo cell, matching where the
+% author block sits in the title cell.
+\newcommand{\dthreelogos}{%
+  \begin{minipage}[b]{20.0em}%
+    \raggedleft
+    \includegraphics[height=3em]{logo-wue.pdf}\hspace{0.6em}%
+    \includegraphics[height=3em]{logo-d3.pdf}%
+  \end{minipage}%
+}
+
+% Convenience: a single-logo variant if the user prefers WUE only.
+\newcommand{\dthreelogowue}{%
+  \begin{minipage}[b]{20.0em}%
+    \raggedleft
+    \includegraphics[height=3.5em]{logo-wue.pdf}%
+  \end{minipage}%
+}
+
+\endinput

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" font-family="Inter, sans-serif">
+  <line x1="40" y1="200" x2="380" y2="200" stroke="#153F87" stroke-width="2"/>
+  <line x1="40" y1="200" x2="40" y2="20" stroke="#153F87" stroke-width="2"/>
+  <rect x="70" y="120" width="50" height="80" fill="#C8DCF0"/>
+  <rect x="150" y="80" width="50" height="120" fill="#C8DCF0"/>
+  <rect x="230" y="50" width="50" height="150" fill="#F29100"/>
+  <rect x="310" y="95" width="50" height="105" fill="#C8DCF0"/>
+  <text x="95" y="222" font-size="14" text-anchor="middle" fill="#153F87">2022</text>
+  <text x="175" y="222" font-size="14" text-anchor="middle" fill="#153F87">2023</text>
+  <text x="255" y="222" font-size="14" text-anchor="middle" fill="#153F87">2024</text>
+  <text x="335" y="222" font-size="14" text-anchor="middle" fill="#153F87">2025</text>
+  <text x="255" y="42" font-size="14" text-anchor="middle" fill="#F29100" font-weight="700">+38 %</text>
+</svg>

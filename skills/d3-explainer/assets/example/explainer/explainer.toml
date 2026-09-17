@@ -1,0 +1,43 @@
+name        = "cutoff_rule"
+title       = "How long to look before you leap"
+title_html  = "How long to look before you <em>leap</em>"
+short_title = "The cutoff rule"
+eyebrow     = "sequential selection · a build-up for the authors"
+subtitle    = "A step-by-step build-up of the sequential-selection project: why skipping about 37 % of the candidates is optimal, what changes for small $n$, and where the code and the paper differ."
+authors     = ["Example Author"]
+status      = "example fixture"
+depth       = "overview"          # focus | overview | standard | deep
+repo        = ".."                # repository root: relative to this folder, or an absolute path
+paper       = ["paper"]           # where the .tex / .aux files live, relative to repo
+macros_from = ["paper/main.tex"]  # \newcommand definitions become KaTeX macros
+code_links  = "auto"              # auto | github | vscode | none
+
+# The project's colour code. Each role becomes a colour name for plots ('skip'), a formula macro (\skip{r}),
+# and an entry of the legend in the hero. Introduce it once, keep it everywhere.
+[[role]]
+key = "skip"
+color = "#F29100"
+label = "what we choose: the cutoff"
+[[role]]
+key = "win"
+color = "#153F87"
+label = "the rule picks the best"
+[[role]]
+key = "gone"
+color = "#4D9AAA"
+label = "the best was skipped"
+[[role]]
+key = "early"
+color = "#808080"
+label = "the rule settled too early"
+
+[hero]
+tex  = "\\win{P(x)} \\;=\\; -\\skip{x}\\,\\ln \\skip{x} \\qquad\\Longrightarrow\\qquad \\skip{x^\\star} = 1/\\e, \\quad \\win{P(x^\\star)} = 1/\\e \\approx 0.368"
+note = "Every symbol in that line is defined below. The colours keep their meaning in every formula and figure."
+
+[hud]
+title = "the argument, assembling"
+lines = ["skip r − 1, then take the first record", "Pₙ(r) = (r−1)/n · Σ 1/(k−1)", "n → ∞ :  P(x) = −x ln x", "P′(x) = 0  ⇒  x* = 1/e", "finite n : enumerate, then simulate"]
+
+[macros]
+"\\R" = "\\mathbb{R}"

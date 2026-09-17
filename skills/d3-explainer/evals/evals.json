@@ -1,0 +1,27 @@
+{
+  "skill_name": "d3-explainer",
+  "note": "All evals run on a copy of the bundled fixture repository (assets/example, a toy project on the secretary problem), without its explainer/ folder unless stated. Never point evals at anyone's research repositories.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "fixture-whole-project",
+      "prompt": "I'm losing the overview of this little sequential-selection project (repo: <copy of <skill>/assets/example>). Build me an interactive HTML explainer of it: the idea, the derivation of the optimal cutoff, the gap, how the code maps to the paper, and what is still open. It's for me and my co-author. Overview depth, standard review.",
+      "expected_output": "Overview explainer built with the d3x engine: gap table, derivation ending on the paper's Eq. (2), 2 to 4 interactive figures, validated chips into src/secretary.py and paper/main.tex, results figure from results/success.json, honest inventory, notation table; build and check clean; two reviewers, one round, working from the packets.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "fixture-one-derivation-light",
+      "prompt": "explain just the derivation of the optimal cutoff from the paper in <copy of <skill>/assets/example> as an interactive page, step by step, with one figure where I can drag the cutoff. keep it short, no review agents",
+      "expected_output": "A scoped overview explainer (3 to 4 sections), one step-through derivation with reasons, one figure with a draggable handle, light review only (automated checks plus a numbers pass).",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "fixture-update-after-change",
+      "prompt": "I changed the paper in <copy of <skill>/assets/example including explainer/> (renamed \\label{eq:limit} to \\label{eq:opt} and moved optimal_cutoff below simulate in src/secretary.py). Update the existing explainer in explainer/ so it builds again and is still correct.",
+      "expected_output": "The build error from the renamed label and the warning from the moved symbol are used to find the affected chips; sections are edited in place; engine refreshed with init.py --refresh; build and check clean.",
+      "files": []
+    }
+  ]
+}

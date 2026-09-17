@@ -1,0 +1,27 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb}
+\newcommand{\Pn}{P_n}
+\newcommand{\e}{\mathrm{e}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\title{The Cutoff Rule in Sequential Selection: Exact Finite-Sample Optimum and Simulation}
+\begin{document}
+\begin{abstract}
+A decision maker sees $n$ candidates one by one in random order, must accept or reject each on the spot,
+and wants the best one. The cutoff rule skips the first $r-1$ candidates and then takes the first who beats
+all predecessors. We restate the exact success probability, derive the large-$n$ optimum $r/n \to 1/\e$, and
+compare both with a simulation.
+\end{abstract}
+\section{Model}\label{sec:model}
+Candidates arrive in uniformly random order and can be ranked without ties. The rule with cutoff $r$
+succeeds with probability
+\begin{equation}\label{eq:prob}
+  \Pn(r) = \frac{r-1}{n} \sum_{k=r}^{n} \frac{1}{k-1}, \qquad r \ge 2 .
+\end{equation}
+\section{Optimal cutoff}\label{sec:opt}
+With $x = r/n$ held fixed as $n \to \infty$,
+\begin{equation}\label{eq:limit}
+  P(x) = -x \ln x, \qquad x^\star = \argmax_x P(x) = 1/\e, \qquad P(x^\star) = 1/\e \approx 0.368 .
+\end{equation}
+\section{Simulation}\label{sec:sim}
+We simulate $20{,}000$ arrival orders per cutoff for $n = 20$ and $n = 100$.
+\end{document}

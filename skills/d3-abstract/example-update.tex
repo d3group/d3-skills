@@ -1,0 +1,147 @@
+%! TEX program = xelatex
+% Example: one-page internal update (Weekly Update pattern).
+% Illustrative content. All names and numbers are placeholders.
+\documentclass[a4paper]{article}
+\usepackage[english]{babel}
+\usepackage{parskip}
+\usepackage{geometry}
+\usepackage{assets/d3-abstract}
+
+% Global title (single-line header, subtitle left empty below)
+\newcommand{\tittel}{AI for Healthcare}
+
+% Project name in the footer replaces the university line
+\renewcommand{\projektname}{AI for Healthcare\enspace|\enspace DFG Priority Programme 2422}
+
+% Page contract: one page (the default, stated here for clarity)
+\renewcommand{\abstractpages}{1}
+
+\begin{document}
+\newgeometry{bottom=0.5cm, right=1.5cm, left=1.5cm, top=1.5cm}
+\pagestyle{empty}
+
+% ============================================================
+% Page 1
+% ============================================================
+
+\renewcommand{\undertittel}{}
+
+\renewcommand{\innledning}{%
+\textbf{Week of March 3, 2026.}
+Pipeline v2 reached \highlight{92\% AUC} on the sepsis validation cohort.
+IRB approval for the cardiology data extension is expected by Friday.}
+
+\renewcommand{\venstre}{%
+\sectionhead{Background}
+
+Our treatment effect estimation pipeline processes electronic health records
+from University Hospital W\"urzburg to generate individualized treatment
+recommendations. The current sprint covers sepsis detection in the ICU
+and statin therapy optimization in cardiology. Both models feed the clinical
+decision support prototype that the partners review in April.
+
+\sectionhead{Details This Week}
+
+\begin{itemize}
+\item \textbf{Sepsis model v2.} Retrained with a doubly robust estimator
+  on 12{,}000 ICU stays. AUC improved from 0.87 to 0.92.
+\item \textbf{Cardiology data.} Submitted the IRB amendment for 18-month
+  follow-up records. Decision expected March 7.
+\item \textbf{Uncertainty calibration.} Implemented conformal prediction
+  intervals. Coverage is 94\% (target: 90\%).
+\item \textbf{Infrastructure.} Migrated the training pipeline to the new GPU
+  cluster. Training time dropped by 40\%.
+\item \textbf{Data quality.} The manual audit of 500 records found 12 with
+  missing timestamps.
+\end{itemize}
+
+\sectionhead{Model Performance}
+
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l S[table-format=3.2] S[table-format=3.2] S[table-format=3.2]@{}}
+\toprule
+\textbf{Metric} & {\textbf{v1}} & {\textbf{v2}} & {\textbf{Target}} \\
+\midrule
+Sepsis AUC          & 0.87 & 0.92 & 0.90 \\
+Coverage (\%)       & 88   & 94   & 90 \\
+Inference (ms)      & 120  & 85   & 100 \\
+Training (h)        & 10.0 & 6.0  & 8.0 \\
+\bottomrule
+\end{tabular*}
+
+\vspace{2ex}
+
+\keypoint{Sepsis pipeline v2 exceeds the 90\% AUC milestone
+two weeks ahead of schedule.}
+}
+
+\renewcommand{\hoyre}{%
+\sectionhead{Status}
+
+\begin{tikzpicture}
+\node[infobox] {\textbf{\color{d3-navy}\Large 94\%}\quad Calibration coverage (target: 90\%)};
+\end{tikzpicture}
+
+\vspace{1ex}
+
+\begin{tikzpicture}
+\node[infobox] {\textbf{\color{d3-navy}\Large 40\%}\quad Shorter training time on the new cluster};
+\end{tikzpicture}
+
+\vspace{1ex}
+
+\begin{tikzpicture}
+\node[card alert, text width=\linewidth-14pt, align=center, inner sep=6pt, minimum height=0.8cm] {\textbf{\color{d3-orange} Blocked:}\enspace IRB approval pending};
+\end{tikzpicture}
+
+\sectionhead{Milestones}
+
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} lll@{}}
+\toprule
+\textbf{Milestone} & \textbf{Due} & \textbf{Status} \\
+\midrule
+Sepsis 90\% AUC     & Mar 14  & \highlight{Done} \\
+IRB cardiology      & Mar 7   & Pending \\
+External validation & Mar 21  & Planned \\
+DFG mid-report      & Mar 21  & Not started \\
+Statin model v1     & Apr 4   & Blocked \\
+\bottomrule
+\end{tabular*}
+
+\sectionhead{Risks}
+
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} ll@{}}
+\toprule
+\textbf{Risk} & \textbf{Mitigation} \\
+\midrule
+IRB delay    & Advance the DFG report in parallel \\
+GPU shortage & Charit\'e cluster as fallback \\
+Data quality & Audit a second sample of 500 records \\
+\bottomrule
+\end{tabular*}
+
+\sectionhead{Next Week}
+
+\begin{enumerate}
+\item Run sepsis model v2 on the external validation set (Charit\'e data)
+\item Begin the statin dosing model if the IRB clears
+\item Draft the mid-project report for DFG (due March 21)
+\item Schedule the review meeting with clinical partners
+\end{enumerate}
+
+\sectionhead{Questions for the Team}
+
+\begin{enumerate}
+\item Should we prioritize external validation or start the statin model
+  in parallel?
+\item The DFG report template asks for ``societal impact''. Who can
+  contribute a paragraph on patient outcomes?
+\item Can we get access to the Charit\'e GPU cluster for the external
+  validation run, or should we use our own?
+\item The audit found 12 records with missing timestamps. Should we drop
+  or impute them?
+\end{enumerate}
+}
+
+\input{assets/d3-abstract-template}
+
+\end{document}

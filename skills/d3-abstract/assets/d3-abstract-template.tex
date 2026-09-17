@@ -1,0 +1,31 @@
+% d3-abstract-template.tex
+% Page layout for D3 abstracts. One \input of this file produces one page.
+% Usage: populate the slot variables, then \input{assets/d3-abstract-template}
+
+% === HEADER ===
+\setheader{\tittel}{\undertittel}
+
+% === LEAD PARAGRAPH (skipped when \innledning is empty) ===
+\ingressblock
+
+% === FULL-WIDTH BLOCK (skipped when \helbredde is empty) ===
+\fullwidthblock
+
+% === BODY (two columns) ===
+\begin{multicols}{2}
+\raggedcolumns
+
+{\small \venstre \par}
+
+\columnbreak
+
+{\small \hoyre \par}
+
+\end{multicols}
+
+% === FOOTER ===
+\bunntekst
+
+\resetslots
+
+\pagebreak

@@ -1,0 +1,280 @@
+% d3-abstract.sty
+% D3-branded abstract style (A4, two columns, one or more pages)
+% Adapted from the SKDE faktaark template with D3 visual identity
+% Requires XeLaTeX or LuaLaTeX
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{d3-abstract}[2026/09/17 D3 Abstract Style]
+
+% ====================
+% Required Packages
+% ====================
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{multicol}
+\RequirePackage{setspace}
+\RequirePackage{tikz}
+\usetikzlibrary{shapes,positioning,calc}
+\RequirePackage[colorlinks, citecolor=black, linkcolor=black, urlcolor=d3-navy]{hyperref}
+\RequirePackage{booktabs}    % Professional tables (\toprule, \midrule, \bottomrule)
+\RequirePackage{siunitx}     % Decimal-aligned numeric columns (S column type)
+% Numbers in the text font (Inter) with tabular figures, so S columns align exactly
+\sisetup{mode=text, text-font-command=\addfontfeatures{Numbers=Monospaced}}
+\RequirePackage{enumitem}    % List customization
+\setlist[itemize]{nosep, leftmargin=1.2em}
+\setlist[enumerate]{nosep, leftmargin=1.5em}
+
+% ====================
+% D3 Color Palette
+% ====================
+\definecolor{d3-navy}{RGB}{21,63,135}
+\definecolor{d3-orange}{HTML}{f29100}
+\definecolor{d3-gray}{RGB}{128,128,128}
+\definecolor{d3-lightblue}{RGB}{200,220,240}
+\definecolor{d3-darkblue}{RGB}{10,40,100}
+
+% ====================
+% Font Setup (Inter via fontspec)
+% ====================
+\RequirePackage{fontspec}
+\setmainfont{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-Regular,
+    BoldFont = Inter_18pt-Bold,
+    ItalicFont = Inter_18pt-Italic,
+    BoldItalicFont = Inter_18pt-BoldItalic
+]
+\setsansfont{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-Regular,
+    BoldFont = Inter_18pt-Bold,
+    ItalicFont = Inter_18pt-Italic,
+    BoldItalicFont = Inter_18pt-BoldItalic
+]
+\newfontfamily{\titlefont}{Inter}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = Inter_18pt-SemiBold,
+    BoldFont = Inter_18pt-Bold,
+    ItalicFont = Inter_18pt-Italic,
+    BoldItalicFont = Inter_18pt-BoldItalic
+]
+
+% ====================
+% Layout
+% ====================
+\columnsep=20pt
+\graphicspath{{./figures/}{./assets/logos/}{./logos/}}
+\newcommand{\figbredde}{1.0\linewidth}
+
+% ====================
+% Slot Variables (defaults)
+% ====================
+\newcommand{\undertittel}{}
+\newcommand{\innledning}{}
+\newcommand{\helbredde}{}     % Optional full-width block between lead paragraph and columns
+\newcommand{\bildebredde}{1.0\linewidth}
+\newcommand{\venstre}{}
+\newcommand{\hoyre}{}
+\newcommand{\projektname}{}   % If set, replaces university info in footer
+\newcommand{\abstractpages}{1} % Declared page count; values above 1 add "page / total" to the footer
+
+% ====================
+% Empty-slot test
+% \dabs@ifempty{<text or slot macro>}{<if empty>}{<if filled>}
+% Expands the argument once, so a slot macro is judged by its content.
+% ====================
+\newcommand{\dabs@ifempty}[1]{%
+\expandafter\def\expandafter\dabs@tmp\expandafter{#1}%
+\ifx\dabs@tmp\@empty
+  \expandafter\@firstoftwo
+\else
+  \expandafter\@secondoftwo
+\fi}
+
+% ====================
+% Header Macro
+% \setheader{title}{subtitle}
+% With an empty subtitle only the title line renders.
+% ====================
+\newcommand{\setheader}[2]{%
+\begin{minipage}[c]{0.12\linewidth}
+\includegraphics[width=\linewidth]{logo-wue.pdf}
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.72\linewidth}
+\raggedright\parskip=0pt
+{\color{d3-navy}\LARGE \titlefont #1\par}%
+\dabs@ifempty{#2}{}{\vspace{0.3em}{\color{black}\normalsize \titlefont \textit{#2}\par}}%
+\end{minipage}%
+\hfill
+\begin{minipage}[c]{0.12\linewidth}
+\raggedleft
+\includegraphics[width=\linewidth]{logo-d3.pdf}
+\end{minipage}
+
+\vspace{1ex}
+{\color{d3-navy}\rule{\textwidth}{2pt}}
+\vspace{1ex}}
+
+% ====================
+% Section Heading
+% \sectionhead{text}
+% ====================
+\newcommand{\sectionhead}[1]{%
+\vspace{2ex}\noindent
+{\sffamily \large \color{d3-navy} \textbf{#1}}%
+\par\vspace{0.8ex}%
+}
+
+% ====================
+% Ingress (full-width lead text)
+% \ingress{text}
+% ====================
+\newcommand{\ingress}[1]{%
+{\large \sffamily #1\par}%
+}
+
+% Lead paragraph block, called by the template.
+% Skipped when \innledning is empty (continuation pages).
+\newcommand{\ingressblock}{%
+\dabs@ifempty{\innledning}{}{%
+\begin{minipage}{1.0\linewidth}
+{\color{d3-navy}\ingress{\innledning}}
+\end{minipage}
+\par\vspace{3ex}}}
+
+% Full-width block, called by the template.
+% Skipped when \helbredde is empty.
+\newcommand{\fullwidthblock}{%
+\dabs@ifempty{\helbredde}{}{%
+\vspace{-1.5ex}%
+\begin{minipage}{1.0\linewidth}
+\small \helbredde\par
+\end{minipage}
+\par\vspace{1ex}}}
+
+% ====================
+% Figure Macros
+% ====================
+
+% Standard column-width figure
+\newcommand{\figur}[2]{%
+\begin{minipage}{1.01\linewidth}
+\begin{flushleft}
+\includegraphics[width=\figbredde]{#1}
+\end{flushleft}
+\vspace{-1ex}
+{\textbf{\color{black} \footnotesize \begin{spacing}{0.7} #2 \end{spacing}}}
+\end{minipage}}
+
+% Large figure (alias of \figur, for semantic clarity)
+\newcommand{\storfigur}{\figur}
+
+% Centered image with configurable width
+\newcommand{\bilde}[2]{%
+\begin{minipage}{0.99\linewidth}
+\begin{center}
+\includegraphics[width=\bildebredde]{#1}
+\end{center}
+{\textbf{\color{black} \footnotesize \begin{spacing}{0.7} #2 \end{spacing}}}
+\end{minipage}}
+
+% Full-width figure for the \helbredde slot (75% of the text width, centered)
+\newcommand{\helfigur}[2]{%
+\begin{center}
+\begin{minipage}{0.75\linewidth}
+\includegraphics[width=\linewidth]{#1}
+\par\vspace{0.5ex}
+{\textbf{\color{black} \footnotesize #2}\par}
+\end{minipage}
+\end{center}}
+
+% ====================
+% Highlight Macros
+% ====================
+
+% Inline highlight (d3-orange bold)
+\newcommand{\highlight}[1]{%
+{\color{d3-orange}\textbf{#1}}%
+}
+
+% Callout box (d3-navy)
+\newcommand{\keypoint}[1]{%
+\begin{tikzpicture}
+\node[fill=d3-navy!8, inner sep=10pt, text width=\linewidth-22pt] (kp) {%
+{\color{d3-navy}\sffamily #1}%
+};
+\draw[d3-navy, line width=3pt] (kp.north west) -- (kp.south west);
+\end{tikzpicture}%
+}
+
+% ====================
+% Reference List
+% \begin{reflist} \item ... \end{reflist}
+% Compact numbered references; cite in the text as [1], [2].
+% ====================
+\newenvironment{reflist}
+{\begingroup\footnotesize
+ \begin{enumerate}[label={[\arabic*]}, leftmargin=2.2em, nosep, itemsep=1pt]}
+{\end{enumerate}\endgroup}
+
+% ====================
+% TikZ Card Styles
+% ====================
+\tikzset{
+    card/.style={fill=d3-lightblue, inner sep=8pt},
+    card gray/.style={fill=black!3, inner sep=8pt},
+    card highlight/.style={fill=d3-navy!8, inner sep=10pt},
+    card alert/.style={
+        fill=d3-orange!8,
+        inner sep=8pt,
+        append after command={
+            (\tikzlastnode.north west) edge[line width=3pt, d3-orange] (\tikzlastnode.south west)
+        }
+    },
+    infobox/.style={
+        fill=d3-lightblue,
+        minimum height=0.8cm,
+        text width=\linewidth-14pt,
+        align=center,
+        inner sep=6pt,
+        append after command={
+            (\tikzlastnode.north west) edge[line width=3pt, d3-navy] (\tikzlastnode.south west)
+        }
+    },
+    tag/.style={fill=d3-navy!8, inner sep=3pt, font=\small},
+}
+
+% ====================
+% Footer Macro
+% Shows \projektname if set, university info otherwise.
+% Appends "page / total" when \abstractpages is above 1.
+% ====================
+\newcommand{\bunntekst}{%
+\vfill
+\null
+\rule{\textwidth}{0.5pt}
+\begin{center}
+{\footnotesize \color{d3-gray}%
+\dabs@ifempty{\projektname}%
+{Data Driven Decisions Group\enspace|\enspace University of W\"urzburg\enspace|\enspace\href{https://www.uni-wuerzburg.de}{www.uni-wuerzburg.de}}%
+{\projektname}%
+\ifnum\abstractpages>1 \enspace|\enspace\thepage\,/\,\abstractpages\fi}
+\end{center}}
+
+% ====================
+% Reset Slot Variables (per-page slots only)
+% ====================
+\newcommand{\resetslots}{%
+\renewcommand{\undertittel}{}%
+\renewcommand{\innledning}{}%
+\renewcommand{\helbredde}{}%
+\renewcommand{\bildebredde}{1.0\linewidth}%
+\renewcommand{\venstre}{}%
+\renewcommand{\hoyre}{}%
+}
+
+\endinput

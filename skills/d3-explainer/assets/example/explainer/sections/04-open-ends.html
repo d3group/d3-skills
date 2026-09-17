@@ -1,0 +1,36 @@
+<section id="open-ends" data-nav="Open ends and notation" data-kicker="Honest inventory" data-hud="5">
+  <h2>What is assumed, what is open, and the notation</h2>
+
+  <p>Three places where paper, code and results do not say the same thing, one assumption everything rests on, and one open end.</p>
+
+  <div class="note warn"><span class="h">Paper and code answer different questions</span>
+    The paper reports the limit, $x^\star = 1/\e$ with a success probability of 0.368 [[paper:eq:limit]]. The code enumerates the exact optimum for the given $n$ [[code:src/secretary.py:15 def optimal_cutoff]], which gives 0.384 at $n = 20$. Both are right: the finite-$n$ value lies above the limit and falls to it. The simulation section of the paper does not say which of the two its numbers should be compared with. [[paper:sec:sim]]
+  </div>
+
+  <div class="note warn"><span class="h">The code covers a case the paper excludes</span>
+    The paper states the success probability for $r \ge 2$ only [[paper:eq:prob]]. The code returns $1/n$ for $r \le 1$ [[code:src/secretary.py:8 def success_probability]], which is correct (take the first candidate), is stored in the results file, and is drawn as the leftmost point of {fig:fig-results}.
+  </div>
+
+  <div class="note warn"><span class="h">Paper and result file disagree</span>
+    For $n = 100$ the results grid moves in steps of five cutoffs, so the best cutoff on the grid is 35 skipped, while the same file stores <code>optimal_r = 38</code>, that is 37 skipped [[result:results/success.json]]. The file is also a single seeded run [[code:src/secretary.py:34 default_rng(7)]], so the agreement in that figure is one draw, not a distribution. A reader of {fig:fig-results} could take the grid maximum for the optimum.
+  </div>
+
+  <div class="note open"><span class="h">Open question</span>
+    The gap table in <a href="#big-picture">section 01</a> lists payoffs beyond "best or nothing" as planned. Nothing in the code supports a payoff by rank yet, and the single-cutoff derivation above does not carry over to it.
+  </div>
+
+  <details class="deep"><summary>Why the first step needs the random arrival order <span class="tag">optional depth</span></summary>
+    <div class="in">
+      <p>Given that the best candidate stands at position $k$, the first $k-1$ candidates are a uniformly random subset in uniformly random order. The best of them is therefore equally likely to stand at any of the $k-1$ positions, and it stands among the first $r-1$ with probability $(r-1)/(k-1)$. With a trend in quality over time this symmetry fails, and the success probability of the paper with it. [[paper:eq:prob]]</p>
+    </div>
+  </details>
+
+  <h3>Notation</h3>
+  <div class="tblwrap"><table class="notation" id="notation">
+    <tr><th>Symbol</th><th>Meaning</th><th>In the code</th></tr>
+    <tr><td>$n$</td><td>number of candidates</td><td><code>n</code></td></tr>
+    <tr><td>$r$</td><td>cutoff: the first candidate who may be accepted, so $r-1$ are skipped</td><td><code>r</code></td></tr>
+    <tr><td>$x = r/n$</td><td>cutoff as a share of the queue (paper). The figures plot the share skipped, $(r-1)/n$; the two coincide as $n \to \infty$</td><td>not used</td></tr>
+    <tr><td>$\Pn(r)$, $P(x)$</td><td>success probability, exact and in the limit</td><td><code>success_probability</code></td></tr>
+  </table></div>
+</section>
