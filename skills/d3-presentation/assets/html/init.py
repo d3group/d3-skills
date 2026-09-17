@@ -29,14 +29,13 @@ meta(title='Action title that states the main message',
      presenter='Author Name',
      chair='Chair of Information Systems and Business Analytics',
      sections=['Introduction', 'Methodology', 'Results', 'Conclusion'],
-     tracker=False,          # True: section tracker in the footer band of content slides
-     numbering='all')        # 'content': structural slides carry no number, backup restarts
+     numbering='content',    # structural slides carry no number, backup restarts ('all': count every slide)
+     look='klar')            # calm look: tracker on top, kicker titles, D3 logo in the foot ('beamer': LaTeX frame)
 
 titleslide()
-agenda()
 
-section(1)
-onecol('Action title summarizing the key message', """
+section(1, question='Which question does this part answer?')
+onecol(K('Problem', 'The title is one claim in at most 15 words'), """
 <ul>
  <li>Point one, always visible</li>
  <li data-s="1">Point two, revealed on the second step</li>

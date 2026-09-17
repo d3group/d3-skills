@@ -59,7 +59,7 @@ class Fragments(unittest.TestCase):
             C.timeline(2025, 2026, [('a', 'teal', 0.5, 0.2, 1, '')])
 
     def test_takeaway_stat_bignum(self):
-        self.assertEqual(C.takeaway('Do it'), '<div class="take"><b>Key Takeaway:</b> Do it</div>')
+        self.assertEqual(C.takeaway('Do it'), '<div class="take"><b class="tk">Key Takeaway:</b> Do it</div>')
         self.assertIn('class="stat o"', C.stat('42', 'answers', accent=True))
         self.assertIn('<div class="bv">1.6M</div>', C.bignum('1.6M', 'matches'))
 

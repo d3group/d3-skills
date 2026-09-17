@@ -70,7 +70,8 @@ All Python in this skill runs through uv (`uv run`, `uv run --with <pkg>`); neve
 | Slide | LaTeX | HTML |
 |---|---|---|
 | Title | `\titleslide` | `titleslide()` |
-| Agenda (clickable) | `\showagenda` | `agenda()` |
+| Agenda (clickable) | `\showagenda` | `agenda()` (klar look: none, use `section(n, question=...)`) |
+| Statement, headline numbers | none | `statement()`, `facts()` |
 | Section divider n | `\showsection{n}` | `section(n)` |
 | One column | `\onecol{title}{content}` | `onecol(title, html)` |
 | Two columns | `\twocol{title}{left}{right}` | `twocol(title, left, right)` |
@@ -105,7 +106,8 @@ HTML adds step builds (`steps=`, `data-s`, `scrim()`), speaker notes (`notes=`),
 - **Action titles**: every slide title is a complete sentence stating the message; the titles alone must read as the argument.
 - **Parallel lists**: bullets are grammatically parallel.
 - **One message per slide, one visual idea per slide.** A figure, a row of stat cards, a process flow and a code box each get their own slide.
-- **Builds are the exception.** Most slides are static. Use a step build only where the argument needs sequencing, reveal a cluster or a region (never bullet by bullet), and keep to 2 or 3 steps. Later steps are invisible until revealed and keep their place, so nothing moves. The build warns about slides that look busy; treat each warning as a request to simplify.
+- **HTML look.** HTML decks use the calm `klar` look by default (tracker on top, orange kicker plus one-claim title via `K()`, question dividers instead of an agenda, `statement()` and `facts()` slides, takeaway on a fixed baseline, D3 logo in the foot, university logo on the title slide). `meta(look='beamer')` reproduces the LaTeX frame when the HTML must match a PDF. See "The look" in references/html-workflow.md.
+- **Builds are the exception.** Most slides are static. Use a step build only where the argument needs sequencing, reveal a cluster or a region (never bullet by bullet), and keep to 2 or 3 steps. Later steps wait as pale ghosts in their final place, so nothing moves and nothing is removed. The build warns about slides that look busy; treat each warning as a request to simplify.
 - **Viewport**: content never overlaps the header, the footer, or the margins. In HTML, the body box crops overflow and the audit reports it.
 - **Key messages**: bold orange text (`\textbf{\textcolor{d3-orange}{...}}` or `highlight()`), never a colored box.
 

@@ -6,8 +6,8 @@ from d3deck import deck as B
 SECS = ['Introduction', 'Methodology', 'Results', 'Conclusion']
 
 
-def small_deck(numbering='all', tracker=False):
-    B.meta(title='Title <b>x</b>', subtitle='Sub', presenter='Ada', sections=SECS, numbering=numbering, tracker=tracker)
+def small_deck(numbering='all', tracker=False, look='beamer'):
+    B.meta(title='Title <b>x</b>', subtitle='Sub', presenter='Ada', sections=SECS, numbering=numbering, tracker=tracker, look=look)
     B.titleslide()
     B.agenda()
     B.section(1)
@@ -173,6 +173,25 @@ class Output(unittest.TestCase):
         self.assertIn('fr-foot', sec)
         self.assertNotIn('class="trk"', sec)
 
+    def test_klar_look_is_default(self):
+        small_deck(look='klar')
+        B.statement('One <b>word</b> matters')
+        B.facts(B.K('Result', 'Two numbers carry it'), [('37 %', 'skipped', True), ('0.38', 'success')], takeaway='Skip a third')
+        doc = self.build()
+        self.assertIn('look-klar', doc)
+        one = doc[doc.index('data-i="3"'):doc.index('data-i="4"')]
+        self.assertIn('<div class="trk">', one)
+        self.assertIn('kf-d3', one)
+        self.assertNotIn('fr-uni', one)
+        self.assertIn('fr-seal', doc[doc.index('data-i="0"'):doc.index('data-i="1"')])
+        self.assertIn('<span class="kick">Result</span>Two numbers carry it', doc)
+        self.assertIn('class="fact acc"', doc)
+        self.assertIn('class="secq"', doc)
+        with self.assertRaises(ValueError):
+            B.meta(title='x', look='fancy')
+        with self.assertRaises(ValueError):
+            B.facts('T', [])
+
     def test_footer_and_numbers_by_kind(self):
         small_deck()
         doc = self.build()
@@ -190,7 +209,7 @@ class Output(unittest.TestCase):
         B.twocoltakeaway('T', 'L', 'R', 'Do this')
         B.css('.mine{color:red}')
         doc = self.build()
-        self.assertIn('<div class="col l short">L</div><div class="col r short">R</div><div class="fr-take"><div class="take"><b>Key Takeaway:</b> Do this</div></div>', doc)
+        self.assertIn('<div class="col l short">L</div><div class="col r short">R</div><div class="fr-take"><div class="take"><b class="tk">Key Takeaway:</b> Do this</div></div>', doc)
         self.assertIn('.mine{color:red}', doc)
 
     def test_fonts(self):

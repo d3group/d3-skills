@@ -28,12 +28,11 @@ from d3deck import *
 meta(title='Action title', subtitle='Optional', date='Date and Location',
      presenter='Author Name', chair='Chair of Information Systems and Business Analytics',
      sections=['Introduction', 'Methodology', 'Results', 'Conclusion'],
-     tracker=False, numbering='all', reveal='hide')
+     numbering='content', look='klar', reveal='ghost')
 
 titleslide()
-agenda()
-section(1)
-onecol('Action title summarizing the key message', '''
+section(1, question='Which question does this part answer?')
+onecol(K('Problem', 'Action title summarizing the key message'), '''
 <ul>
  <li>Point one</li>
  <li data-s="1">Point two, revealed on the second step</li>
@@ -48,13 +47,22 @@ build('my_talk')          # writes dist/my_talk.html
 - The title slide shows title and subtitle, like the LaTeX one. meta(date=...) is stored for the manifest only, like \date in LaTeX; put the date into the subtitle if it should appear.
 - Every slide function accepts `steps=1, notes='', src='', cls='', group=None, num=True`. `src` is a one-line summary that is never rendered; it feeds the `/` search palette. `cls` adds classes to the `<section>` for scoped CSS. `num=False` hides and skips the number.
 
+## The look
+
+`meta(look='klar')` is the default and follows the talk design used for D3 defenses: every content slide has the section tracker on top, a title made of an orange kicker and one claim in a light weight, a body in dark ink at 22 px with generous whitespace, the takeaway on a fixed baseline with an orange tick, and a quiet mono foot with the section name, `page / total` and the D3 logo. The university logo and the seal appear on the title and thank-you slides only. There is no agenda slide: the tracker and the question dividers carry the structure (`agenda()` still works if an audience expects one).
+
+`meta(look='beamer')` draws the frame of the LaTeX template instead (university logo, navy bar, footer tab, bold title; `tracker=True` moves the tracker into the footer band). Choose it when the HTML deck must match a PDF deck slide for slide.
+
 ## 3. Slide functions
 
 | HTML | LaTeX | Notes |
 |---|---|---|
 | `titleslide()` | `\titleslide` | title template with the seal watermark |
 | `agenda()` | `\showagenda` | numbered circles, clickable to the section dividers that exist |
-| `section(n)` | `\showsection{n}` | 1-based; also sets the current section for tracker and jump tabs |
+| `section(n, question='')` | `\showsection{n}` | 1-based; also sets the current section for tracker and jump tabs. In the klar look the divider shows `Part n of N` and the question this part answers |
+| `statement(html)` | none | one sentence at 50 px, alone on the slide; mark the one word that carries it with `<b>` (orange). A few per talk, at the turns of the argument |
+| `facts(title, items, takeaway='')` | none | one to four headline numbers side by side; `items` are `(value, label)` or `(value, label, True)` for the single accented number |
+| `K(kick, claim, sub='')` | none | builds a title: orange kicker (the category, one or two words) plus the claim; pass it wherever a title goes |
 | `onecol(title, html)` | `\onecol` | body box 1133 by 432 px |
 | `twocol(title, left, right)` | `\twocol` | two boxes of 547 px |
 | `twocoltakeaway(title, left, right, takeaway)` | `\twocoltakeaway` | shorter boxes, takeaway box below |
@@ -88,7 +96,7 @@ Layout helpers in the stylesheet: `.grid2`, `.grid3`, `.grid4`.
 
 ## 5. Step builds
 
-A step reveals something that is already laid out. Elements of later steps are invisible until their step and keep their place, so nothing moves between steps and the slide stays calm. `meta(..., reveal='ghost')` shows them as pale ghosts instead (15 percent opacity), for the rare deck where the audience should see the structure coming; `data-soft="1"` dims a single element to 42 percent in either mode.
+A step reveals something that is already laid out. Elements of later steps stand as pale grey ghosts (15 percent opacity) in their final place, so nothing is ever removed, nothing moves between steps, and the audience sees how much is still to come. `meta(..., reveal='hide')` makes them fully invisible instead, for decks where a ghost would give away the point; `data-soft="1"` dims a single element to 42 percent in either mode.
 
 ```python
 onecol('Three mechanisms explain the effect', '''

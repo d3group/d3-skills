@@ -56,11 +56,15 @@ def _strip(s):
 
 
 def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, sections=(),
-         tracker=False, numbering='all', lang='en', reveal='hide'):
+         tracker=False, numbering='all', lang='en', reveal='ghost', look='klar'):
     """Deck metadata; call once before the first slide. Resets the deck. date is stored for the
     manifest only, like \\date in LaTeX; put it into the subtitle if it should appear.
-    reveal='hide' (default): content of later steps is invisible until its step, and keeps its place, so nothing moves.
-    reveal='ghost': later steps are shown as pale grey ghosts; use it only when the audience should see the structure coming."""
+    look='klar' (default): calm content slides: section tracker on top, kicker and one-claim title, mono foot with the
+    D3 logo, takeaway on a fixed baseline. look='beamer': the frame of the LaTeX template (uni logo, bar, footer tab).
+    reveal='ghost' (default): later steps stand as pale grey ghosts, so nothing is ever removed and nothing moves.
+    reveal='hide': later steps are invisible until their step (they keep their place)."""
+    if look not in ('klar', 'beamer'):
+        raise ValueError("look must be 'klar' or 'beamer'")
     if reveal not in ('hide', 'ghost'):
         raise ValueError("reveal must be 'hide' or 'ghost'")
     if numbering not in ('all', 'content'):
@@ -70,7 +74,7 @@ def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, section
         warnings.warn(f'{len(sections)} sections; agenda and tracker are designed for at most 7')
     D.reset()
     D.meta = dict(title=title, subtitle=subtitle, date=date, presenter=presenter, chair=chair,
-                  sections=sections, tracker=bool(tracker), numbering=numbering, lang=lang, reveal=reveal)
+                  sections=sections, tracker=bool(tracker), numbering=numbering, lang=lang, reveal=reveal, look=look)
     return D.meta
 
 
@@ -118,8 +122,16 @@ def agenda(**kw):
     return _add('agenda', 'Agenda', inner, **kw)
 
 
-def section(n, **kw):
-    """Section divider n (1-based); also makes n the current section."""
+def K(kick, claim, sub=''):
+    """Slide title as kicker and claim: K('Method', 'A cutoff rule needs only one number').
+    The kicker names the category in one or two words; the claim is a full sentence of at most 15 words."""
+    sub = f'<span class="sub">{sub}</span>' if sub else ''
+    return f'<span class="kick">{kick}</span>{claim}{sub}'
+
+
+def section(n, question='', **kw):
+    """Section divider n (1-based); also makes n the current section.
+    question: the question this part answers; in the 'klar' look the divider shows it instead of an agenda list."""
     _need_meta()
     secs = D.meta['sections']
     if not 1 <= n <= len(secs):
@@ -130,6 +142,9 @@ def section(n, **kw):
     mark(f'sec-{n}')
 
     def inner():
+        if D.meta.get('look') == 'klar':
+            return (f'<div class="secq"><div class="pt">Part {n} of {len(secs)} · {secs[n - 1]}</div>'
+                    f'<div class="stmt">{question or secs[n - 1]}</div></div>')
         return chrome.agenda_list(secs, n, _links())
     idx = _add('section', secs[n - 1], inner, **kw)
     D.section_slides[n - 1] = idx
@@ -147,6 +162,22 @@ def twocol(title, left, right, **kw):
 def twocoltakeaway(title, left, right, takeaway, **kw):
     inner = (f'<div class="col l short">{left}</div><div class="col r short">{right}</div>'
              f'<div class="fr-take">{components.takeaway(takeaway)}</div>')
+    return _add('content', title, inner, **kw)
+
+
+def statement(text, title='', **kw):
+    """One sentence, large, alone on the slide. Mark the one word that carries it with <b>; use it a few times per talk."""
+    top = '250px' if title else '230px'
+    return _add('content', title, f'<div class="body" style="top:{top}"><div class="stmt">{text}</div></div>', **kw)
+
+
+def facts(title, items, takeaway='', **kw):
+    """Two to four headline numbers side by side. items: (value, label) or (value, label, True) for the one accented number."""
+    if not 1 <= len(items) <= 4:
+        raise ValueError('facts(): one to four numbers; more than four is a table')
+    inner = f'<div class="body">{components.facts(items)}</div>'
+    if takeaway:
+        inner += f'<div class="fr-take">{components.takeaway(takeaway)}</div>'
     return _add('content', title, inner, **kw)
 
 
@@ -309,12 +340,18 @@ def render_slides():
             body = chrome.title_frame(inner)
         else:
             trk = ''
-            foot_text = f"{m['chair']} | {m['presenter']}"
-            if m['tracker'] and s.kind == 'content' and not in_backup and s.sec is not None:
-                trk = chrome.tracker(m['sections'], s.sec)
-                foot_text = ''
             title = s.title if s.kind in ('content', 'backuphome') else ''
-            body = chrome.content_frame(title, inner, tab, foot_text, trk, dots)
+            if m.get('look') == 'klar':
+                if s.sec is not None and not in_backup and m['sections']:
+                    trk = chrome.tracker(m['sections'], s.sec)
+                foot_text = 'Backup' if in_backup else (m['sections'][s.sec] if s.sec is not None and m['sections'] else m['presenter'])
+                body = chrome.klar_frame(title, inner, foot or tab, foot_text, trk, dots)
+            else:
+                foot_text = f"{m['chair']} | {m['presenter']}"
+                if m['tracker'] and s.kind == 'content' and not in_backup and s.sec is not None:
+                    trk = chrome.tracker(m['sections'], s.sec)
+                    foot_text = ''
+                body = chrome.content_frame(title, inner, tab, foot_text, trk, dots)
         cls = f'sl k-{s.kind}' + (f' {s.cls}' if s.cls else '')
         secs.append(f'<section class="{cls}" data-steps="{s.steps}" data-i="{i}">{body}</section>')
         manifest.append(dict(i=i, k=s.kind, t=_strip(s.title), g=s.group, s=s.src, n=s.notes,
@@ -368,7 +405,7 @@ def build(name, out=None, embed_fonts=True, notes=True):
 <style>{nav.CSS}</style>
 <style>{presenter.CSS}</style>
 <style>{extra}</style>
-</head><body class="{'reveal-ghost' if m.get('reveal') == 'ghost' else 'reveal-hide'}">
+</head><body class="{'reveal-ghost' if m.get('reveal') == 'ghost' else 'reveal-hide'} look-{m.get('look', 'klar')}">
 <div id="bar"></div>
 <button id="play" title="Present fullscreen (F)">&#9654; Present</button>
 <div id="pexit"><kbd>Esc</kbd> exit &nbsp; <kbd>&rarr;</kbd> step &nbsp; <kbd>&darr;</kbd> slide</div>

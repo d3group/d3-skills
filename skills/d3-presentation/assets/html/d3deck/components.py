@@ -106,7 +106,15 @@ def timeline(start_year, end_year, packages):
 
 
 def takeaway(text):
-    return f'<div class="take"><b>Key Takeaway:</b> {text}</div>'
+    return f'<div class="take"><b class="tk">Key Takeaway:</b> {text}</div>'
+
+
+def facts(items):
+    out = []
+    for it in items:
+        acc = ' acc' if len(it) > 2 and it[2] else ''
+        out.append(f'<div class="fact{acc}"><div class="fv">{it[0]}</div><div class="fk">{it[1]}</div></div>')
+    return '<div class="facts">' + ''.join(out) + '</div>'
 
 
 def stat(value, label, accent=False):

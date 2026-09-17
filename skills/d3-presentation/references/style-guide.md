@@ -149,7 +149,10 @@ Prose must read as written by the presenter.
 - One visual idea per slide: do not combine a figure with stat cards with a process flow. Whitespace is part of the slide.
 - Body text up to about 60 words and 3 to 5 bullets; the rest goes into the speaker notes or the backup.
 - At most one annotated or animated figure per section; it is the high point of that section.
-- Later steps are hidden by default and keep their place (`meta(reveal='hide')`). Use `reveal='ghost'` only when the audience should see the structure that is coming, for example a grid that fills cell by cell.
+- Later steps wait as pale grey ghosts in their final place (`meta(reveal='ghost')`, the default): never remove, grey out. Use `reveal='hide'` only when a ghost would give away the point.
+- HTML titles are a kicker plus a claim, `K('Method', 'A cutoff rule needs one number')`. The kicker names the category; the claim is a sentence of at most 15 words. "Results", "Method" or "Agenda" alone are not titles.
+- Aim for a median of 30 to 40 words and 3 to 6 visible elements per slide. Orange covers only a few percent of the surface: blue is what is known, orange is what is new.
+- Use `statement()` at the turns of the argument and `facts()` for the numbers the audience should take home, instead of another bullet slide.
 
 
 - One step is one idea. Step k+1 answers a question step k raised.

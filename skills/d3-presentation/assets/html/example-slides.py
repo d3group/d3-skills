@@ -13,23 +13,26 @@ meta(title='Data-driven decisions raise forecast accuracy by 38 percent',
      sections=['Basic slides', 'Code boxes', 'Chevrons and timelines', 'Figures and numbers'],
      tracker=True, numbering='content')
 
-# ── TITLE AND AGENDA ────────────────────────────────────────────────────
+# ── TITLE ───────────────────────────────────────────────────────────────
+# No agenda slide: the tracker on every slide and the question dividers carry the structure.
+# (agenda() still exists for look='beamer'.)
 titleslide()
-agenda()
+
+statement('A forecast is only worth the <b>decision</b> it changes.', src='Statement slide: one sentence, one orange word')
 
 # ── SECTION 1: BASIC SLIDES ─────────────────────────────────────────────
-section(1)
+section(1, question='What does a calm slide look like?')
 
-onecol('One-column slides carry one message, with at most one build', '''
+onecol(K('Layout', 'One-column slides carry one message, with at most one build'), '''
 <ul>
  <li>Every slide title is a complete sentence that states the message</li>
  <li>Bullets stay grammatically parallel and short</li>
- <li>Later steps stay hidden and keep their place, so nothing on the slide moves</li>
+ <li>Later steps wait as pale ghosts in their place, so nothing on the slide moves</li>
  <li data-s="1">''' + highlight('The one orange element is the point of the slide') + '''</li>
 </ul>''', steps=2, notes='Three rules at once, then the point of the slide as the one build.',
        src='Rules for one-column slides')
 
-twocol('Two columns compare two things side by side',
+twocol(K('Layout', 'Two columns compare two things side by side'),
        columnheader('Observation') + '''
 <ul>
  <li>Forecast errors cluster in the last quarter</li>
@@ -48,7 +51,7 @@ twocoltakeaway('Takeaway slides end a block with the sentence to remember',
                src='Before and after the intervention')
 
 # ── SECTION 2: CODE BOXES ───────────────────────────────────────────────
-section(2)
+section(2, question='How do we show code without a wall of text?')
 
 twocol('Code boxes keep the three states of a program apart',
        columnheader('Standard and error') + codebox('''def forecast(series, horizon=12):
@@ -61,7 +64,7 @@ Fitting model ... done (4.2 s)
 MAPE: 6.1 %'''), src='Code box variants')
 
 # ── SECTION 3: CHEVRONS AND TIMELINES ───────────────────────────────────
-section(3)
+section(3, question='How do we show a process and a plan?')
 
 onecol('Process flows highlight the phase under discussion', '''
 <p>Three phases, the second one active:</p>''' +
@@ -80,7 +83,7 @@ onecol('Project timelines show work packages against the calendar',
 M3 testing complete, M4 project delivered.</p>''', src='Gantt timeline with milestones')
 
 # ── SECTION 4: FIGURES AND NUMBERS ──────────────────────────────────────
-section(4)
+section(4, question='Which numbers does the audience take home?')
 
 twocol('Embedded figures keep their aspect ratio',
        fig('example', width='100%'),
@@ -98,7 +101,11 @@ onecol('Stat cards reveal a grid one cell at a time with a scrim', '''
 </div>''' + scrim(1, '50%', 0, 0, '50%') + scrim(2, 0, '50%', '50%', 0) + scrim(3, '50%', '50%', 0, 0),
        steps=4, src='Grid revealed by scrims')
 
-slide('One number can carry a slide', '''
+facts(K('Result', 'Three numbers summarise the study'),
+      [('38 %', 'higher forecast accuracy after twelve months', True), ('1.6M', 'team matches analysed'), ('0.61', 'AUC on the held-out split')],
+      takeaway='The gain holds on the held-out split.', src='Facts slide: at most four numbers, one accented')
+
+slide(K('Result', 'One number can carry a slide'), '''
 <div class="body" style="display:flex;align-items:center;justify-content:center;text-align:center">
  <div>''' + bignum('38 %', 'higher forecast accuracy after twelve months') + '''</div>
 </div>''', src='Big number')

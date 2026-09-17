@@ -75,6 +75,19 @@ def content_frame(title, inner, page='', foot='', tracker='', dots=''):
     return ''.join(parts)
 
 
+def klar_frame(title, inner, page='', foot='', tracker='', dots=''):
+    """The 'klar' content frame: tracker on top, kicker and claim, a quiet mono foot with the D3 mark.
+    No logos or bars compete with the content; the corporate frame stays on the title slide."""
+    parts = [tracker or '']
+    if title:
+        parts.append(f'<div class="kf-title">{title}</div>')
+    parts.append(inner)
+    parts.append(f'<div class="kf-foot"><span class="kf-sec">{foot}</span><span class="kf-num">{page}</span>'
+                 f'<span class="kf-d3">{_logo(D3_SVG)}</span></div>')
+    parts.append(dots)
+    return ''.join(parts)
+
+
 def title_frame(inner):
     """Title_template look: uni logo, left navy bar, large D3 logo, seal watermark."""
     return (f'<div class="fr-uni">{_logo(UNI_SVG)}</div><div class="fr-tbar"></div>'
@@ -157,4 +170,39 @@ CSS = r"""
 .trk .ti+.ti{margin-left:-7px}
 .trk .ti.done{background:var(--lightblue);color:var(--navy)}
 .trk .ti.cur{background:var(--navy);color:#fff;z-index:3}
+/* ══ look 'klar': calm content slides (layout after N. Elbert's defense talk), D3 colours ══ */
+body.look-klar .sl{color:#1B2740;font-size:22px;line-height:1.6;font-weight:400}
+body.look-klar .trk{left:86px;top:40px;width:1108px;height:26px}
+body.look-klar .trk .ti{font-size:11px;font-weight:600;letter-spacing:.01em}
+body.look-klar .kf-title{position:absolute;left:86px;top:88px;width:1108px;font-size:34px;line-height:1.22;font-weight:400;letter-spacing:-.02em;color:var(--navy);text-wrap:balance}
+body.look-klar .kf-title .kick{color:var(--orange);font-weight:500;margin-right:.28em}
+body.look-klar .kf-title .sub{display:block;font-size:17px;line-height:1.5;color:#4A5568;letter-spacing:0;margin-top:8px;max-width:72ch}
+body.look-klar .body{left:86px;top:196px;width:1108px;height:400px}
+body.look-klar .col{top:196px;width:530px;height:400px}
+body.look-klar .col.l{left:86px}
+body.look-klar .col.r{left:664px}
+body.look-klar .col.short{height:318px}
+body.look-klar .kf-foot{position:absolute;left:86px;right:86px;top:646px;border-top:1px solid #E1E6EE;padding-top:12px;display:flex;align-items:center;
+ font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A93A3}
+body.look-klar .kf-num{margin-left:auto;margin-right:18px}
+body.look-klar .kf-d3{width:132px;height:27px;display:block}
+body.look-klar .kf-d3 svg{width:100%;height:100%;display:block}
+body.look-klar .stepdots{left:86px;right:auto;top:630px}
+body.look-klar ul>li{margin:.35em 0}
+body.look-klar ul>li::before{top:.62em;width:.32em;height:.32em;background:var(--navy-50)}
+body.look-klar .colhead{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#6B7688;font-weight:400;margin-bottom:10px}
+body.look-klar .take{position:absolute;left:86px;right:86px;bottom:92px;background:none;border-left:3px solid var(--orange);padding:2px 0 2px 14px;font-size:19px;font-weight:600;color:var(--navy);line-height:1.35}
+body.look-klar .take .tk{display:none}
+body.look-klar .fr-take{position:static}
+body.look-klar .stmt{font-size:50px;line-height:1.18;font-weight:400;letter-spacing:-.028em;max-width:25ch;color:#0F1B33;text-wrap:balance}
+body.look-klar .stmt b{font-weight:600;color:var(--orange)}
+body.look-klar .stmt .bl{font-weight:600;color:var(--navy)}
+body.look-klar .facts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:34px;margin-top:70px}
+body.look-klar .fact .fv{font-size:68px;line-height:.9;font-weight:400;letter-spacing:-.04em;color:var(--navy);font-variant-numeric:tabular-nums}
+body.look-klar .fact.acc .fv{color:var(--orange)}
+body.look-klar .fact .fk{font-size:18px;line-height:1.45;color:#4A5568;margin-top:16px;max-width:26ch}
+body.look-klar .bignum .bv{font-weight:400;font-size:112px}
+body.look-klar .bignum .bk{font-size:19px;color:#4A5568}
+body.look-klar .secq{position:absolute;left:86px;top:250px;width:1000px}
+body.look-klar .secq .pt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--orange);margin-bottom:22px}
 """
