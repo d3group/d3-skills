@@ -42,6 +42,14 @@ class Detect(unittest.TestCase):
         _, html = deck('<p>none</p>', math=True)
         self.assertIn('window.MathJax', html)
 
+    def test_formula_counts_as_one_word(self):
+        import warnings
+        tex = r'\[ \hat y_{t+1} = \alpha y_t + (1 - \alpha) \hat y_t + ' + ' + '.join(f'x_{i}' for i in range(80)) + r' \]'
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            deck('<p>short text</p>' + tex)
+        self.assertFalse([x for x in w if 'words in the body' in str(x.message)])
+
     def test_macros(self):
         self.assertEqual(B.mathjax_macros({'E': r'\mathbb{E}', r'\norm': r'\lVert #1 \rVert', 'c': r'\textcolor{##1B3A8C}{#1}'}),
                          {'E': r'\mathbb{E}', 'norm': [r'\lVert #1 \rVert', 1], 'c': [r'\textcolor{##1B3A8C}{#1}', 1]})

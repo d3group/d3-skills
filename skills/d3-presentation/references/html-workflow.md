@@ -135,7 +135,9 @@ Formulas are typeset by MathJax (3.2.2, SVG output). Write LaTeX inside any body
 - The paper's macros go into `meta(macros={'E': r'\mathbb{E}', 'norm': r'\lVert #1 \rVert'})`; the number of arguments is read from the `#n` in the body.
 - Math takes the colour and size of its surroundings, so it ghosts with `data-s` like text and turns orange inside `highlight()`. A display formula is one visual element: give it air and no more than one or two per slide.
 - Dollar signs: `codebox()` and `terminalbox()` are never scanned, and a single `$` on a slide is left alone. Two literal dollars in one paragraph would pair up as math: write them as `<span class="nomath">$</span>`.
+- The build's word budget counts a formula as one word.
 - Speaker notes are plain text; formulas in `notes=` are not typeset.
+- `assets/html/example-slides.py` has a working math slide (section 4): display and inline formulas, macros, one build.
 - `shoot.py` lists every formula MathJax cannot render (unknown command, missing brace) under `MATH:` and exits with 1, like an overflow.
 
 ## 7. Custom CSS

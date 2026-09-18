@@ -35,7 +35,7 @@
     },
     {
       "name": "d3-presentation",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "description": "D3-branded presentations as LaTeX Beamer PDFs or interactive HTML decks",
       "source": "./",
       "strict": false,

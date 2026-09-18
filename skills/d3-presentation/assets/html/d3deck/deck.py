@@ -363,7 +363,7 @@ def math_head(body):
 def _calm(i, s, inner):
     """Warn about what makes a slide look busy. One idea, one visual, few builds."""
     name = f'slide {i + 1} ({_strip(s.title)[:40]!r})'
-    text = _strip(re.sub(r'<(pre|svg|style)\b.*?</\1>', ' ', inner, flags=re.S))
+    text = _strip(MATH.sub(' formula ', re.sub(r'<(pre|svg|style)\b.*?</\1>', ' ', inner, flags=re.S)))   # a formula reads as one word, not as its TeX tokens
     words, bullets = len(text.split()), inner.count('<li')
     kinds = [k for k, pat in (('figure', r'<img|class="fig'), ('stat cards', r'class="(stat|bignum)'), ('chevrons', r'class="chev'),
                               ('timeline', r'class="tl\b|class="tl"'), ('code box', r'<pre'), ('table', r'<table')) if re.search(pat, inner)]

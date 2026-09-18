@@ -11,7 +11,8 @@ meta(title='Data-driven decisions raise forecast accuracy by 38 percent',
      presenter='Author Name',
      chair='Chair of Information Systems and Business Analytics',
      sections=['Basic slides', 'Code boxes', 'Chevrons and timelines', 'Figures and numbers'],
-     tracker=True, numbering='content')
+     tracker=True, numbering='content',
+     macros={'E': r'\mathbb{E}', 'yhat': r'\hat{y}_{#1}'})      # the paper's macros, for the math slide
 
 # ── TITLE ───────────────────────────────────────────────────────────────
 # No agenda slide: the tracker on every slide and the question dividers carry the structure.
@@ -93,6 +94,22 @@ twocol('Embedded figures keep their aspect ratio',
  <li>The container matches the figure ratio, so annotations stay anchored</li>
  <li data-s="1">2024 carries the intervention and the one orange bar</li>
 </ul>''', steps=2, src='Figure with one build: the reading of the chart')
+
+# Math: LaTeX as in the paper, in raw strings (r'...'). MathJax is embedded because this slide exists.
+twocoltakeaway(K('Model', 'The forecast is a weighted average of the last value and the last forecast'),
+               columnheader('Update rule') + r'''
+<p>Each period blends the newest observation into the forecast:</p>
+\[ \yhat{t+1} = \alpha\, y_t + (1 - \alpha)\, \yhat{t} \]
+<p data-s="1">The weight is chosen to minimise the expected squared error:</p>
+<div data-s="1">\[ \alpha^\star = \arg\min_{\alpha \in [0,1]} \; \E\big[ (y_{t+1} - \yhat{t+1})^2 \big] \]</div>''',
+               columnheader('Reading the formula') + r'''
+<ul>
+ <li>$\alpha \to 1$ follows the last value, $\alpha \to 0$ ignores it</li>
+ <li>Math takes the colour of its surroundings: ''' + highlight(r'$\alpha^\star = 0.3$') + r'''</li>
+ <li data-s="1">Formulas ghost with <code>data-s</code> like text</li>
+</ul>''',
+               r'One parameter, $\alpha$, carries the whole model', steps=2,
+               src='Math slide: inline and display formulas, macros from meta(), one build')
 
 onecol('Stat cards reveal a grid one cell at a time with a scrim', '''
 <div class="grid2" style="height:100%;position:relative">
