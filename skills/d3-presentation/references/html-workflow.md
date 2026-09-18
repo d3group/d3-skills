@@ -8,7 +8,7 @@ One self-contained HTML file, written as Python. Read `SKILL.md` first for the s
 my_talk/
 ├── slides.py           the deck; long talks may split into c_*.py modules imported by slides.py
 ├── figures/            png, jpg, jpeg, svg, or pdf files used by fig()
-├── d3deck/             the engine (copied by init.py, never edited per talk), with fonts/ and logos/ inside
+├── d3deck/             the engine (copied by init.py, never edited per talk), with fonts/, logos/ and mathjax/ inside
 ├── dist/my_talk.html   build output, one file
 ├── dist/my_talk.pdf    optional print export (shoot.py --pdf)
 └── shots/              per-step screenshots and contact sheets from shoot.py
@@ -127,6 +127,17 @@ twocol('The gap is largest for lower-rated players',
        '<ul><li>...</li></ul>')
 ```
 
+## Math
+
+Formulas are typeset by MathJax (3.2.2, SVG output). Write LaTeX inside any body, title, takeaway or fragment: inline `$…$` or `\(…\)`, display `$$…$$` or `\[…\]`. Use raw strings so the backslashes survive: `r'<p>We choose $\hat\beta$ such that</p>\[ \hat\beta = \arg\min_\beta \E\big[\norm{y - X\beta}^2\big] \]'`. Formulas copied from the paper or the Beamer deck work as they are (AMS environments such as `aligned` and `cases`, `\operatorname*`, `\boldsymbol`, `\textcolor{#F39200}{…}`).
+
+- The build embeds MathJax only when a slide contains math (the build line then says `MathJax embedded`; the file grows by about 2.2 MB and still works offline). `meta(math=True)` or `meta(math=False)` overrides the detection.
+- The paper's macros go into `meta(macros={'E': r'\mathbb{E}', 'norm': r'\lVert #1 \rVert'})`; the number of arguments is read from the `#n` in the body.
+- Math takes the colour and size of its surroundings, so it ghosts with `data-s` like text and turns orange inside `highlight()`. A display formula is one visual element: give it air and no more than one or two per slide.
+- Dollar signs: `codebox()` and `terminalbox()` are never scanned, and a single `$` on a slide is left alone. Two literal dollars in one paragraph would pair up as math: write them as `<span class="nomath">$</span>`.
+- Speaker notes are plain text; formulas in `notes=` are not typeset.
+- `shoot.py` lists every formula MathJax cannot render (unknown command, missing brace) under `MATH:` and exits with 1, like an overflow.
+
 ## 7. Custom CSS
 
 `css()` appends a fragment after the shared stylesheets. Scope it with a class you also pass as `cls=`:
@@ -196,6 +207,7 @@ The script waits 480 ms per step so the 420 ms transition has settled, audits ev
 - The engine selector is `.sl`; an audit written against `.slide` checks nothing.
 - The deck is one file. Send `dist/my_talk.html`, nothing else is needed.
 - Notes ship inside the file unless you build with notes=False.
+- A formula written in a normal Python string loses its backslashes (`'\beta'` starts with a backspace character). Use `r'…'` for every string that holds math.
 
 ## 14. Checklist before delivery
 

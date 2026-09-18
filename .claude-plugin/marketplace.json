@@ -35,7 +35,7 @@
     },
     {
       "name": "d3-presentation",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "description": "D3-branded presentations as LaTeX Beamer PDFs or interactive HTML decks",
       "source": "./",
       "strict": false,
@@ -45,7 +45,7 @@
     },
     {
       "name": "d3-explainer",
-      "version": "0.9.1",
+      "version": "0.10.0",
       "description": "Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors",
       "source": "./",
       "strict": false,

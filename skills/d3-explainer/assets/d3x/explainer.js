@@ -37,7 +37,7 @@ function H(tag, cls, parent, text) {
   return e;
 }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-/* SVG <text> cannot host KaTeX. Labels inside figures may still be written as '$c_{\\max}$':
+/* SVG <text> cannot host MathJax output. Labels inside figures may still be written as '$c_{\\max}$':
    plain() turns simple TeX into Unicode (Greek, sub- and superscripts, common operators). */
 var GREEK = {alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', varepsilon: 'ε', zeta: 'ζ', eta: 'η', theta: 'θ', vartheta: 'ϑ', iota: 'ι',
   kappa: 'κ', lambda: 'λ', mu: 'μ', nu: 'ν', xi: 'ξ', pi: 'π', rho: 'ρ', sigma: 'σ', tau: 'τ', upsilon: 'υ', phi: 'φ', varphi: 'φ', chi: 'χ', psi: 'ψ', omega: 'ω',
@@ -102,15 +102,14 @@ function rng(seed) {
 function hash(str) { var h = 2166136261, i; str = String(str); for (i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 
 /* ------------------------------------------------------------------ math + chips */
-var MATH_OPTS = null;
+/* MathJax (tex-svg-full, inlined) is configured by the build in window.MathJax. typeset() is synchronous here because the
+   full bundle needs no further loading; figure parts are re-typeset on every redraw, so their items are dropped again. */
 function renderMath(el) {
-  if (!window.renderMathInElement) return;
-  if (!MATH_OPTS) MATH_OPTS = {
-    delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true},
-      {left: '\\(', right: '\\)', display: false}, {left: '$', right: '$', display: false}],
-    macros: Object.assign({}, window.D3X_MACROS || {}), throwOnError: false, errorColor: '#B4572A', strict: 'ignore',
-    ignoredClasses: ['nomath', 'chip']};
-  try { window.renderMathInElement(el, MATH_OPTS); } catch (e) { console.error('D3X math: ' + e.message); }
+  var MJ = window.MathJax;
+  if (!MJ || !MJ.startup) return;
+  if (!MJ.typeset) { MJ.startup.promise.then(function () { renderMath(el); }); return; }
+  try { MJ.typeset([el]); if (el !== document.body) MJ.startup.document.clearMathItemsWithin([el]); }
+  catch (e) { console.error('D3X math: ' + e.message); }
 }
 var CHIP_RE = /\[\[(code|paper|vault|result|file|reading|src)(?::([^\]]*))?\]\]/g;
 var KIND_LABEL = {code: 'code', paper: 'paper', vault: 'vault', result: 'result', file: 'file', reading: 'my reading', src: 'source'};
@@ -708,5 +707,7 @@ window.D3X = {
     var e = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z); return 0.5 * (1 + (z < 0 ? -e : e)); },
   data: function (id) { var e = document.getElementById(id); if (!e) { console.error('D3X.data: no <script type="application/json" id="' + id + '">'); return null; } return JSON.parse(e.textContent); }
 };
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+/* boot only once MathJax has finished starting up, so the first enrich() typesets synchronously and D3X_READY means "math is on the page" */
+function start() { var MJ = window.MathJax; if (MJ && MJ.startup && !MJ.typeset) MJ.startup.promise.then(boot, boot); else boot(); }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

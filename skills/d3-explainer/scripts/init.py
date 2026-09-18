@@ -9,7 +9,7 @@
     uv run <skill-dir>/scripts/init.py path/to/explainer --refresh   # only replace d3x/ with the skill's current engine
 
 Creates: explainer.toml (prefilled from the repository), brief.md (the content brief to get approved), sections/, figures/,
-data/, review/, and d3x/ (the engine: build.py, check.py, stylesheet, runtime, KaTeX, fonts). The folder is self-contained:
+data/, review/, and d3x/ (the engine: build.py, check.py, stylesheet, runtime, MathJax, fonts). The folder is self-contained:
 a co-author can rebuild with `uv run d3x/build.py` without the skill installed.
 """
 from __future__ import annotations
@@ -79,7 +79,7 @@ status      = ""                  # e.g. "Working draft, model v3" (shown in the
 depth       = "{depth}"          # focus | overview | standard | deep: sets the word and figure budget the build reports against
 repo        = "{repo}"            # repository root: relative to this folder, or an absolute path
 paper       = {paper}             # folders with the paper's .tex / .aux, relative to repo
-macros_from = {macros}            # .tex files whose \\newcommand definitions become KaTeX macros
+macros_from = {macros}            # .tex files whose \\newcommand definitions become MathJax macros
 {vault}
 code_links  = "auto"              # auto (GitHub permalinks when origin is on GitHub) | github | vscode | none
 
@@ -97,7 +97,7 @@ code_links  = "auto"              # auto (GitHub permalinks when origin is on Gi
 # title = "the equation, assembling"
 # lines = ["...", "..."]
 
-[macros]                          # extra KaTeX macros, e.g. "\\\\E" = "\\\\mathbb{{E}}"
+[macros]                          # extra MathJax macros, e.g. "\\\\E" = "\\\\mathbb{{E}}"
 """
 
 

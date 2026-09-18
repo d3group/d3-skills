@@ -9,7 +9,7 @@
     uv run d3x/check.py --shots --sections    # + tiled screenshots of every section     (costly to read; use on demand)
     uv run --with playwright playwright install chromium    # once per machine
 
-Interactive figures fail silently: a NaN in a path, a slider that changes nothing, a formula KaTeX cannot
+Interactive figures fail silently: a NaN in a path, a slider that changes nothing, a formula MathJax cannot
 parse. This script moves every control to its extremes, clicks every preset and action, drags every handle,
 steps through every derivation, and checks for page overflow at desktop and phone width.
 Exit status 1 = at least one error.
@@ -32,7 +32,7 @@ window.addEventListener('unhandledrejection', e => window.__errs.push('unhandled
 AUDIT = r"""
 async () => {
   const raf = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  const out = {widgets: [], katex: [], badChips: [], derivations: [], flows: []};
+  const out = {widgets: [], math: [], badChips: [], derivations: [], flows: []};
   const sig = fig => { const s = fig.querySelector('.stage svg'); return (s ? s.innerHTML.length + ':' + s.innerHTML.slice(0, 20000) : '') + '|' +
       [...fig.querySelectorAll('.ro, .dyn')].map(e => e.textContent).join('|'); };
   const problems = fig => {
@@ -43,7 +43,7 @@ async () => {
       if (/NaN|undefined|Infinity/.test(a.value)) { bad.push(`<${el.tagName} ${a.name}="${a.value.slice(0, 50)}"> contains NaN/undefined/Infinity`); break; }
     for (const t of svg.querySelectorAll('text')) if (/\$|\\[a-zA-Z]/.test(t.textContent)) { bad.push(`label "${t.textContent.slice(0, 40)}" shows raw TeX: SVG text cannot render math, write Unicode (κ, λ, q*)`); break; }
     for (const host of fig.querySelectorAll('.ctrls, .acts, .legend, .readouts, .dyn, figcaption, .flowdetail')) {
-      const c = host.cloneNode(true); c.querySelectorAll('.katex, .katex-display').forEach(k => k.remove());
+      const c = host.cloneNode(true); c.querySelectorAll('mjx-container').forEach(k => k.remove());
       const m = /\$[^$]{1,60}\$|\\[a-zA-Z]{2,}/.exec(c.textContent); if (m) { bad.push(`raw TeX "${m[0].slice(0, 40)}" is visible in the ${host.className.split(' ')[0] || host.tagName.toLowerCase()}: it was not rendered`); break; } }
     const vb = svg.viewBox.baseVal;
     for (const t of svg.querySelectorAll('text')) { if (t.getAttribute('transform')) continue; let b; try { b = t.getBBox(); } catch (e) { continue; }
@@ -122,11 +122,10 @@ async () => {
     if (!rec.controls && !rec.handles) rec.warnings.push('no controls and no handles: this is a static figure; is interactivity earning its place here?');
     out.widgets.push(rec);
   }
-  for (const e of document.querySelectorAll('.katex-error')) out.katex.push({src: e.textContent.slice(0, 120), msg: (e.getAttribute('title') || '').slice(0, 200),
-    section: (e.closest('section') || {}).id || ''});
-  // an unknown macro does not fail the formula: KaTeX prints the command name in the error colour
-  for (const e of document.querySelectorAll('.katex [style*="color"]')) { const c = getComputedStyle(e).color;
-    if (c === 'rgb(180, 87, 42)' && !out.katex.some(k => k.src === e.textContent.slice(0, 60))) out.katex.push({src: e.textContent.slice(0, 60), msg: 'unknown command; add it to [macros] in explainer.toml or rewrite it', section: (e.closest('section') || {}).id || ''}); }
+  // a TeX error (an unknown command included) replaces the whole formula by an merror node that carries the message
+  for (const e of document.querySelectorAll('mjx-container svg [data-mjx-error]')) { if (e.parentElement.closest('[data-mjx-error]')) continue;
+    out.math.push({src: e.textContent.replace(e.getAttribute('data-mjx-error') || '', '').trim().slice(0, 120), msg: (e.getAttribute('data-mjx-error') || '').slice(0, 200) + (/Undefined control sequence/.test(e.getAttribute('data-mjx-error') || '') ? '; add it to [macros] in explainer.toml or rewrite it' : ''),
+    section: (e.closest('section') || {}).id || ''}); }
   for (const c of document.querySelectorAll('.chip.bad')) out.badChips.push(c.textContent);
   for (const D of document.querySelectorAll('.derivation')) {
     const n = D.querySelectorAll('.dstep').length; let guard = 0; const next = D.querySelector('[data-next]');
@@ -301,9 +300,9 @@ def main() -> int:
             lines.append(f"  - warning {m}")
             warnings += 1
     lines += ["", "## Math"]
-    if report["katex"]:
-        for k in report["katex"]:
-            lines.append(f"- ERROR KaTeX cannot render `{k['src']}` in #{k['section']}: {k['msg']}")
+    if report["math"]:
+        for k in report["math"]:
+            lines.append(f"- ERROR MathJax cannot render `{k['src']}` in #{k['section']}: {k['msg']}")
             errors += 1
     else:
         lines.append("- all formulas render")

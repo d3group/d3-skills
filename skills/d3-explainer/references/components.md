@@ -40,7 +40,7 @@ status      = "Working draft, model v2"   # optional, shown in the header
 depth       = "standard"                  # overview | standard | deep
 repo        = ".."                        # repository root, relative to explainer/; an absolute path works too
 paper       = ["paper"]                   # folders searched for .tex and .aux
-macros_from = ["paper/macros.tex"]        # \newcommand, \DeclareMathOperator -> KaTeX macros
+macros_from = ["paper/macros.tex"]        # \newcommand, \DeclareMathOperator -> MathJax macros
 vault       = "Vault - Project"           # an Obsidian vault inside the repo, optional
 code_links  = "auto"                      # auto | github | vscode | none
 [[role]]                                  # the project's colour code, two to five roles
@@ -133,7 +133,7 @@ A failed chip means the claim next to it is unverified. Find the right pointer o
 <div class="eq" data-label="eq:prob"></div>
 ```
 
-Works anywhere, including inside a `.dstep`, which is the natural way to end a derivation on the paper's own equation. Finds `\label{eq:prob}`, takes the enclosing `equation` / `align` / `gather` / `multline` / `eqnarray`, strips labels, converts to `aligned` / `gathered`, adds `\tag{12}` when the `.aux` knows the number, and appends the `[[paper:eq:prob]]` chip. If KaTeX cannot render what the paper uses (`check.py` reports it), define the macro in `[macros]` or write the formula by hand as `$$…$$` with a `[[paper:…]]` chip.
+Works anywhere, including inside a `.dstep`, which is the natural way to end a derivation on the paper's own equation. Finds `\label{eq:prob}`, takes the enclosing `equation` / `align` / `gather` / `multline` / `eqnarray`, strips labels, converts to `aligned` / `gathered`, adds `\tag{12}` when the `.aux` knows the number, and appends the `[[paper:eq:prob]]` chip. If MathJax cannot render what the paper uses (`check.py` reports it), define the macro in `[macros]` or write the formula by hand as `$$…$$` with a `[[paper:…]]` chip.
 
 **Code from the repo.**
 
@@ -165,9 +165,9 @@ When the numbers have to be computed (a sweep the repo never stored), copy `<ski
 
 ## 6. Math
 
-KaTeX, offline. Inline `$…$` or `\(…\)`, display `$$…$$` or `\[…\]`. Paste LaTeX from the paper as it is: the paper's macros come in through `macros_from`, and the build escapes `<`, `>`, `&` inside math, so `$a<b$` and `aligned` with `&` are safe. Math also works in captions, `data-why`, control labels, readout labels, legend labels, `ctx.note`, and flow `detail` strings. Text drawn *inside* the SVG (axis labels, panel titles, `hline` / `vline` / `point` / `text` / `region` / end labels, flow node labels) cannot hold KaTeX: simple TeX there is converted to Unicode (`$c_{\max}$` becomes cₘₐₓ, `$x^\star$` becomes x*), so keep those labels to symbols, sub- and superscripts; fractions and operators belong in the caption or a readout. In JavaScript strings, double the backslashes: `'optimum $x^\\star$'`. Literal dollar: `<span class="usd">$</span>`.
+MathJax (3.2.2, SVG output, inlined into the page, so it works offline; it adds about 2.2 MB to the file). Inline `$…$` or `\(…\)`, display `$$…$$` or `\[…\]`. Paste LaTeX from the paper as it is: the paper's macros come in through `macros_from`, and the build escapes `<`, `>`, `&` inside math, so `$a<b$` and `aligned` with `&` are safe. Math also works in captions, `data-why`, control labels, readout labels, legend labels, `ctx.note`, and flow `detail` strings. Text drawn *inside* the SVG (axis labels, panel titles, `hline` / `vline` / `point` / `text` / `region` / end labels, flow node labels) cannot hold typeset math: simple TeX there is converted to Unicode (`$c_{\max}$` becomes cₘₐₓ, `$x^\star$` becomes x*), so keep those labels to symbols, sub- and superscripts; fractions and operators belong in the caption or a readout. In JavaScript strings, double the backslashes: `'optimum $x^\\star$'`. Literal dollar: `<span class="usd">$</span>`.
 
-Not supported by KaTeX: `\ensuremath` (stripped from macros), `\mbox` with math inside, TikZ, `\textcolor` with xcolor mixes, custom environments. `check.py` lists every formula that fails and every unknown command.
+MathJax covers the AMS environments (`align`, `gather`, `cases`, `\tag`, `\operatorname*`), `\mbox{… $x$ …}`, `\boldsymbol`, `\textcolor{#1B3A8C}{…}`, `\cancel`, `\bbox`, and paper macros with an optional first argument (`\newcommand{\E}[2][]{…}`; in `[macros]` write `"\\E" = ["body", 2, "default"]`). Not supported: `\ensuremath` (stripped from macros), TikZ, `\textcolor` with xcolor mixes (`red!50`), `\usepackage`-defined or custom environments. An unknown command fails its whole formula (shown on a yellow ground); `check.py` lists every such formula with MathJax's message. Right-click on a formula offers "Show Math As → TeX Commands", handy for co-authors.
 
 ## 7. Derivations
 
@@ -308,7 +308,7 @@ Kinds: `data` (light blue), `code` (outlined), `model` (navy, the project's cont
 `uv run explainer/d3x/check.py [--shots] [--sections]`
 
 - Moves every slider to min, mid, max; toggles every checkbox; selects every option; clicks presets and actions; drags every handle; steps every derivation; clicks every flow node.
-- Errors: exceptions in `draw`, NaN / undefined / Infinity in any SVG attribute, a control with no visible effect, a label cut off at the figure's edge in any state, raw TeX left visible in a label, control, legend or caption, KaTeX failures and unknown commands, steps that stay hidden, content hidden under the sidebar, page overflow at 1280 and 390 px.
+- Errors: exceptions in `draw`, NaN / undefined / Infinity in any SVG attribute, a control with no visible effect, a label cut off at the figure's edge in any state, raw TeX left visible in a label, control, legend or caption, formulas MathJax cannot render (unknown commands included), steps that stay hidden, content hidden under the sidebar, page overflow at 1280 and 390 px.
 - Warnings: labels that overlap in the default state, points off the scale, curves that use under 6 % of their panel's height (the effect is invisible), more than four parameters on one figure, a flow edge crossing a box, a figure without controls, Reset not restoring the picture, derivation steps without a reason, very long derivations.
 - `--shots` writes one PNG per interactive figure to `review/shots/<id>.png`; `--sections` adds tiled section screenshots (many images; use it for a layout problem, not by default).
 - The report is also saved as `review/check.md` for the reviewers.

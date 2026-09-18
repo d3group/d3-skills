@@ -56,13 +56,15 @@ def _strip(s):
 
 
 def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, sections=(),
-         tracker=False, numbering='all', lang='en', reveal='ghost', look='klar'):
+         tracker=False, numbering='all', lang='en', reveal='ghost', look='klar', math=None, macros=None):
     """Deck metadata; call once before the first slide. Resets the deck. date is stored for the
     manifest only, like \\date in LaTeX; put it into the subtitle if it should appear.
     look='klar' (default): calm content slides: section tracker on top, kicker and one-claim title, mono foot with the
     D3 logo, takeaway on a fixed baseline. look='beamer': the frame of the LaTeX template (uni logo, bar, footer tab).
     reveal='ghost' (default): later steps stand as pale grey ghosts, so nothing is ever removed and nothing moves.
-    reveal='hide': later steps are invisible until their step (they keep their place)."""
+    reveal='hide': later steps are invisible until their step (they keep their place).
+    math=None (default): MathJax is embedded when a slide contains $...$, \\(...\\), $$...$$ or \\[...\\]; True / False force it.
+    macros: LaTeX macros for the formulas, e.g. {'E': r'\\mathbb{E}', 'norm': r'\\lVert #1 \\rVert'}."""
     if look not in ('klar', 'beamer'):
         raise ValueError("look must be 'klar' or 'beamer'")
     if reveal not in ('hide', 'ghost'):
@@ -74,7 +76,8 @@ def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, section
         warnings.warn(f'{len(sections)} sections; agenda and tracker are designed for at most 7')
     D.reset()
     D.meta = dict(title=title, subtitle=subtitle, date=date, presenter=presenter, chair=chair,
-                  sections=sections, tracker=bool(tracker), numbering=numbering, lang=lang, reveal=reveal, look=look)
+                  sections=sections, tracker=bool(tracker), numbering=numbering, lang=lang, reveal=reveal, look=look,
+                  math=math, macros=dict(macros or {}))
     return D.meta
 
 
@@ -301,6 +304,60 @@ def fonts_css(font_dir=None):
     return '\n'.join(out)
 
 
+# ── math ─────────────────────────────────────────────────────────────────
+# MathJax 3 tex-svg-full: one script, glyphs as SVG paths, so the deck stays a single offline file. It is embedded
+# only when a slide holds math (about 2.2 MB). A lone '$' (a price, a shell prompt) is not math; two of them on one
+# slide can pair up: write the literal one as <span class="nomath">$</span>. fontCache 'none' keeps the SVG free of ids,
+# because the presenter view clones slides and strips ids.
+
+MATH = re.compile(r'\$\$.+?\$\$|\\\[.+?\\\]|\\\(.+?\\\)|(?<![\\$\w])\$(?![\s$])[^$\n]{1,400}?(?<![\s\\])\$(?![\d\w])', re.S)
+NO_MATH = re.compile(r'<(pre|code|script|style)\b.*?</\1>|<[^>]+>', re.S | re.I)
+MATH_BOOT = '''window.D3_MATH_READY=false;
+window.MathJax={tex:{inlineMath:[['$','$'],['\\\\(','\\\\)']],displayMath:[['$$','$$'],['\\\\[','\\\\]']],macros:__MACROS__,
+  packages:{'[-]':['noundefined']}},   /* an unknown command fails its formula, so shoot.py can name it */
+ svg:{fontCache:'none'},options:{ignoreHtmlClass:'nomath'},
+ startup:{typeset:false,ready:function(){MathJax.startup.defaultReady();
+  /* hidden slides are display:none and cannot be measured: lay all of them out (invisibly) while typesetting */
+  document.body.classList.add('mjx-measure');
+  try{MathJax.typeset()}catch(e){console.error('d3deck math: '+e.message)}
+  document.body.classList.remove('mjx-measure');window.D3_MATH_READY=true;}}};'''
+MATH_CSS = ('body.mjx-measure .sl{display:block!important;visibility:hidden}'
+            'mjx-container[display="true"]{margin:.5em 0!important}')
+
+
+def has_math(text):
+    return bool(MATH.search(NO_MATH.sub(' ', text)))
+
+
+def mathjax_macros(macros):
+    """{'E': r'\\mathbb{E}', r'\\norm': r'\\lVert #1 \\rVert'} -> MathJax's macro table ([body, n] when the body uses #1..#n)."""
+    out = {}
+    for k, v in macros.items():
+        name = k.lstrip('\\')
+        if not re.fullmatch(r'[A-Za-z]+', name):
+            raise ValueError(f'macro name {k!r}: letters only')
+        if isinstance(v, (list, tuple)):
+            out[name] = list(v)
+            continue
+        n = max([int(d) for d in re.findall(r'(?<!#)#(\d)', v)] or [0])
+        out[name] = [v, n] if n else v
+    return out
+
+
+def math_head(body):
+    """(css, script tags) for MathJax, or ('', '') for a deck without math."""
+    want = D.meta.get('math')
+    if want is False or (want is None and not has_math(body)):
+        return '', ''
+    p = os.path.join(paths.PKG, 'mathjax', 'tex-svg-full.js')
+    if not os.path.exists(p):
+        raise FileNotFoundError(f'{p} missing; refresh d3deck/ from the skill (init.py) to get MathJax')
+    with open(p, encoding='utf-8') as fh:
+        js = fh.read().replace('</script', '<\\/script')
+    boot = MATH_BOOT.replace('__MACROS__', json.dumps(mathjax_macros(D.meta.get('macros', {}))).replace('</', '<\\/'))
+    return MATH_CSS, f'<script>{boot}</script>\n<script>{js}</script>\n'
+
+
 # ── rendering ────────────────────────────────────────────────────────────
 
 def _calm(i, s, inner):
@@ -395,6 +452,7 @@ def build(name, out=None, embed_fonts=True, notes=True):
     meta_json = json.dumps(manifest, ensure_ascii=False).replace('<', '\\u003c')
     fonts = fonts_css() if embed_fonts else ''
     extra = '\n'.join(D.extra_css)
+    math_css, math_js = math_head(body)
     doc = f'''<!doctype html><html lang="{m['lang']}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{_html.escape(_strip(m['title']))}</title>
@@ -404,6 +462,7 @@ def build(name, out=None, embed_fonts=True, notes=True):
 <style>{components.CSS}</style>
 <style>{nav.CSS}</style>
 <style>{presenter.CSS}</style>
+<style>{math_css}</style>
 <style>{extra}</style>
 </head><body class="{'reveal-ghost' if m.get('reveal') == 'ghost' else 'reveal-hide'} look-{m.get('look', 'klar')}">
 <div id="bar"></div>
@@ -412,7 +471,7 @@ def build(name, out=None, embed_fonts=True, notes=True):
 <div id="top"><span class="lb">Jump</span>{tabs}</div>
 <div id="stage">{body}</div>
 <div id="foot"><span id="fl"></span><span>{HINTS}<b id="fr"></b></span></div>
-<script>{engine.JS.replace('__META__', meta_json)}</script>
+{math_js}<script>{engine.JS.replace('__META__', meta_json)}</script>
 <script>{nav.JS.replace('__HUB__', str(hub))}</script>
 <script>{presenter.JS}</script>
 </body></html>'''
@@ -426,5 +485,5 @@ def build(name, out=None, embed_fonts=True, notes=True):
     built = [x for x in content if x.steps > 1]
     if len(content) >= 6 and len(built) > 0.4 * len(content):
         warnings.warn(f'{len(built)} of {len(content)} content slides use step builds. Builds are for the few slides whose argument needs sequencing; a deck where most slides build feels restless')
-    print(f'{len(D.slides)} slides · {total_steps} steps · {len(doc) / 1e6:.2f} MB → {out}')
+    print(f'{len(D.slides)} slides · {total_steps} steps · {len(doc) / 1e6:.2f} MB' + (' (MathJax embedded)' if math_js else '') + f' → {out}')
     return out

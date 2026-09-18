@@ -32,7 +32,7 @@ sub,sup{line-height:0}
 .hero h1 em{font-style:normal;color:var(--accent)}
 .hero .lede{font-size:clamp(17px,2.2vw,20px);line-height:1.5;color:#C8D6EC;max-width:58ch;margin:0 0 30px}
 .hero-eq{background:var(--card);border-radius:3px;padding:16px 18px 12px;color:var(--ink);overflow-x:auto}      /* a light card: role colours keep the contrast they have everywhere else */
-.hero-eq .katex-display{margin:.2em 0 .5em}
+.hero-eq mjx-container[display="true"]{margin:.2em 0 .5em}
 .hero .key{margin:14px 0 0}
 .hero .key .lab{color:#C8D6EC}.hero-eq .key{border-top:1px solid var(--rule);padding-top:10px;margin-top:6px}.hero-eq .key .lab{color:var(--ink-2)}
 .hero small{display:block;margin-top:16px;font-size:12.5px;color:#93A6C6;font-family:var(--mono);line-height:1.7}
@@ -114,8 +114,8 @@ a.chip:hover{background:var(--ink);color:var(--paper)}a.chip:hover i{color:var(-
 .chip.bad{background:#FDE2E0;color:#A3261C;outline:1px solid #A3261C}
 
 /* ---------- math and derivations ---------- */
-.katex{font-size:1.02em;text-transform:none;letter-spacing:normal}
-.katex-display{margin:1em 0;overflow-x:auto;overflow-y:hidden;padding:2px 0}
+mjx-container{text-transform:none;letter-spacing:normal}
+mjx-container[display="true"]{margin:1em 0;overflow-x:auto;overflow-y:hidden;padding:2px 0}
 .eq{background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:8px 18px 6px;margin:22px 0}
 .eq .eqsrc,.eqsrc{display:flex;justify-content:flex-end;margin:-4px 0 6px}
 .eqlabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:-14px 0 22px}

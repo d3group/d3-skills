@@ -36,8 +36,6 @@ PAPER_NAMES = {"eq": "Eq.", "eqn": "Eq.", "sec": "§", "subsec": "§", "fig": "F
                "lem": "Lemma", "prop": "Prop.", "cor": "Cor.", "def": "Def.", "alg": "Alg.", "app": "App.", "ass": "Ass.", "asm": "Ass.",
                "rem": "Remark", "ex": "Ex."}
 MATH_ENVS = "equation|align|gather|multline|eqnarray|alignat|flalign|dmath"
-OPTIONAL_KATEX_FONTS = {"Fraktur": r"\\(mathfrak|frak)\b", "SansSerif": r"\\(mathsf|textsf)\b", "Script": r"\\mathscr\b",
-                        "Typewriter": r"\\(mathtt|texttt)\b", "Caligraphic": r"\\(mathcal|cal)\b"}
 WORDING = [  # (pattern, advice) -- same house rules as d3-abstract / d3-presentation, warnings only
     (r"(?<!\d)\s[\u2013\u2014]\s|\u2014", "dash as punctuation: use a comma, a colon, or a new sentence"),
     (r"\bnot\s+(only|just|merely|simply)\b", "contrast framing: state the positive claim"),
@@ -146,9 +144,9 @@ class Paper:
         return body
 
 
-def read_macros(repo: Path, files: list[str], rep: Report) -> dict[str, str]:
-    """Simple \\newcommand / \\DeclareMathOperator definitions -> KaTeX macros."""
-    out: dict[str, str] = {}
+def read_macros(repo: Path, files: list[str], rep: Report) -> dict[str, str | list]:
+    """Simple \\newcommand / \\DeclareMathOperator definitions -> macro bodies; [body, n, default] for an optional first argument."""
+    out: dict[str, str | list] = {}
 
     def group(t: str, i: int) -> tuple[str, int] | None:
         if i >= len(t) or t[i] != "{":
@@ -174,11 +172,15 @@ def read_macros(repo: Path, files: list[str], rep: Report) -> dict[str, str]:
             continue
         t = re.sub(r"(?<!\\)%.*", "", f.read_text(encoding="utf-8", errors="replace"))
         for m in re.finditer(r"\\(?:re|provide)?newcommand\*?\s*(?:\{(\\[A-Za-z@]+)\}|(\\[A-Za-z@]+))\s*(?:\[(\d)\])?\s*(\[)?", t):
-            if m.group(4):          # optional-argument default: KaTeX macros cannot express it
-                continue
-            g = group(t, m.end())
+            default, end = None, m.end()
+            if m.group(4):          # \newcommand{\x}[2][default]{...}: the first argument is optional
+                close = t.find("]", end)
+                if close < 0 or not m.group(3):
+                    continue
+                default, end = t[end:close], close + 1
+            g = group(t, end + len(t[end:]) - len(t[end:].lstrip()))
             if g:
-                out[m.group(1) or m.group(2)] = g[0]
+                out[m.group(1) or m.group(2)] = g[0] if default is None else [g[0], int(m.group(3)), default]
         for m in re.finditer(r"\\DeclareMathOperator(\*?)\s*\{(\\[A-Za-z]+)\}\s*", t):
             g = group(t, m.end())
             if g:
@@ -188,9 +190,28 @@ def read_macros(repo: Path, files: list[str], rep: Report) -> dict[str, str]:
             if g:
                 out.setdefault(m.group(1), g[0])
     for k in list(out):
-        out[k] = out[k].replace("\\xspace", "").replace("\\ensuremath", "")
-        if re.search(r"\\(usepackage|begin\{(?!aligned|cases|pmatrix|bmatrix|matrix|array))", out[k]):
+        body = (out[k][0] if isinstance(out[k], list) else out[k]).replace("\\xspace", "").replace("\\ensuremath", "")
+        if re.search(r"\\(usepackage|begin\{(?!aligned|cases|pmatrix|bmatrix|matrix|array))", body):
             del out[k]
+        elif isinstance(out[k], list):
+            out[k][0] = body
+        else:
+            out[k] = body
+    return out
+
+
+def mathjax_macros(macros: dict) -> dict:
+    """{"\\E": "\\mathbb{E}"} -> MathJax's {"E": ...}; a body that uses #1..#n becomes [body, n]."""
+    out = {}
+    for k, v in macros.items():
+        name = k.lstrip("\\")
+        if not re.fullmatch(r"[A-Za-z]+", name):       # \@internal names: MathJax macro names are letters only
+            continue
+        if isinstance(v, (list, tuple)):
+            out[name] = list(v)
+            continue
+        n = max([int(d) for d in re.findall(r"(?<!#)#(\d)", str(v))] or [0])
+        out[name] = [str(v), n] if n else str(v)
     return out
 
 
@@ -225,7 +246,6 @@ def escape_math(text: str, where: str, rep: Report, stats: dict) -> str:
             return seg
         stats["equations"] += 1
         stats["display"] += m.group(1) is not None or m.group(2) is not None
-        stats["math_src"].append(inner)
         esc = re.sub(r"&(?!(?:amp|lt|gt|#\d+);)", "&amp;", inner).replace("<", "&lt;").replace(">", "&gt;")
         return seg.replace(inner, esc, 1)
 
@@ -265,7 +285,7 @@ class Builder:
         self.raw: dict[str, str] = {}
         self.evidence: dict[str, str] = {}
         self.chip_state: dict[str, str] = {}
-        self.stats = {"equations": 0, "display": 0, "pulled": 0, "math_src": [], "widgets": 0, "flows": 0, "derivations": 0, "code": 0, "images": 0}
+        self.stats = {"equations": 0, "display": 0, "pulled": 0, "widgets": 0, "flows": 0, "derivations": 0, "code": 0, "images": 0}
         self.commit = git(self.repo, "rev-parse", "--short", "HEAD")
         self.dirty = bool(git(self.repo, "status", "--porcelain", "--untracked-files=no"))
         self.remote = self._github(git(self.repo, "remote", "get-url", "origin"))
@@ -634,23 +654,6 @@ class Builder:
             css.append(f"@font-face{{font-family:'{family}';font-style:{style};font-weight:{weight};font-display:swap;src:url(data:font/woff2;base64,{b64}) format('woff2')}}")
         return "\n".join(css)
 
-    def katex_css(self) -> str:
-        css = (ENGINE / "katex" / "katex.min.css").read_text(encoding="utf-8")
-        used = "\n".join(self.stats["math_src"]) + json.dumps(self.cfg.get("macros", {}))
-
-        def face(m: re.Match) -> str:
-            block = m.group(0)
-            fm = re.search(r"url\((fonts/(KaTeX_([A-Za-z0-9]+)-[A-Za-z]+)\.woff2)\)", block)
-            if not fm:
-                return ""
-            family = fm.group(3)
-            if family in OPTIONAL_KATEX_FONTS and not re.search(OPTIONAL_KATEX_FONTS[family], used):
-                return ""
-            b64 = base64.b64encode((ENGINE / "katex" / fm.group(1)).read_bytes()).decode()
-            return re.sub(r"src:[^}]*", f"src:url(data:font/woff2;base64,{b64}) format('woff2')", block)
-
-        return re.sub(r"@font-face\{[^}]*\}", face, css)
-
     def roles(self) -> list[dict]:
         """[[role]] entries: the project's colour code, kept in every equation and figure."""
         out = []
@@ -670,9 +673,8 @@ class Builder:
         for r in roles:                                # \choice{b} colours b in the role's colour, in any formula
             if "\\" + r["key"] in macros:
                 self.rep.warn(f"[[role]] key '{r['key']}' hides the paper macro \\{r['key']}; pick another key")
-            macros["\\" + r["key"]] = "\\textcolor{%s}{#1}" % r["color"].lstrip("#")      # no '#': inside a macro body "#2A..." would read as argument 2
+            macros["\\" + r["key"]] = "\\textcolor{#%s}{#1}" % r["color"]      # "##": a literal '#'; a bare "#2A..." would read as argument 2
         macros.update(cfg.get("macros", {}))
-        self.stats["math_src"].append(json.dumps(macros))
         js = lambda p: (ENGINE / p).read_text(encoding="utf-8").replace("</script", "<\\/script")
         words = sum(s["words"] for s in sections)
         minutes = round(words / 220 + 1.5 * (self.stats["widgets"] + self.stats["flows"]))
@@ -688,7 +690,6 @@ class Builder:
                 self.rep.error(f"explainer.toml [hero] equation = \"{hero['equation']}\": no equation with that \\label in the paper sources")
             else:
                 tex = re.sub(r"\\tag\{[^}]*\}", "", tex)
-                self.stats["math_src"].append(tex)
                 esc = tex.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 hero_eq = f'<div class="hero-eq">$${esc}$$' + (f'<div class="key">{key}</div>' if key else "") + "</div>"
         elif key:
@@ -697,8 +698,6 @@ class Builder:
         hud = cfg.get("hud", {})
         hud_html = ""
         if hud.get("lines"):
-            for ln in hud["lines"]:
-                self.stats["math_src"].append(str(ln))
             lines_html = "".join(f'<div class="line" data-hud="{i}">{ln}</div>' for i, ln in enumerate(hud["lines"], 1))
             hud_html = f'<aside id="hud" aria-hidden="true"><div class="t">{html.escape(hud.get("title", "the idea, assembling"))}</div>{lines_html}<div class="f">{html.escape(hud.get("foot", "Each piece is introduced in one step. Scroll to build it."))}</div></aside>'
             levels = {int(x) for sec in sections for x in re.findall(r'<section\b[^>]*data-hud="(\d+)"', sec["html"])}
@@ -709,10 +708,12 @@ class Builder:
         toc = "".join(f'<li><span class="n">{s["n"]:02d}</span><a href="#{s["id"]}">{html.escape(s["nav"])}</a></li>' for s in sections)
         meta = " · ".join(x for x in [html.escape(authors), built, f"about {minutes} min", html.escape(cfg.get("status", ""))] if x)
         role_css = ":root{" + "".join(f"--r-{r['key']}:{r['color']};" for r in roles) + "}" + "".join(f".r-{r['key']}{{color:{r['color']}}}" for r in roles)
-        boot = "window.D3X_MACROS=%s;window.D3X_CHIPS=%s;window.D3X_ROLES=%s;window.D3X_META=%s;" % tuple(
+        mathjax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]], "macros": mathjax_macros(macros),
+                           "packages": {"[-]": ["noundefined"]}},      # an unknown command fails its formula, so check.py can name it
+                   "svg": {"fontCache": "local"}, "options": {"ignoreHtmlClass": "nomath|chip|usd"}, "startup": {"typeset": False}}
+        boot = "window.MathJax=%s;window.D3X_CHIPS=%s;window.D3X_ROLES=%s;window.D3X_META=%s;" % tuple(
             json.dumps(x, ensure_ascii=False).replace("</", "<\\/") for x in (
-                macros, self.chips, {r["key"]: r["color"] for r in roles}, {"title": title, "commit": self.commit, "built": today, "sections": [s["id"] for s in sections]}))
-        self.stats["math_src"].append(json.dumps(macros))
+                mathjax, self.chips, {r["key"]: r["color"] for r in roles}, {"title": title, "commit": self.commit, "built": today, "sections": [s["id"] for s in sections]}))
         return f"""<!doctype html>
 <html lang="{cfg.get('lang', 'en')}">
 <head>
@@ -722,14 +723,12 @@ class Builder:
 <title>{html.escape(re.sub(r"<[^>]+>", "", title))}</title>
 <style>
 {self.fonts_css()}
-{self.katex_css()}
 {(ENGINE / 'explainer.css').read_text(encoding='utf-8')}
 {role_css}
 {cfg.get('css', {}).get('extra', '')}
 </style>
-<script>{js('katex/katex.min.js')}</script>
-<script>{js('katex/auto-render.min.js')}</script>
 <script>{boot}</script>
+<script>{js('mathjax/tex-svg-full.js')}</script>
 <script>{js('explainer.js')}</script>
 </head>
 <body>

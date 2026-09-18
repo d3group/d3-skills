@@ -75,6 +75,7 @@ def run_playwright(deck, out_dir, first, last, tol, scale, contact, pdf):
         page = browser.new_page(viewport=VIEWPORT, device_scale_factor=scale)
         page.goto('file://' + os.path.abspath(deck))
         page.wait_for_timeout(1500)          # fonts, base64 figures
+        page.wait_for_function('window.D3_MATH_READY !== false', timeout=30000)   # MathJax, when the deck embeds it
         n = page.evaluate('N')
         lo = max(0, (first - 1) if first else 0)
         hi = min(n, last if last else n)
@@ -91,6 +92,9 @@ def run_playwright(deck, out_dir, first, last, tol, scale, contact, pdf):
                 for hit in page.evaluate(AUDIT_JS, tol):
                     problems.append((i + 1, s + 1, hit))
             print(f'  slide {i + 1:3d}  {k} step(s)', end='\r', flush=True)
+        math_errors = page.evaluate("""() => [...document.querySelectorAll('.sl')].flatMap((s, i) =>
+            [...s.querySelectorAll('mjx-container svg [data-mjx-error]')].filter(e => !e.parentElement.closest('[data-mjx-error]'))
+              .map(e => [i + 1, e.getAttribute('data-mjx-error'), e.textContent.replace(e.getAttribute('data-mjx-error'), '').trim().slice(0, 60)]))""")
         if pdf:
             page.emulate_media(media='print')
             page.pdf(path=pdf, width='1280px', height='720px', print_background=True, prefer_css_page_size=True)
@@ -103,9 +107,13 @@ def run_playwright(deck, out_dir, first, last, tol, scale, contact, pdf):
             print(f'  {slide:3d}.{step}  {h["px"]:4d}px {h["side"]:<6s} {h["tag"]}.{h["cls"]}  "{h["text"]}"')
     else:
         print('overflow audit: clean')
+    if math_errors:
+        print(f'\nMATH: {len(math_errors)} formula(s) MathJax cannot render\n')
+        for slide, msg, src in math_errors:
+            print(f'  {slide:3d}    {msg}  "{src}"')
     if contact:
         make_contact_sheets(shots, out_dir)
-    return 1 if problems else 0
+    return 1 if problems or math_errors else 0
 
 
 def chrome_binary():

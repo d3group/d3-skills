@@ -29,7 +29,7 @@ async () => {
   // open everything that is merely collapsed so that content checks see it, but count main-line words first
   // prose only: figures, formulas, code, navigation and collapsed detail are not main-line reading text
   const clone = document.body.cloneNode(true);
-  clone.querySelectorAll('script, style, svg, canvas, .figbox, .katex, mjx-container, math, pre, nav, aside, #side, #drawer, .toc, .chip, details:not([open]) > *:not(summary), .dstep.hidden, [hidden]').forEach(e => e.remove());
+  clone.querySelectorAll('script, style, svg, canvas, .figbox, mjx-container, pre, nav, aside, #side, #drawer, .toc, .chip, details:not([open]) > *:not(summary), .dstep.hidden, [hidden]').forEach(e => e.remove());
   out.words = (clone.textContent.match(/[A-Za-zÀ-ÿ0-9][\w'’-]*/g) || []).length;
   out.ranges = document.querySelectorAll('input[type=range]').length;
   out.controls = document.querySelectorAll('input[type=range], select, input[type=checkbox], input[type=radio]').length;
@@ -43,10 +43,10 @@ async () => {
     tested++; if (states.size < 2) dead.push(inp.id || inp.name || inp.getAttribute('data-param') || '(unnamed)');
   }
   out.tested = tested; out.dead = dead; out.nanMoved = nanMoved;
-  out.mathEls = document.querySelectorAll('.katex, mjx-container, math').length;
+  out.mathEls = document.querySelectorAll('mjx-container').length;
   const text = document.body.innerText;
   out.rawTex = (text.match(/\\frac|\\mathbb|\\begin\{|\$\$|\\\(/g) || []).length;
-  out.eqTags = document.querySelectorAll('.katex-tag, .katex .tag, mjx-mtd[id^="mjx-eqn"], mjx-labels mjx-mtd, .mjx-tag').length;
+  out.eqTags = document.querySelectorAll('mjx-container [data-mml-node="mlabeledtr"], mjx-mtd[id^="mjx-eqn"], mjx-labels mjx-mtd').length;
   out.headings = [...document.querySelectorAll('h1,h2,h3,h4,summary,.note .h,.callout-title')].map(h => h.innerText.trim()).filter(Boolean);
   out.tables = [...document.querySelectorAll('table')].map(t => (t.querySelector('tr') || t).innerText.trim().slice(0, 120));
   out.captions = [...document.querySelectorAll('figcaption, .caption, .figcap')].map(c => c.innerText.trim());

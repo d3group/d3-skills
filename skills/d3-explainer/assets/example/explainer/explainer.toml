@@ -9,7 +9,7 @@ status      = "example fixture"
 depth       = "overview"          # focus | overview | standard | deep
 repo        = ".."                # repository root: relative to this folder, or an absolute path
 paper       = ["paper"]           # where the .tex / .aux files live, relative to repo
-macros_from = ["paper/main.tex"]  # \newcommand definitions become KaTeX macros
+macros_from = ["paper/main.tex"]  # \newcommand definitions become MathJax macros
 code_links  = "auto"              # auto | github | vscode | none
 
 # The project's colour code. Each role becomes a colour name for plots ('skip'), a formula macro (\skip{r}),

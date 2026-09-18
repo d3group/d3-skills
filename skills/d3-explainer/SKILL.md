@@ -101,7 +101,7 @@ uv run explainer/d3x/build.py                  # no --draft: TODO markers now fa
 uv run explainer/d3x/check.py --shots          # headless browser: moves every control, drags every handle, steps every derivation
 ```
 
-`check.py` must end with `0 error(s)`. It catches what reading the source cannot: NaN in a path, a control that changes nothing, a formula KaTeX cannot render, a label cut off at a slider extreme, page overflow at phone width. Its first run on a machine may ask for a browser once: `uv run --with playwright playwright install chromium` (it falls back to an installed Chrome or Edge).
+`check.py` must end with `0 error(s)`. It catches what reading the source cannot: NaN in a path, a control that changes nothing, a formula MathJax cannot render, a label cut off at a slider extreme, page overflow at phone width. Its first run on a machine may ask for a browser once: `uv run --with playwright playwright install chromium` (it falls back to an installed Chrome or Edge).
 
 Look at two or three of the screenshots in `explainer/review/shots/` yourself. Then review at the chosen depth; prompts and token rules are in `references/review.md`:
 

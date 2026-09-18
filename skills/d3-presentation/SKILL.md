@@ -21,7 +21,7 @@ Two output formats, one slide vocabulary, one set of rules.
 | Best for | print-stable decks, email, archiving | step builds, deep links, a navigable backup, presenting from a browser |
 | Source | `<name>.tex` | `slides.py` (Python, standard library only) |
 | Build | `xelatex` twice | `uv run slides.py` |
-| Output | `<name>.pdf` | `dist/<name>.html`: one file, fonts and figures embedded |
+| Output | `<name>.pdf` | `dist/<name>.html`: one file, fonts, figures and (when the deck has formulas) MathJax embedded |
 | Workflow | [references/latex-workflow.md](references/latex-workflow.md) | [references/html-workflow.md](references/html-workflow.md) |
 
 ## Step 0: Choose the format and the review depth
@@ -85,6 +85,8 @@ All Python in this skill runs through uv (`uv run`, `uv run --with <pkg>`); neve
 | Timeline | `projecttimeline` + `\workpackage` | `timeline(start, end, packages)` |
 
 HTML adds step builds (`steps=`, `data-s`, `scrim()`), speaker notes (`notes=`), stat cards and big numbers; see the HTML workflow.
+
+Equations: LaTeX decks use Beamer's math as usual; HTML decks take the same LaTeX (`$…$`, `\[…\]`, macros via `meta(macros=...)`) and typeset it with an embedded MathJax, see the Math section of the HTML workflow.
 
 ## Rules that apply to both formats
 
