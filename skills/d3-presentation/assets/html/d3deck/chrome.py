@@ -58,7 +58,7 @@ def seal_uri():
     return _cache['seal']
 
 
-def content_frame(title, inner, page='', foot='', tracker='', dots=''):
+def content_frame(title, inner, page='', foot='', tracker='', dots='', prov=''):
     """Slide_template look: uni logo, navy bar, page tab, D3 logo, number, footer, title, body."""
     parts = [f'<div class="fr-uni">{_logo(UNI_SVG)}</div>', '<div class="fr-bar"></div>',
              '<div class="fr-tab"></div>', f'<div class="fr-d3">{_logo(D3_SVG)}</div>']
@@ -71,21 +71,39 @@ def content_frame(title, inner, page='', foot='', tracker='', dots=''):
     if title:
         parts.append(f'<div class="fr-title">{title}</div>')
     parts.append(inner)
+    if prov:
+        parts.append(f'<div class="prov">{prov}</div>')
     parts.append(dots)
     return ''.join(parts)
 
 
-def klar_frame(title, inner, page='', foot='', tracker='', dots=''):
+def klar_frame(title, inner, page='', foot='', tracker='', dots='', prov=''):
     """The 'klar' content frame: tracker on top, kicker and claim, a quiet mono foot with the D3 mark.
     No logos or bars compete with the content; the corporate frame stays on the title slide."""
     parts = [tracker or '']
     if title:
         parts.append(f'<div class="kf-title">{title}</div>')
     parts.append(inner)
-    parts.append(f'<div class="kf-foot"><span class="kf-sec">{foot}</span><span class="kf-num">{page}</span>'
+    prov = f'<span class="prov">{prov}</span>' if prov else ''
+    parts.append(f'<div class="kf-foot"><span class="kf-sec">{foot}</span>{prov}<span class="kf-num">{page}</span>'
                  f'<span class="kf-d3">{_logo(D3_SVG)}</span></div>')
     parts.append(dots)
     return ''.join(parts)
+
+
+def klar_divider(n, sections, question, part):
+    """The klar section divider: outlined part numeral, 'Part n of N', the question the part answers and, beside it,
+    the part's slides (numbered, clickable), so the structure is visible without an agenda slide."""
+    q = question or sections[n - 1]
+    h = (f'<div class="secn" aria-hidden="true">{n:02d}</div>'
+         f'<div class="secq{" has-part" if part else ""}"><div class="pt">Part {n} of {len(sections)} · {sections[n - 1]}</div>'
+         f'<div class="stmt">{q}</div></div>')
+    if part:
+        rows = ''.join(f'<div class="spi" data-jump="{j}"><span class="spn">{num}</span><span>{c}</span></div>'
+                       for j, num, c in part[:6])
+        more = f'<div class="spm">and {len(part) - 6} more</div>' if len(part) > 6 else ''
+        h += f'<div class="spart"><div class="sph">In this part</div>{rows}{more}</div>'
+    return h
 
 
 def title_frame(inner):
@@ -204,5 +222,17 @@ body.look-klar .fact .fk{font-size:18px;line-height:1.45;color:#4A5568;margin-to
 body.look-klar .bignum .bv{font-weight:400;font-size:112px}
 body.look-klar .bignum .bk{font-size:19px;color:#4A5568}
 body.look-klar .secq{position:absolute;left:86px;top:250px;width:1000px}
+body.look-klar .secq.has-part{width:560px}
+body.look-klar .secq.has-part .stmt{font-size:44px}
+body.look-klar .secn{position:absolute;left:66px;top:58px;font-size:210px;font-weight:600;line-height:1;letter-spacing:-.04em;
+ color:transparent;-webkit-text-stroke:2px var(--navy-15);pointer-events:none}
+body.look-klar .spart{position:absolute;left:720px;top:250px;width:474px}
+body.look-klar .sph{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+ color:#6B7688;padding-bottom:10px;border-bottom:1px solid #E1E6EE}
+body.look-klar .spi{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid #E1E6EE;
+ font-size:17px;line-height:1.35;color:var(--navy);cursor:pointer}
+body.look-klar .spi:hover{color:var(--orange-ink,#B86E00)}
+body.look-klar .spn{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#8A93A3;padding-top:3px}
+body.look-klar .spm{font-size:14px;color:#8A93A3;padding-top:8px}
 body.look-klar .secq .pt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--orange);margin-bottom:22px}
 """

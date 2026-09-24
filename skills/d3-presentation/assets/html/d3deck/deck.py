@@ -13,7 +13,7 @@ import os
 import re
 import warnings
 
-from . import chrome, components, engine, nav, paths, presenter
+from . import chrome, components, engine, kit, nav, paths, presenter
 
 STRUCTURAL = ('title', 'agenda', 'section', 'thankyou')
 NUMBERED_KINDS = ('content', 'agenda', 'section', 'backuphome')
@@ -21,15 +21,30 @@ FACES = (('Inter_18pt-Regular.ttf', 400, 'normal'), ('Inter_18pt-Italic.ttf', 40
          ('Inter_18pt-SemiBold.ttf', 600, 'normal'), ('Inter_18pt-Bold.ttf', 700, 'normal'),
          ('Inter_18pt-BoldItalic.ttf', 700, 'italic'))
 DEFAULT_CHAIR = 'Chair of Information Systems and Business Analytics'
+FEELS = ('calm', 'rich', 'interactive')
+
+
+def parse_time(t):
+    """'0:45', '1:30', 45 or None -> seconds (0 when no budget)."""
+    if t in (None, ''):
+        return 0
+    if isinstance(t, (int, float)):
+        return int(t)
+    m = re.fullmatch(r'(\d+):([0-5]\d)', str(t).strip())
+    if not m:
+        raise ValueError(f'time={t!r}: write minutes:seconds, e.g. time="0:45"')
+    return int(m.group(1)) * 60 + int(m.group(2))
 
 
 class Slide:
-    def __init__(self, kind, title, inner, steps=1, notes='', src='', cls='', group=None, num=True, sec=None):
+    def __init__(self, kind, title, inner, steps=1, notes='', src='', cls='', group=None, num=True, sec=None,
+                 time=None, provenance=''):
         if steps < 1:
             raise ValueError('steps must be >= 1')
         self.kind, self.title, self.inner = kind, title, inner
         self.steps, self.notes, self.src, self.cls = steps, notes, src, cls
         self.group, self.num, self.sec = group, num, sec
+        self.time, self.provenance = parse_time(time), provenance
 
 
 class Deck:
@@ -42,6 +57,7 @@ class Deck:
         self.marks = {}            # mark name -> slide index
         self.pending = []          # mark names waiting for the next slide
         self.extra_css = []
+        self.extra_js = []
         self.cur_sec = None        # 0-based index of the current section
         self.backup_at = None      # index of the first backup slide
         self.hub_at = None         # index of the backuphome slide
@@ -56,7 +72,7 @@ def _strip(s):
 
 
 def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, sections=(),
-         tracker=False, numbering='all', lang='en', reveal='ghost', look='klar', math=None, macros=None):
+         tracker=False, numbering='all', lang='en', reveal='ghost', look='klar', math=None, macros=None, feel='calm'):
     """Deck metadata; call once before the first slide. Resets the deck. date is stored for the
     manifest only, like \\date in LaTeX; put it into the subtitle if it should appear.
     look='klar' (default): calm content slides: section tracker on top, kicker and one-claim title, mono foot with the
@@ -64,20 +80,25 @@ def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, section
     reveal='ghost' (default): later steps stand as pale grey ghosts, so nothing is ever removed and nothing moves.
     reveal='hide': later steps are invisible until their step (they keep their place).
     math=None (default): MathJax is embedded when a slide contains $...$, \\(...\\), $$...$$ or \\[...\\]; True / False force it.
-    macros: LaTeX macros for the formulas, e.g. {'E': r'\\mathbb{E}', 'norm': r'\\lVert #1 \\rVert'}."""
+    macros: LaTeX macros for the formulas, e.g. {'E': r'\\mathbb{E}', 'norm': r'\\lVert #1 \\rVert'}.
+    feel: the motion budget agreed at intake. 'calm' (default): builds on at most about 40 percent of the content slides.
+    'rich': builds and arrival motion wherever they report something. 'interactive': rich plus Q&A interactions or a
+    live instrument; the build warns when the deck has none."""
     if look not in ('klar', 'beamer'):
         raise ValueError("look must be 'klar' or 'beamer'")
     if reveal not in ('hide', 'ghost'):
         raise ValueError("reveal must be 'hide' or 'ghost'")
     if numbering not in ('all', 'content'):
         raise ValueError("numbering must be 'all' or 'content'")
+    if feel not in FEELS:
+        raise ValueError(f"feel must be one of {FEELS}")
     sections = list(sections)
     if len(sections) > 7:
         warnings.warn(f'{len(sections)} sections; agenda and tracker are designed for at most 7')
     D.reset()
     D.meta = dict(title=title, subtitle=subtitle, date=date, presenter=presenter, chair=chair,
                   sections=sections, tracker=bool(tracker), numbering=numbering, lang=lang, reveal=reveal, look=look,
-                  math=math, macros=dict(macros or {}))
+                  math=math, macros=dict(macros or {}), feel=feel)
     return D.meta
 
 
@@ -86,7 +107,7 @@ def _need_meta():
         raise RuntimeError('call meta(...) before adding slides')
 
 
-def _add(kind, title, inner, steps=1, notes='', src='', cls='', group=None, num=True):
+def _add(kind, title, inner, steps=1, notes='', src='', cls='', group=None, num=True, time=None, provenance=''):
     _need_meta()
     in_backup = D.backup_at is not None
     if group is None:
@@ -96,7 +117,7 @@ def _add(kind, title, inner, steps=1, notes='', src='', cls='', group=None, num=
             group = D.meta['sections'][D.cur_sec]
         else:
             group = 'Start'
-    s = Slide(kind, title, inner, steps, notes, src, cls, group, num, None if in_backup else D.cur_sec)
+    s = Slide(kind, title, inner, steps, notes, src, cls, group, num, None if in_backup else D.cur_sec, time, provenance)
     idx = len(D.slides)
     D.slides.append(s)
     for name in D.pending:
@@ -146,12 +167,36 @@ def section(n, question='', **kw):
 
     def inner():
         if D.meta.get('look') == 'klar':
-            return (f'<div class="secq"><div class="pt">Part {n} of {len(secs)} · {secs[n - 1]}</div>'
-                    f'<div class="stmt">{question or secs[n - 1]}</div></div>')
+            return chrome.klar_divider(n, secs, question, _part(idx))
         return chrome.agenda_list(secs, n, _links())
     idx = _add('section', secs[n - 1], inner, **kw)
     D.section_slides[n - 1] = idx
     return idx
+
+
+def claim(title):
+    """The claim of a slide title, without the K() kicker and sub line: for agendas and the search palette."""
+    return _strip(re.sub(r'<span class="(kick|sub)">.*?</span>', '', title, flags=re.S)).strip()
+
+
+def kicker(title):
+    """The K() kicker of a title ('' without one): shown nowhere else, still searchable in the / palette."""
+    m = re.search(r'<span class="kick">(.*?)</span>', title, re.S)
+    return _strip(m.group(1)).strip() if m else ''
+
+
+def _part(idx):
+    """[(slide index, number label, claim)] of the content slides between divider idx and the next divider,
+    thank-you slide or appendix (the agenda a klar divider shows)."""
+    out = []
+    for j in range(idx + 1, len(D.slides)):
+        s = D.slides[j]
+        if s.kind in ('section', 'thankyou') or (D.backup_at is not None and j >= D.backup_at):
+            break
+        if s.kind == 'content' and s.title:
+            tab = D.labels[j][0] if getattr(D, 'labels', None) else ''
+            out.append((j, tab.split('/')[0], claim(s.title)))
+    return out
 
 
 def onecol(title, body, **kw):
@@ -216,7 +261,7 @@ def backuphome(title='Backup', **kw):
         cols = []
         for g, idxs in groups.items():
             rows = ''.join(f'<div class="hi" data-jump="{i}"><span class="hn">B{i - D.backup_at}</span>'
-                           f'<span>{_strip(D.slides[i].title)}</span></div>' for i in idxs)
+                           f'<span>{claim(D.slides[i].title)}</span></div>' for i in idxs)
             cols.append(f'<div><h4>{g}</h4>{rows}</div>')
         return f'<div class="body"><div class="hub">{"".join(cols)}</div></div>'
     idx = _add('backuphome', title, inner, **kw)
@@ -246,6 +291,11 @@ def link(name, text):
 def css(text):
     """Append a stylesheet fragment; scope it with a class you also pass as cls=."""
     D.extra_css.append(text)
+
+
+def js(text):
+    """Append deck-local JavaScript, run after the engine and the kit (live modules: D3Deck.live(...))."""
+    D.extra_js.append(text)
 
 
 # ── numbering ────────────────────────────────────────────────────────────
@@ -360,13 +410,22 @@ def math_head(body):
 
 # ── rendering ────────────────────────────────────────────────────────────
 
+# the visual components a slide can centre on; more than two on one slide is clutter
+KINDS = (('figure', r'<img|class="fig'), ('stat cards', r'class="(stat|bignum)'), ('chevrons', r'class="chev'),
+         ('timeline', r'class="tl\b|class="tl"|class="k-ms'), ('code box', r'<pre'), ('table', r'<table'),
+         ('model figure', r'class="k-model'), ('bar chart', r'class="k-bars'), ('gauge', r'class="k-gauge'),
+         ('derivation', r'class="k-proof'), ('comparison', r'class="k-vs'), ('selector', r'class="k-select'),
+         ('interface mock', r'class="k-chat'), ('unit chart', r'class="k-units'), ('instrument', r'class="k-(lab|ctl)'))
+# lighter objects: a slide built from these is designed, although they do not count as a visual kind
+OBJECTS = r'class="(k-tile|facts|k-brace|k-bub|k-effect)|<svg(?! class="ico)'
+
+
 def _calm(i, s, inner):
     """Warn about what makes a slide look busy. One idea, one visual, few builds."""
     name = f'slide {i + 1} ({_strip(s.title)[:40]!r})'
     text = _strip(MATH.sub(' formula ', re.sub(r'<(pre|svg|style)\b.*?</\1>', ' ', inner, flags=re.S)))   # a formula reads as one word, not as its TeX tokens
     words, bullets = len(text.split()), inner.count('<li')
-    kinds = [k for k, pat in (('figure', r'<img|class="fig'), ('stat cards', r'class="(stat|bignum)'), ('chevrons', r'class="chev'),
-                              ('timeline', r'class="tl\b|class="tl"'), ('code box', r'<pre'), ('table', r'<table')) if re.search(pat, inner)]
+    kinds = [k for k, pat in KINDS if re.search(pat, inner)]
     if s.steps > 4:
         warnings.warn(f'{name}: {s.steps} steps. More than 4 builds on one slide reads as fidgeting; split the slide or reveal clusters')
     if s.steps > 1 and bullets and s.steps >= bullets >= 3:
@@ -377,12 +436,16 @@ def _calm(i, s, inner):
         warnings.warn(f'{name}: {bullets} bullets; keep to 3 to 5, or split the slide')
     if len(kinds) > 2:
         warnings.warn(f'{name}: {", ".join(kinds)} on one slide. One visual idea per slide; give each its own slide')
+    if not kinds and not re.search(OBJECTS, inner) and 'class="stmt' not in inner:
+        warnings.warn(f'{name} is text only. Give it a designed object that carries the claim (html-components.md: '
+                      f'"The draft says ... build instead"); keep the sentences for the notes')
 
 
 def render_slides():
     """-> (section html list, manifest list, jump tab html, hub index or -1)."""
     m = D.meta
     labels = page_labels(D.slides, m['numbering'], D.backup_at)
+    D.labels = labels          # dividers list their part's slides with these numbers
     secs, manifest = [], []
     for i, s in enumerate(D.slides):
         tab, foot = labels[i]
@@ -402,17 +465,17 @@ def render_slides():
                 if s.sec is not None and not in_backup and m['sections']:
                     trk = chrome.tracker(m['sections'], s.sec)
                 foot_text = 'Backup' if in_backup else (m['sections'][s.sec] if s.sec is not None and m['sections'] else m['presenter'])
-                body = chrome.klar_frame(title, inner, foot or tab, foot_text, trk, dots)
+                body = chrome.klar_frame(title, inner, foot or tab, foot_text, trk, dots, s.provenance)
             else:
                 foot_text = f"{m['chair']} | {m['presenter']}"
                 if m['tracker'] and s.kind == 'content' and not in_backup and s.sec is not None:
                     trk = chrome.tracker(m['sections'], s.sec)
                     foot_text = ''
-                body = chrome.content_frame(title, inner, tab, foot_text, trk, dots)
+                body = chrome.content_frame(title, inner, tab, foot_text, trk, dots, s.provenance)
         cls = f'sl k-{s.kind}' + (f' {s.cls}' if s.cls else '')
         secs.append(f'<section class="{cls}" data-steps="{s.steps}" data-i="{i}">{body}</section>')
-        manifest.append(dict(i=i, k=s.kind, t=_strip(s.title), g=s.group, s=s.src, n=s.notes,
-                             st=s.steps, f=foot, l=tab, sec=s.sec))
+        manifest.append(dict(i=i, k=s.kind, t=claim(s.title) if s.kind == 'content' else _strip(s.title), kk=kicker(s.title), g=s.group, s=s.src, n=s.notes,
+                             st=s.steps, f=foot, l=tab, sec=s.sec, tm=s.time))
     tabs = ''.join(f'<button class="jt" data-go="{D.section_slides[k]}">{m["sections"][k]}</button>'
                    for k in sorted(D.section_slides))
     hub = -1
@@ -432,8 +495,8 @@ def resolve_marks(text):
     return re.sub(r'@@([\w-]+)@@', rep, text)
 
 
-HINTS = ('<kbd>&rarr;</kbd> step &nbsp;<kbd>&darr;</kbd> slide &nbsp;<kbd>F</kbd> present &nbsp;'
-         '<kbd>P</kbd> print &nbsp;<kbd>/</kbd> search &nbsp;<kbd>N</kbd> notes &nbsp;&nbsp;')
+HINTS = ('<kbd>&rarr;</kbd> step &nbsp;<kbd>&darr;</kbd> slide &nbsp;<kbd>F</kbd> present &nbsp;<kbd>O</kbd> overview &nbsp;'
+         '<kbd>/</kbd> search &nbsp;<kbd>N</kbd> notes &nbsp;<kbd>?</kbd> keys &nbsp;&nbsp;')
 
 
 def build(name, out=None, embed_fonts=True, notes=True):
@@ -462,6 +525,7 @@ def build(name, out=None, embed_fonts=True, notes=True):
 <style>{components.CSS}</style>
 <style>{nav.CSS}</style>
 <style>{presenter.CSS}</style>
+<style>{kit.CSS}</style>
 <style>{math_css}</style>
 <style>{extra}</style>
 </head><body class="{'reveal-ghost' if m.get('reveal') == 'ghost' else 'reveal-hide'} look-{m.get('look', 'klar')}">
@@ -474,6 +538,8 @@ def build(name, out=None, embed_fonts=True, notes=True):
 {math_js}<script>{engine.JS.replace('__META__', meta_json)}</script>
 <script>{nav.JS.replace('__HUB__', str(hub))}</script>
 <script>{presenter.JS}</script>
+<script>{kit.JS}</script>
+{''.join(f'<script>{x}</script>' for x in D.extra_js)}
 </body></html>'''
     if out is None:
         out = os.path.join(paths.talk_dir(), 'dist', f'{name}.html')
@@ -483,7 +549,7 @@ def build(name, out=None, embed_fonts=True, notes=True):
     total_steps = sum(s.steps for s in D.slides)
     content = [x for x in D.slides if x.kind == 'content']
     built = [x for x in content if x.steps > 1]
-    if len(content) >= 6 and len(built) > 0.4 * len(content):
-        warnings.warn(f'{len(built)} of {len(content)} content slides use step builds. Builds are for the few slides whose argument needs sequencing; a deck where most slides build feels restless')
+    if m.get('feel', 'calm') == 'calm' and len(content) >= 6 and len(built) > 0.4 * len(content):
+        warnings.warn(f'{len(built)} of {len(content)} content slides use step builds. Builds are for the few slides whose argument needs sequencing; a deck where most slides build feels restless (or agree on meta(feel="rich") with the presenter)')
     print(f'{len(D.slides)} slides · {total_steps} steps · {len(doc) / 1e6:.2f} MB' + (' (MathJax embedded)' if math_js else '') + f' → {out}')
     return out

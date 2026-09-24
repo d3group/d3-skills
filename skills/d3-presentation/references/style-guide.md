@@ -6,7 +6,7 @@
 - **Header**: Title area at top (assume 2-line titles for consistent spacing)
 - **Footer**: Page number and chair/presenter info - reserved for footnotes only
 - **Viewport**: All content must fit between header and footer, never overlap
-- Content is **top-aligned** within the viewport (handled automatically by template)
+- Content is **top-aligned** within the viewport (handled automatically by template). In HTML, a short object is centred in its region with `middle()` rather than leaving the lower half empty
 
 ### Alignment
 - Text boxes and figures must be properly aligned
@@ -104,6 +104,17 @@ Create a new folder for each presentation:
 2. Understand the audience, the time slot, and the one takeaway
 3. The approved action titles are the outline; slides are written to them
 
+### Storyline skeletons by talk type
+Budgets are speaking time. One content slide takes 45 to 60 seconds, a slide with a built figure up to 1:30; title, dividers and closing about 10 seconds each. Keep about 10 percent of the slot as slack. A skeleton gives the slots; the two proposals of Step 1 order them differently.
+
+| Talk type | Skeleton |
+|---|---|
+| Conference paper (7 to 15 min) | hook (a concrete case or surprising number, felt rather than described) · gap (what prior work assumes and why it breaks here) · research question and contribution · model, one relation per step · method at a glance · what participants saw or the data · results with the honest row on its own step · implication · closing with the takeaway · backup (limitations, full model, robustness). For 7 minutes merge gap into the hook and method with the data |
+| Progress report or group meeting (15 to 45 min) | parts with dividers: where we were · what changed (each change with its reason) · the hardest new idea, derived step by step · where it goes (venue, timeline) · the ask: concrete questions for the room, never "thoughts?" |
+| Defense or proposal (20 to 30 min) | motivation · research questions · compact background · per study: question, method, result, contribution · synthesis · limitations · contributions to theory and practice · closing; backup holds every method detail a committee may ask for |
+| Lecture (45 to 90 min) | learning goals · activation (a question to the room) · concept blocks, each intuition, formal, example, check question · live demos · summary · exercises; more slides, fewer words each |
+| Invited talk (30 to 45 min) | a puzzle · why it matters · two or three studies as chapters that resolve it · the bigger picture · what comes next; fewer numbers, more figures, a memorable last sentence |
+
 ### Checklist
 
 **Title Slide**
@@ -117,6 +128,14 @@ Create a new folder for each presentation:
 - Use appropriate layout (`\onecol`, `\twocol`, `\twocoltakeaway`)
 - Use `\columnheader{}` for two-column subheadings
 - Use code boxes for any code examples
+
+### Visual precision
+Checked at full size, on every build step, not only on the contact sheet:
+- **Arrowheads**: the shaft enters the head from behind, on the arrow's axis; the tip touches the target's border, neither overlapping it nor stopping short (`model()` computes this; hand-drawn TikZ or SVG arrows need the same care).
+- **Labels never sit on lines**: an edge label cuts the line with a white ground (a `tag=`), or keeps a consistent gap from it.
+- **Same-kind boxes align**: nodes of one stage share a row, a height and the column grid; gutters are constant within a slide.
+- **No overlap at any build step**: a node that is fine at the last step may collide with something at step 2.
+- **Reproduced figures stay complete**: a redrawn published model, table or equation keeps every edge, label and term of the source (list them first). Dropping an arrow or a residual term states a different claim; if the slide compresses the source on purpose, say so on the slide or in the notes.
 
 ### Verification
 1. View the compiled PDF
@@ -141,23 +160,36 @@ Prose must read as written by the presenter.
 - First person plural for own work: we analysed, we observe, our approach.
 - Concrete numbers instead of "large-scale"; one condition clause instead of an adjective stack.
 
-## 5. Step builds (HTML)
+### Voice and rigour
+- **Present, do not defend.** The slide states what the research does and finds. No pre-emptive defences ("the theory makes no claim that ...", "the weakest joint is ..."); objections belong on backup slides titled as the answer.
+- **No debt framing.** Not "what I owe" or "what I still have to show". Research does things; a venue expects things.
+- **No coined terms.** Do not invent word combinations for things the literature already names. Every technical term carries its source (a citation on the slide) and its plain meaning where it first appears.
+- **Every number is explained where it stands.** A total shows its sum (40 + 38 + 4 = 82), a percentage its base, a scale its range. A number the room cannot reconstruct raises a hand in the Q&A.
+- **Illustrative is labelled illustrative**, on the slide (`provenance='Illustrative numbers'`), and never borrows a real study's number that happens to match.
+- **Attribution is exact.** A number attributed to a paper is that paper's number in that paper's sense; check it at the source.
+- **Title style follows the deck.** Action titles are the default; if the presenter's existing deck uses short labels, keep that convention throughout instead of mixing.
+- **One spelling variant per deck** (American or British), notes included; quotes and stimulus replicas keep their original spelling.
+- **Honest rows get their own step**: null results and limitations are said, not skimmed.
 
-**Restraint first.** A calm deck has mostly static slides. Builds, stat cards, chevrons, timelines and annotated figures are strong devices; used on every slide they cancel each other out and the deck looks cluttered.
+## 5. Step builds and designed objects (HTML)
 
-- At most about one slide in three uses a build, and a build has 2 or 3 steps (the build warns above 4, and when over 40 percent of the content slides build).
-- One visual idea per slide: do not combine a figure with stat cards with a process flow. Whitespace is part of the slide.
-- Body text up to about 60 words and 3 to 5 bullets; the rest goes into the speaker notes or the backup.
-- At most one annotated or animated figure per section; it is the high point of that section.
-- Later steps wait as pale grey ghosts in their final place (`meta(reveal='ghost')`, the default): never remove, grey out. Use `reveal='hide'` only when a ghost would give away the point.
+**An object on every slide, motion where it reports.** Every content slide centres on a designed object that carries its claim (html-components.md has the bar, the objects and the "draft says ... build instead" table); the words are labels on it and the sentences go into the notes. Motion is part of the argument, never decoration: a relation drawn while it is said, a bar growing out of the previous one, a total that counts, a stimulus replayed as participants saw it.
+
+**The feel sets the budget** (`meta(feel=...)`, agreed in Step 1):
+- `calm` (default): at most about one slide in three builds; the kit's arrival motion stays, since it only finishes what is already laid out.
+- `rich`: builds wherever a step adds one idea; replays, counted numbers, figures that build.
+- `interactive`: rich plus Q&A interactions or a live instrument the presenter drives.
+
+Rules for every feel:
+- One step is one idea. Step k+1 answers a question step k raised; say it while it appears, and write what each step does in the notes (`0: ... 1: ...`).
+- No bullet-by-bullet reveals. Reveal a cluster, a column, a region, a relation.
+- Two to four steps per slide; a model built one relation per step may take up to six. The build warns above four.
+- Nothing moves between steps: later elements wait as pale ghosts in their final place (`meta(reveal='ghost')`, the default), never removed. Use `reveal='hide'` only when a ghost would give away the point.
+- One visual idea per slide: do not combine a figure with stat cards with a process flow. Tiles, a callout and a legend support an object; they do not compete with it.
+- About 40 visible words on a typical slide, 60 at most outside a dense backup slide; 3 to 5 lines per tile.
 - HTML titles are a kicker plus a claim, `K('Method', 'A cutoff rule needs one number')`. The kicker names the category; the claim is a sentence of at most 15 words. "Results", "Method" or "Agenda" alone are not titles.
-- Aim for a median of 30 to 40 words and 3 to 6 visible elements per slide. Orange covers only a few percent of the surface: blue is what is known, orange is what is new.
-- Use `statement()` at the turns of the argument and `facts()` for the numbers the audience should take home, instead of another bullet slide.
-
-
-- One step is one idea. Step k+1 answers a question step k raised.
-- No bullet-by-bullet reveals. Reveal a cluster, a column, or a region.
+- Orange covers only a few percent of the surface: blue is what is known, orange is what is new. At most one orange element per slide; the step that reveals it is the point of the slide.
+- Use `statement()` at the turns of the argument, `facts()` for the numbers the audience should take home, and the `callout()` band for the one sentence that must land, on about one slide in three at most.
 - Use a scrim to reveal a grid cell by cell; the whole grid is laid out from the start.
-- Nothing moves between steps: elements are ghosted, never removed.
-- At most one orange element per slide; the step that reveals it is the point of the slide.
 - A beat with no new content is allowed once per section, as the transition into the own contribution.
+- Anything interactive is a bonus: the slide reads completely without a hover or a click, in the PDF and the overview too.

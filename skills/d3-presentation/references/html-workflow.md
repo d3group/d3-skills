@@ -28,15 +28,14 @@ from d3deck import *
 meta(title='Action title', subtitle='Optional', date='Date and Location',
      presenter='Author Name', chair='Chair of Information Systems and Business Analytics',
      sections=['Introduction', 'Methodology', 'Results', 'Conclusion'],
-     numbering='content', look='klar', reveal='ghost')
+     numbering='content', look='klar', reveal='ghost', feel='calm')
 
 titleslide()
 section(1, question='Which question does this part answer?')
-onecol(K('Problem', 'Action title summarizing the key message'), '''
-<ul>
- <li>Point one</li>
- <li data-s="1">Point two, revealed on the second step</li>
-</ul>''', steps=2, notes='What to say.', src='One-line summary for the search palette')
+onecol(K('Problem', 'Action title summarizing the key message'), middle(
+       '<div class="grid2">' + tile('Point one', ['a keyword line'], kick='First', ico='target') +
+       tile('Point two', ['revealed on the second step'], kick='Second', ico='bulb', color='teal', s=1) + '</div>'),
+       steps=2, time='0:45', notes='0: point one. 1: point two.', src='One-line summary for the search palette')
 thankyou()
 build('my_talk')          # writes dist/my_talk.html
 ```
@@ -45,11 +44,12 @@ build('my_talk')          # writes dist/my_talk.html
 
 - `meta()` must come first; it resets the deck. `sections` takes 1 to 7 names. `tracker=True` shows a section tracker in the footer band of content slides (it replaces the chair | presenter text there). `numbering='all'` counts every slide like Beamer; `'content'` matches the `contentnumbering` option: title, agenda, section, and thank-you slides carry no number and backup numbering restarts after `appendix()`.
 - The title slide shows title and subtitle, like the LaTeX one. meta(date=...) is stored for the manifest only, like \date in LaTeX; put the date into the subtitle if it should appear.
-- Every slide function accepts `steps=1, notes='', src='', cls='', group=None, num=True`. `src` is a one-line summary that is never rendered; it feeds the `/` search palette. `cls` adds classes to the `<section>` for scoped CSS. `num=False` hides and skips the number.
+- Every slide function accepts `steps=1, notes='', src='', cls='', group=None, num=True, time=None, provenance=''`. `src` is a one-line summary that is never rendered; it feeds the `/` search palette. `cls` adds classes to the `<section>` for scoped CSS. `num=False` hides and skips the number. `time='0:45'` is the slide's speaking budget: the presenter window paces against the sum, and `shoot.py --slot` compares it with the slot (give every presented slide one, or none). `provenance='Table 3 · N = 38'` prints a small source line in the foot (klar) or above the footer (beamer), for numbers the audience may ask about; illustrative numbers say so there.
+- `feel` is the motion budget agreed in Step 1: `'calm'` (default) warns when more than about 40 percent of the content slides build; `'rich'` and `'interactive'` do not. The build warns about every content slide that is text only, whatever the feel.
 
 ## The look
 
-`meta(look='klar')` is the default and follows the talk design used for D3 defenses: every content slide has the section tracker on top, a title made of an orange kicker and one claim in a light weight, a body in dark ink at 22 px with generous whitespace, the takeaway on a fixed baseline with an orange tick, and a quiet mono foot with the section name, `page / total` and the D3 logo. The university logo and the seal appear on the title and thank-you slides only. There is no agenda slide: the tracker and the question dividers carry the structure (`agenda()` still works if an audience expects one).
+`meta(look='klar')` is the default and follows the talk design used for D3 defenses: every content slide has the section tracker on top, a title made of an orange kicker and one claim in a light weight, a body in dark ink at 22 px with generous whitespace, the takeaway on a fixed baseline with an orange tick, and a quiet mono foot with the section name, `page / total` and the D3 logo. The university logo and the seal appear on the title and thank-you slides only. There is no agenda slide: the tracker and the question dividers carry the structure (`agenda()` still works if an audience expects one). Each divider shows an outlined part numeral, `Part n of N`, the question the part answers and, beside it, the part's slides with their numbers (clickable, at most six listed).
 
 `meta(look='beamer')` draws the frame of the LaTeX template instead (university logo, navy bar, footer tab, bold title; `tracker=True` moves the tracker into the footer band). Choose it when the HTML deck must match a PDF deck slide for slide.
 
@@ -92,7 +92,9 @@ build('my_talk')          # writes dist/my_talk.html
 | `mix('teal!60')` | a tint as hex, for inline styles; brand tokens plus white and black |
 | `css('.mine{...}')` | append a stylesheet fragment; scope it with `cls=` |
 
-Layout helpers in the stylesheet: `.grid2`, `.grid3`, `.grid4`.
+Layout helpers in the stylesheet: `.grid2`, `.grid3`, `.grid4`, and `middle(html)` to centre a short object vertically.
+
+The component kit adds the designed objects (tiles with icons, `model()` figures with computed arrows, `bars()`, `gauge()`, `effect()` bars in a `k-table`, `proof()` and `brace()`, `versus()`, `selector()`, `chat()` replicas, `milestones()`, `units()`, instruments) and the Q&A interactions (`k=` keys, `pop()`, `badge(pop=)`, `cite()`, preset chips). Catalogue, examples and the bar every slide should meet: [html-components.md](html-components.md).
 
 ## 5. Step builds
 
@@ -110,6 +112,8 @@ onecol('Three mechanisms explain the effect', '''
 - `data-s="k"`: sharp from step k (0-based). `data-soft="1"`: ghost to 42 percent instead of 15. `data-until="k"`: ghosted again after step k.
 - `scrim(off, l, t, r, b)`: covers a rectangle of the slide (px numbers or `%` strings) and lifts at step `off`. Use it to reveal a grid cell by cell.
 - `steps=` on the slide is the number of steps and draws the step dots under the top-right bar.
+- The kit helpers take `s=` for the same purpose (`tile(..., s=1)`, `edge(..., s=2)`, `bar(..., s=1)`).
+- The engine marks the slide on screen with `.is-current` and every `data-s` element whose step is reached with `.is-shown`; motion written with `css()` keys on these (html-components.md, section Motion). Previews, the overview and print never carry `.is-current`, so they show end states.
 - Never `display:none`; the build warns. Rules for good builds are in the style guide, section Step builds.
 
 ## 6. Figures
@@ -149,7 +153,9 @@ css('.compare .body{display:grid;grid-template-columns:1fr 1fr;gap:24px}')
 slide('Two models side by side', '<div class="body">...</div>', cls='compare')
 ```
 
-Type sizes are tokens: `--fs-LARGE 49px`, `--fs-Large 41px` (titles), `--fs-large 34px`, `--fs-normal 31px` (column headers), `--fs-small 28px` (body), `--fs-footnote 25px`, `--fs-script 23px` (code), `--fs-tiny 17px` (footer). Use tokens for every size.
+Type sizes are tokens: `--fs-LARGE 49px`, `--fs-Large 41px` (titles), `--fs-large 34px`, `--fs-normal 31px` (column headers), `--fs-small 28px` (body), `--fs-footnote 25px`, `--fs-script 23px` (code), `--fs-tiny 17px` (footer); the kit's components use `--k-lg 26px`, `--k-md 21px`, `--k-sm 19px`, `--k-xs 16px`, `--k-mi 11.5px`. Use tokens for every size.
+
+`js()` appends deck-local JavaScript after the engine and the kit, for live modules (`D3Deck.live(...)`, html-components.md section 3.8).
 
 ## 8. Backup app
 
@@ -166,7 +172,7 @@ onecol('Backup: ...', crumb(('Ch. 5', 'ch5'), ('Descriptives', None)) + link('ch
 
 ## 9. Speaker notes
 
-`notes='...'` on any slide. N opens a presenter window (current slide, next step, notes, clock, timer; T resets the timer). Keys work in either window. If the popup is blocked, N toggles a notes drawer in the main window. Notes are embedded in the file and one keypress away for anyone who opens it; build with build('my_talk', notes=False) before sharing a deck whose notes are private. In the notes window only the navigation keys and T act; F and P belong to the main window.
+`notes='...'` on any slide. Start with what each step does (`0: ... 1: ...`) and end with the transition sentence when useful. N or S opens the presenter window: the current slide, the next step, the notes, a clock and the elapsed time; when slides carry `time=`, a pace line says "on pace", "ahead by m:ss" or "behind by m:ss" against the budgets up to this slide. Chrome and Edge ask once for permission to place the window on the second screen. T resets the timer, P pauses it (in the presenter window only; in the main window P prints). Keys work in either window, and clicks on buttons and slider input on the presenter's current slide are relayed to the projected slide, so demos and popovers are driven from the laptop. If the popup is blocked, N toggles a notes drawer in the main window. Notes are embedded in the file and one keypress away for anyone who opens it; build with build('my_talk', notes=False) before sharing a deck whose notes are private.
 
 ## 10. Build
 
@@ -175,14 +181,25 @@ onecol('Backup: ...', crumb(('Ch. 5', 'ch5'), ('Descriptives', None)) + link('ch
 ## 11. Verify
 
 ```bash
-uv run --with playwright --with pillow d3deck/shoot.py dist/my_talk.html --contact              # every slide, every step -> shots/
+uv run --with playwright --with pillow d3deck/shoot.py dist/my_talk.html --contact --slot 15    # every slide, every step -> shots/
 uv run --with playwright --with pillow d3deck/shoot.py dist/my_talk.html --from 3 --to 8         # a range
+uv run --with playwright --with pillow d3deck/shoot.py dist/my_talk.html --from 5 --to 5 --live --wait 1500   # a replay mid-way
 uv run --with playwright --with pillow d3deck/shoot.py dist/my_talk.html --pdf dist/my_talk.pdf  # print view as PDF
 uv run d3deck/shoot.py dist/my_talk.html --chrome                                              # headless Chrome, no packages, no audit
 ```
 First time on a machine: `uv run --with playwright playwright install chromium` (installs the browser Playwright drives).
 
-The script waits 480 ms per step so the 420 ms transition has settled, audits every visible element against the slide box and the body boxes, prints an overflow report, and exits 1 on overflow. Contact sheets need Pillow (the --with pillow above); without it, read the per-step shots in shots/ directly. Then continue at the review depth chosen in Step 0 of `SKILL.md`: light stops here, standard adds one reviewer pass over `slides.py` and `shots/contact_*.png`, full runs the two-agent loop.
+The script waits 480 ms per step so the 420 ms transition has settled, then finishes every animation on the slide, so each shot is the end state (`--live` shoots what is on screen instead, `--wait MS` waits longer; together they time-lapse a replay). It prints, in order:
+
+- `OVERFLOW`: every visible element outside the slide box or cropped by its body box (exit 1).
+- `MATH`: formulas MathJax cannot render (exit 1).
+- `LINT`: emoji or dingbats used as icons (error, exit 1); holes, where content ends more than 30 percent of the region above its bottom without being centred (fill the region or use `middle()`); wordy slides over 100 visible words; lowercase Greek inside an uppercase label, which prints α as Α (wrap it in `nocaps()`).
+- `CONSOLE`: script errors and failed requests (exit 1).
+- `budget m:ss of MM:00 slot` with `--slot`, or whenever slides carry `time=`; it warns when the budget exceeds the slot or when some presented slides have a time and others not.
+- `signature`: how many content slides build, move, carry a designed object and hold interactive elements, and `text only:` the slides without an object. Every slide named there gets an object (html-components.md, section 2).
+- `shots/report.json` holds all of it.
+
+Contact sheets need Pillow (the --with pillow above); without it, read the per-step shots in shots/ directly. Then continue at the review depth chosen in Step 0 of `SKILL.md`: light stops here, standard adds one reviewer pass over `slides.py` and `shots/contact_*.png`, full runs the two-agent loop.
 
 ## 12. Presenting
 
@@ -192,11 +209,16 @@ The script waits 480 ms per step so the 420 ms transition has settled, audits ev
 | Left, PageUp | previous step |
 | Down, Up | next or previous slide |
 | Home, End | first or last slide |
+| number, Enter | jump to that slide (the numbers of the `#12.3` deep links) |
 | F | fullscreen present mode; Esc leaves |
-| P | print (one slide per page, final state) |
-| / | search palette; Enter jumps |
+| N, S | presenter window (notes, next step, timer, pace); T resets, P pauses the timer there |
+| O | overview of every slide at its final step; click or arrows and Enter to jump |
+| B, W | black or white screen for a discussion; the same key or Esc returns |
+| L | laser pointer |
+| / | search palette over titles, summaries and speaker notes; Enter jumps |
 | H | backup hub |
-| N | speaker notes |
+| P | print (one slide per page, final state) |
+| ? | all keys |
 
 `#12.3` in the URL opens slide 12 at step 3. The jump tabs at the top go to the section dividers and the backup.
 
@@ -210,12 +232,19 @@ The script waits 480 ms per step so the 420 ms transition has settled, audits ev
 - The deck is one file. Send `dist/my_talk.html`, nothing else is needed.
 - Notes ship inside the file unless you build with notes=False.
 - A formula written in a normal Python string loses its backslashes (`'\beta'` starts with a backspace character). Use `r'…'` for every string that holds math.
+- Anything the presenter should click is a `<button>` (all kit helpers make one); the presenter window relays only buttons and inputs.
+- Motion written with `css()` keeps the end state as the base style and animates from the start under `.sl.is-current`; otherwise the PDF and the previews show a half-built slide.
+- Kit labels are uppercase: a Greek letter or `s_i` in them turns into a capital. Wrap symbols in `nocaps()` or write them as `$...$`.
+- `model()` draws in its region's px; a figure in a column needs `box='col'` (`'short'` in `twocoltakeaway`).
 
 ## 14. Checklist before delivery
 
 - [ ] Titles read as the argument on their own
+- [ ] Every content slide centres on a designed object; the signature line lists no text-only slide
+- [ ] Every number traceable to the fact sheet in `storyline.md`; illustrative numbers labelled
+- [ ] Time budget within the slot (`--slot`)
 - [ ] One orange element per slide at most
 - [ ] Every step reveals something; nothing moves between steps
-- [ ] `shoot.py` audit clean; contact sheets inspected
+- [ ] `shoot.py` audit clean, LINT and CONSOLE without errors, holes fixed; contact sheets inspected
 - [ ] Wording rules from the style guide applied
 - [ ] Review done at the chosen depth (light: audit clean; standard: one pass applied; full: 9 or better in every category)

@@ -92,13 +92,53 @@ body.shot #top,body.shot #foot,body.shot #bar,body.shot #play,body.shot #pexit{d
 body.shot #stage{top:0;bottom:0}
 body.shot .sl{box-shadow:none}
 
+/* ══ operator surface: overview (O), help (?), jump toast, black/white screen (B/W), laser (L).
+   Injected by the JS at boot; dark shell styling like the search palette; never printed. ══ */
+.opov{position:fixed;inset:0;z-index:92;display:none;flex-direction:column;background:rgba(6,8,12,.97);
+ font-family:'Inter',system-ui,sans-serif;color:#E6E8EB}
+.opov.on{display:flex}
+.opov header{flex:none;display:flex;align-items:baseline;gap:16px;padding:16px 24px 10px}
+.opov header h2{font-size:15px;font-weight:600;letter-spacing:.01em}
+.opov header span{font-size:11px;color:#6E7681}
+#ovg{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px 16px;
+ padding:6px 24px 28px;align-content:start}
+.ovt{display:flex;flex-direction:column;gap:6px;background:none;border:0;padding:0;cursor:pointer;text-align:left;
+ font-family:inherit;color:#C3C8CE}
+.ovf{position:relative;width:240px;height:135px;overflow:hidden;border-radius:4px;background:#fff;
+ outline:2px solid transparent;outline-offset:2px;transition:outline-color .12s}
+.ovf .sl{position:absolute!important;left:0!important;top:0!important;transform:scale(.1875)!important;
+ transform-origin:0 0;box-shadow:none;pointer-events:none}
+.ovt .ovl{font-size:11px;line-height:1.3;display:flex;gap:8px;max-width:240px}
+.ovt .ovl b{font-family:var(--mono);font-size:10px;color:#8A929B;font-weight:600;flex:none}
+.ovt .ovl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ovt.cur .ovf{outline-color:var(--orange)}
+.ovt.sel .ovf,.ovt:hover .ovf{outline-color:#fff}
+.ovt.cur .ovl b{color:var(--orange)}
+#okeys{flex:1;overflow-y:auto;padding:6px 24px 28px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));
+ gap:6px 36px;align-content:start}
+#okeys div{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:baseline;padding:6px 0;
+ border-bottom:1px solid rgba(255,255,255,.07);font-size:13px}
+#okeys kbd{margin-right:3px}
+#otoast{position:fixed;left:50%;bottom:56px;transform:translateX(-50%);z-index:95;display:none;padding:8px 16px;
+ border-radius:8px;background:rgba(11,13,16,.92);border:1px solid rgba(255,255,255,.12);color:#E6E8EB;
+ font-family:var(--mono);font-size:14px;letter-spacing:.04em}
+#otoast.on{display:block}
+#ocover{position:fixed;inset:0;z-index:90;display:none}
+body.cover-b #ocover{display:block;background:#000}
+body.cover-w #ocover{display:block;background:#fff}
+#olaser{position:fixed;left:0;top:0;z-index:91;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;
+ background:#F29100;box-shadow:0 0 0 3px rgba(242,145,0,.28),0 0 16px 4px rgba(242,145,0,.55);pointer-events:none;display:none}
+body.laser #olaser{display:block}
+body.laser,body.laser *{cursor:none!important}
+
 /* ══ print: one slide per page, final state ══ */
 @media print{
  html,body{overflow:visible;background:#fff}
- #top,#bar,#foot,#play,#pexit{display:none!important}
+ #top,#bar,#foot,#play,#pexit,.opov,#otoast,#ocover,#olaser{display:none!important}
  #stage{position:static}
  .sl{display:block!important;position:relative;left:0;top:0;transform:none!important;page-break-after:always;box-shadow:none}
  .gh,.gh-soft{opacity:1!important;filter:none!important}
+ .sl *{animation:none!important;transition:none!important}   /* every page shows the end state */
  .scrim{display:none}
  @page{size:1280px 720px;margin:0}
 }
@@ -107,7 +147,7 @@ body.shot .sl{box-shadow:none}
 JS = r"""
 const SL=[...document.querySelectorAll('.sl')], N=SL.length;
 const META=__META__;
-let cur=0, st=0;
+let cur=0, st=0, painted=-1;
 function steps(i){return Math.max(1,parseInt(SL[i].dataset.steps||'1'))}
 function pres(){return document.body.classList.contains('pres')}
 function shot(){return document.body.classList.contains('shot')}
@@ -121,14 +161,18 @@ function applyStep(s,step){
  s.querySelectorAll('[data-s]').forEach(n=>{
   const need=parseInt(n.dataset.s), soft=n.dataset.soft==='1';
   n.classList.toggle('gh',!soft&&step<need);
-  n.classList.toggle('gh-soft',soft&&step<need);});
+  n.classList.toggle('gh-soft',soft&&step<need);
+  n.classList.toggle('is-shown',step>=need);});   /* motion keys on .is-shown: '.sl.is-current .is-shown ...' */
  s.querySelectorAll('.scrim').forEach(n=>n.classList.toggle('off',step>=parseInt(n.dataset.off)));
- s.querySelectorAll('[data-until]').forEach(n=>{if(step>parseInt(n.dataset.until))n.classList.add('gh')});
+ s.querySelectorAll('[data-until]').forEach(n=>{if(step>parseInt(n.dataset.until)){n.classList.add('gh');n.classList.remove('is-shown')}});
  const dots=s.querySelector('.stepdots');
  if(dots)[...dots.children].forEach((d,i)=>d.classList.toggle('on',i<=step));
 }
 function paint(){
  const s=SL[cur]; s.dataset.step=st; applyStep(s,st);
+ /* .is-current marks the slide on screen; clones (presenter next pane, overview) never carry it, so arrival
+    animations keyed on it run only here and every preview shows the end state */
+ SL.forEach(x=>{if(x!==s)x.classList.remove('is-current')}); s.classList.add('is-current');
  const m=META[cur];
  document.getElementById('bar').style.width=((cur+1)/N*100)+'%';
  document.getElementById('fl').innerHTML='<b>'+m.g+'</b>'+(m.s?' <span class="d">&middot;</span> '+m.s:'');
@@ -137,7 +181,8 @@ function paint(){
  let on=null; document.querySelectorAll('.jt').forEach(b=>{if(+b.dataset.go<=cur)on=b});
  document.querySelectorAll('.jt').forEach(b=>b.classList.toggle('on',b===on));
  location.hash=(cur+1)+(st?'.'+(st+1):'');
- document.dispatchEvent(new CustomEvent('d3paint',{detail:{cur:cur,st:st}}));
+ const prev=painted; painted=cur;          /* prev !== cur: the slide changed (live modules leave/enter on it) */
+ document.dispatchEvent(new CustomEvent('d3paint',{detail:{cur:cur,st:st,prev:prev}}));
 }
 function show(i,step){
  SL[cur].classList.remove('on'); cur=Math.max(0,Math.min(N-1,i));
@@ -188,4 +233,74 @@ addEventListener('hashchange',()=>{
  const i=(parseInt(h[0])||1)-1, s=(parseInt(h[1])||1)-1;
  if(i!==cur||s!==st)show(i,s);
 });
+
+/* ── operator surface: O overview, ? help, number+Enter jump, B/W screen, L laser ──
+   navTo and coverKey are hooks: the presenter window reassigns them so that its overview, jumps and
+   black screen act on the projected window instead of on itself. */
+let navTo=i=>show(i,0), coverKey=null;
+(function(){
+coverKey=k=>setCover(document.body.classList.contains('cover-'+k)?'':k);
+const KEYS=[['&rarr; &nbsp;Space &nbsp;PgDn','next step, then next slide'],['&larr; &nbsp;PgUp','previous step'],
+ ['&darr; &nbsp;&uarr;','next or previous slide'],['Home &nbsp;End','first or last slide'],
+ ['12 &nbsp;Enter','jump to slide 12'],['O','overview of all slides'],['/','search titles, summaries and notes'],
+ ['H','backup hub'],['F','fullscreen present mode'],['B &nbsp;W','black or white screen'],['L','laser pointer'],
+ ['N &nbsp;S','presenter window: notes, next step, timer'],['P','print (in the presenter window: pause the timer)'],
+ ['T','reset the timer (presenter window)'],['?','this list'],['Esc','close, uncover, leave fullscreen']];
+function opEl(tag,id,cls,html){const e=document.createElement(tag); e.id=id; if(cls)e.className=cls; if(html)e.innerHTML=html;
+ document.body.appendChild(e); return e}
+const ovBox=opEl('div','ov','opov','<header><h2>Overview</h2><span>click a slide or use the arrows and Enter &middot; Esc closes</span></header><div id="ovg"></div>');
+const helpBox=opEl('div','ohelp','opov','<header><h2>Keys</h2><span>? or Esc closes</span></header><div id="okeys">'+
+ KEYS.map(k=>'<div><span>'+k[0].split(' &nbsp;').map(x=>'<kbd>'+x+'</kbd>').join(' ')+'</span><span>'+k[1]+'</span></div>').join('')+'</div>');
+const toast=opEl('div','otoast'), cover=opEl('div','ocover'), laser=opEl('div','olaser');
+let ovSel=0, digits='', digitT, toastT;
+function say(t,ms){toast.textContent=t; toast.classList.add('on'); clearTimeout(toastT);
+ toastT=setTimeout(()=>toast.classList.remove('on'),ms||1600)}
+function ovOpen(){
+ const g=document.getElementById('ovg'); g.innerHTML='';
+ SL.forEach((s,i)=>{
+  const b=document.createElement('button'); b.className='ovt'+(i===cur?' cur':''); b.dataset.i=i;
+  const f=document.createElement('div'); f.className='ovf';
+  const c=s.cloneNode(true); c.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+  c.classList.remove('is-current'); c.classList.add('on'); applyStep(c,steps(i)-1);   /* the finished slide */
+  f.appendChild(c); b.appendChild(f);
+  const l=document.createElement('div'); l.className='ovl'; l.innerHTML='<b>'+(i+1)+'</b>';
+  const t=document.createElement('span'); t.textContent=(META[i]&&META[i].t)||''; l.appendChild(t); b.appendChild(l);
+  b.onclick=()=>{ovClose(); navTo(i)}; g.appendChild(b);});
+ ovSel=cur; ovBox.classList.add('on'); ovMark();}
+function ovClose(){ovBox.classList.remove('on'); document.getElementById('ovg').innerHTML=''}
+function ovMark(){const t=[...document.querySelectorAll('.ovt')];
+ t.forEach((b,i)=>b.classList.toggle('sel',i===ovSel)); if(t[ovSel])t[ovSel].scrollIntoView({block:'nearest'})}
+function ovMove(key){const t=[...document.querySelectorAll('.ovt')]; if(!t.length)return;
+ const cols=t.filter(b=>b.offsetTop===t[0].offsetTop).length||1;
+ const d={ArrowLeft:-1,ArrowRight:1,ArrowUp:-cols,ArrowDown:cols}[key];
+ ovSel=Math.max(0,Math.min(t.length-1,ovSel+d)); ovMark()}
+function setCover(k){document.body.classList.remove('cover-b','cover-w'); if(k)document.body.classList.add('cover-'+k)}
+addEventListener('mousemove',e=>{if(document.body.classList.contains('laser')){laser.style.left=e.clientX+'px'; laser.style.top=e.clientY+'px'}});
+/* capture phase, registered before the search palette and the presenter: an open overlay swallows every key */
+addEventListener('keydown',e=>{
+ const t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable))return;
+ if(e.metaKey||e.ctrlKey||e.altKey)return;
+ const pal=document.getElementById('pal'); if(pal&&pal.classList.contains('on'))return;
+ const k=e.key, stop=()=>{e.preventDefault(); e.stopImmediatePropagation()};
+ if(ovBox.classList.contains('on')){stop();
+  if(k==='Escape'||k==='o'||k==='O')ovClose();
+  else if(k==='Enter'){const i=ovSel; ovClose(); navTo(i)}
+  else if(k.indexOf('Arrow')===0)ovMove(k);
+  return}
+ if(helpBox.classList.contains('on')){stop(); if(k==='Escape'||k==='?')helpBox.classList.remove('on'); return}
+ if(/^[0-9]$/.test(k)){stop(); digits=(digits+k).slice(-4); say('go to slide '+digits,2200);
+  clearTimeout(digitT); digitT=setTimeout(()=>{digits=''},2200); return}
+ if(digits&&(k==='Enter'||k==='Escape'||k==='Backspace')){stop();
+  if(k==='Backspace'){digits=digits.slice(0,-1); if(digits)say('go to slide '+digits,2200); else toast.classList.remove('on'); return}
+  const n=parseInt(digits); digits=''; clearTimeout(digitT); toast.classList.remove('on');
+  if(k==='Enter'&&n>=1)navTo(Math.min(N,n)-1); return}
+ if(k==='Escape'&&(document.body.classList.contains('cover-b')||document.body.classList.contains('cover-w'))){stop(); setCover(''); return}
+ if(k==='o'||k==='O'){stop(); ovOpen()}
+ else if(k==='?'){stop(); helpBox.classList.add('on')}
+ else if(k==='b'||k==='B'){stop(); coverKey('b')}
+ else if(k==='w'||k==='W'){stop(); coverKey('w')}
+ else if((k==='l'||k==='L')&&!document.body.classList.contains('presenter')){stop();
+  const on=document.body.classList.toggle('laser'); say(on?'laser on':'laser off')}
+},true);
+})();
 """

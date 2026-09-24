@@ -20,8 +20,8 @@ LOGOS = ('Universitaet_Wuerzburg_Logo.svg', 'DataDrivenDecisions_2c.svg')
 
 STARTER = '''# -*- coding: utf-8 -*-
 """__NAME__: D3 HTML deck.  Build: uv run slides.py  ->  dist/__NAME__.html
-Verify: uv run --with playwright --with pillow d3deck/shoot.py dist/__NAME__.html --contact
-See the skill's references/html-workflow.md for the slide API and step grammar."""
+Verify: uv run --with playwright --with pillow d3deck/shoot.py dist/__NAME__.html --contact --slot <minutes>
+See the skill's references/html-workflow.md for the slide API and html-components.md for the designed objects."""
 from d3deck import *
 
 meta(title='Action title that states the main message',
@@ -30,18 +30,20 @@ meta(title='Action title that states the main message',
      chair='Chair of Information Systems and Business Analytics',
      sections=['Introduction', 'Methodology', 'Results', 'Conclusion'],
      numbering='content',    # structural slides carry no number, backup restarts ('all': count every slide)
-     look='klar')            # calm look: tracker on top, kicker titles, D3 logo in the foot ('beamer': LaTeX frame)
+     look='klar',            # calm look: tracker on top, kicker titles, D3 logo in the foot ('beamer': LaTeX frame)
+     feel='calm')            # motion budget agreed with the presenter: 'calm', 'rich' or 'interactive'
 
-titleslide()
+titleslide(time='0:15')
 
-section(1, question='Which question does this part answer?')
-onecol(K('Problem', 'The title is one claim in at most 15 words'), """
-<ul>
- <li>Point one, always visible</li>
- <li data-s="1">Point two, revealed on the second step</li>
-</ul>""", steps=2, notes='What to say here.', src='Introduction: the problem in one line')
+section(1, question='Which question does this part answer?', time='0:05')
+# Every content slide centres on a designed object (references/html-components.md); sentences go into the notes.
+onecol(K('Problem', 'The title is one claim in at most 15 words'), middle(
+       '<div class="grid2">' +
+       tile('Point one', ['a keyword line, always visible'], kick='First', ico='target') +
+       tile('Point two', ['revealed on the second step'], kick='Second', ico='bulb', color='teal', s=1) +
+       '</div>'), steps=2, time='0:45', notes='0: point one. 1: point two.', src='Introduction: the problem in one line')
 
-thankyou()
+thankyou(time='0:10')
 build('__NAME__')
 '''
 

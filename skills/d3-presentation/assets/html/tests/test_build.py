@@ -134,7 +134,7 @@ class Output(unittest.TestCase):
         B.onecol('a', 'b', src='closes </script> early')
         doc = self.build()
         self.assertIn('closes \\u003c/script> early', doc)
-        self.assertEqual(doc.count('</script>'), 3)
+        self.assertEqual(doc.count('</script>'), 4)   # engine, nav, presenter, kit
 
     def test_marks_and_tabs(self):
         small_deck()
@@ -186,7 +186,11 @@ class Output(unittest.TestCase):
         self.assertIn('fr-seal', doc[doc.index('data-i="0"'):doc.index('data-i="1"')])
         self.assertIn('<span class="kick">Result</span>Two numbers carry it', doc)
         self.assertIn('class="fact acc"', doc)
-        self.assertIn('class="secq"', doc)
+        self.assertIn('class="secq has-part"', doc)
+        divider = doc[doc.index('data-i="2"'):doc.index('data-i="3"')]
+        self.assertIn('In this part', divider)
+        self.assertEqual(divider.count('class="spi"'), 2)          # One and Two; the thank-you slide ends the part
+        self.assertIn('data-jump="3"', divider)
         with self.assertRaises(ValueError):
             B.meta(title='x', look='fancy')
         with self.assertRaises(ValueError):
