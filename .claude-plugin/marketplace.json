@@ -4,7 +4,7 @@
     "name": "Data Driven Decisions (D3) Group, University of Würzburg",
     "url": "https://github.com/d3group"
   },
-  "description": "Claude Code skills of the D3 group for research communication: abstracts, posters, presentations, and interactive project explainers in the D3 corporate design",
+  "description": "Claude Code skills of the D3 group for research communication: abstracts, posters, presentations, and interactive project explainers in the D3 corporate design, with a shared scientific wording layer",
   "version": "1.0.0",
   "renames": {
     "d3-abstract-skill": "d3-abstract",
@@ -15,7 +15,7 @@
   "plugins": [
     {
       "name": "d3-abstract",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "description": "D3-branded abstracts, one-pagers and research updates as A4 PDFs (LaTeX)",
       "source": "./",
       "strict": false,
@@ -25,7 +25,7 @@
     },
     {
       "name": "d3-poster",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "description": "D3-branded A0 conference posters from a paper or repo (LaTeX, baposter)",
       "source": "./",
       "strict": false,
@@ -35,7 +35,7 @@
     },
     {
       "name": "d3-presentation",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "description": "D3-branded presentations as LaTeX Beamer PDFs or interactive HTML decks with designed objects, a presenter view and Q&A interactions",
       "source": "./",
       "strict": false,
@@ -45,12 +45,22 @@
     },
     {
       "name": "d3-explainer",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "description": "Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/d3-explainer"
+      ]
+    },
+    {
+      "name": "d3-scientific-wording",
+      "version": "0.1.0",
+      "description": "Wording layer of the D3 skills: direct claims, neutral related work, claims within the evidence, short sentences, outlet-aware register, optional Simplified Technical English (ASD-STE100), wording lint",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/d3-scientific-wording"
       ]
     }
   ]

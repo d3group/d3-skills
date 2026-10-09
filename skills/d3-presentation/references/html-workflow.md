@@ -246,5 +246,5 @@ Contact sheets need Pillow (the --with pillow above); without it, read the per-s
 - [ ] One orange element per slide at most
 - [ ] Every step reveals something; nothing moves between steps
 - [ ] `shoot.py` audit clean, LINT and CONSOLE without errors, holes fixed; contact sheets inspected
-- [ ] Wording rules from the style guide applied
+- [ ] Wording rules applied (`d3-scientific-wording`); `check_wording.py slides.py` reports 0 errors
 - [ ] Review done at the chosen depth (light: audit clean; standard: one pass applied; full: 9 or better in every category)

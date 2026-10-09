@@ -1,7 +1,7 @@
 <section id="big-picture" data-nav="The project in one screen" data-kicker="Orientation" data-hud="1">
   <h2>The project in one screen</h2>
 
-  <p class="claim">Watch the first 37 % of the candidates without committing, then take the first one who beats them all: no other cutoff finds the best candidate more often, and the rule succeeds about 37 % of the time in a long queue, a little more often in a short one.</p>
+  <p class="claim">Watch the first 37 % of the candidates and accept none of them. Then take the first candidate who beats them all. No other cutoff finds the best candidate more often. In a long queue the rule succeeds about 37 % of the time, in a short queue a little more often.</p>
 
   <p>We see $n$ candidates one by one in random order and must accept or reject each on the spot. The repository states the exact success probability of the cutoff rule, derives the large-$n$ optimum, and checks both by simulation. [[paper:sec:model]] [[code:src/secretary.py:8 def success_probability]]</p>
 
@@ -19,6 +19,6 @@
   </table></div>
 
   <div class="note reading"><span class="h">My reading</span>
-    The paper has no related-work section yet. The first row is inferred from the abstract, which says the exact probability is restated; what the project adds is the enumerated optimum for a given $n$ and the simulation check. A payoff other than "best or nothing" is on the authors' list and in nobody's column yet. [[reading]]
+    The paper has no related-work section yet. The first row comes from the abstract. The abstract says that the project restates the exact probability. The project adds the enumerated optimum for a given $n$ and the simulation check. A payoff other than "best or nothing" is on the authors' list and in nobody's column yet. [[reading]]
   </div>
 </section>

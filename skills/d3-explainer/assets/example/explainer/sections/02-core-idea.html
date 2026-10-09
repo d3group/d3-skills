@@ -4,13 +4,13 @@
   <p>Start from a sentence: <strong>every candidate you skip makes your benchmark better and the chance that the best one is already gone larger.</strong> The rule fails in exactly two ways, and the cutoff trades one against the other. The figure shows the trade before the algebra does.</p>
 
   <details class="predict"><summary>Before you drag: with $n = 20$, does skipping half of the candidates beat skipping a quarter?</summary>
-    <div class="in"><p>No, though only just: 0.359 against 0.366. Both are below the optimum of 0.384 at seven skipped. The curve is flat near its top and falls off steeply only at the extremes.</p></div>
+    <div class="in"><p>No, though only just: 0.359 against 0.366. Both are below the optimum of 0.384 at seven skipped. The curve is flat near its top and decreases steeply only at the extremes.</p></div>
   </details>
 
   <figure class="widget wide" id="fig-cutoff">
     <figcaption><b>{fig}. The two ways to fail, and the success probability they leave.</b>
-      <span class="try">Drag the orange handle from a low to a high cutoff (the figure starts too impatient on purpose), then raise $n$.</span>
-      <span class="notice">At low cutoffs the rule settles too early, at high cutoffs the best has already been skipped. The best share lies between 30 and 40 % for short queues and settles at 37 %, and the exact curve lies above the limit $-x \ln x$ and falls to it as $n$ grows.</span>
+      <span class="try">Drag the orange handle from a low to a high cutoff. Then raise $n$. The figure starts with a cutoff that is too low on purpose.</span>
+      <span class="notice">At low cutoffs the rule stops too early. At high cutoffs the rule has already skipped the best candidate. For short queues the best share is between 30 and 40 %, and it goes to 37 % as $n$ grows. The exact curve lies above the limit $-x \ln x$ and decreases to it.</span>
     </figcaption>
   </figure>
   <script>
@@ -49,7 +49,7 @@
 
   <h3>The same statement, derived</h3>
   <div class="derivation" id="deriv-cutoff" data-title="From the success probability to 1/e">
-    <div class="dstep" data-why="Condition on the position $k$ of the best candidate, each with probability $1/n$. It is chosen exactly when nobody between $r$ and $k-1$ beats the benchmark, that is, when the best of the first $k-1$ sits among the $r-1$ skipped.">
+    <div class="dstep" data-why="Condition on the position $k$ of the best candidate. Each position has probability $1/n$. The rule chooses the best candidate exactly when nobody between $r$ and $k-1$ beats the benchmark. This is the case when the best of the first $k-1$ is among the $r-1$ skipped.">
       <div class="eq" data-label="eq:prob"></div>
     </div>
     <div class="dstep" data-why="Let $n \to \infty$ with $x = r/n$ fixed. The sum is a Riemann sum of $1/t$ over $[x, 1]$. The figures plot the share skipped, $(r-1)/n$, which differs from $x$ by $1/n$ and coincides with it in the limit.">
@@ -61,6 +61,6 @@
   </div>
 
   <div class="note key"><span class="h">What to keep</span>
-    The optimum balances two failure probabilities, and the same number, $1/\e$, is both the share to skip and the chance of success in the limit. For finite $n$ the success probability lies above $1/\e$ and falls to it, which is why enumerating the exact optimum is worth the three lines of code. Only the first step uses the random arrival order; without that assumption nothing here holds.
+    The optimum balances two failure probabilities. In the limit, the same number, $1/\e$, is the share to skip and the chance of success. For finite $n$ the success probability lies above $1/\e$ and decreases to it as $n$ grows. For this reason, the three lines of code that enumerate the exact optimum are worth it. Only the first step uses the random arrival order. Without that assumption, nothing here holds.
   </div>
 </section>

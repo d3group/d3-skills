@@ -36,7 +36,7 @@ PAPER_NAMES = {"eq": "Eq.", "eqn": "Eq.", "sec": "§", "subsec": "§", "fig": "F
                "lem": "Lemma", "prop": "Prop.", "cor": "Cor.", "def": "Def.", "alg": "Alg.", "app": "App.", "ass": "Ass.", "asm": "Ass.",
                "rem": "Remark", "ex": "Ex."}
 MATH_ENVS = "equation|align|gather|multline|eqnarray|alignat|flalign|dmath"
-WORDING = [  # (pattern, advice) -- same house rules as d3-abstract / d3-presentation, warnings only
+WORDING = [  # (pattern, advice) -- mechanical subset of d3-scientific-wording (scripts/check_wording.py has all rules), warnings only
     (r"(?<!\d)\s[\u2013\u2014]\s|\u2014", "dash as punctuation: use a comma, a colon, or a new sentence"),
     (r"\bnot\s+(only|just|merely|simply)\b", "contrast framing: state the positive claim"),
     (r"\b(leverag\w+|delv\w+|seamless\w*|transformative|synerg\w+|robust framework|comprehensive\w*|holistic\w*|paradigm shift|game.chang\w+|cutting.edge|state.of.the.art)\b",

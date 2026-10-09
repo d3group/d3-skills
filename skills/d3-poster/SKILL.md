@@ -13,7 +13,7 @@ description: |
 
 # D3 Poster (Conference / Research)
 
-> **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-poster`; copied by hand: `~/.claude/skills/d3-poster`). Substitute the real path in every command.
+> **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-poster`; copied by hand: `~/.claude/skills/d3-poster`). Substitute the real path in every command. `<wording-dir>` means `<skill-dir>/../d3-scientific-wording`, the shared wording skill that every D3 plugin ships.
 
 Create professional A0-portrait research posters with D3 (Data Driven Decisions) and University of Würzburg branding. Builds on the `baposter` class for a grid layout, with a thin D3 reskin (`d3-poster.sty`) that overrides the brand color, adds the D3 logo, and ports the `\highlight` / `\keypoint` / `infobox` / `card` macros from `d3-abstract`. **Compiles with XeLaTeX or LuaLaTeX for Inter font; falls back to pdfLaTeX with Helvetica clone.**
 
@@ -331,9 +331,10 @@ TikZ output is vector by default — the cleanest path when redrawing.
 ### Phase 1: Plan
 
 1. **Analyze the request.** New poster or editing an existing one? Identify the paper source (run Step 1 of paper scanning). Print: `[HH:MM:SS] PLANNING: [new|editing]`.
-2. **Optional knowledge enrichment.** Offer only when the user's request is high-level, no paper is linked, or the user mentions "literature", "recall", "past work". Skip if a paper was scanned or the user provides a detailed brief. Options to offer: (1) recall vault, (2) NotebookLM, (3) both, (4) skip. Print: `[HH:MM:SS] ENRICHMENT: [skipped|recall|notebooklm|both]`.
+2. **Optional knowledge enrichment.** Offer only when the user's request is high-level, no paper is linked, or the user mentions "literature", "recall", "past work". Skip if a paper was scanned or the user provides a detailed brief. Options to offer: (1) recall vault, (2) NotebookLM, (3) both, (4) skip. When a literature folder, a vault or a NotebookLM notebook is at hand, also offer (5) a wording profile, even if the triggers above do not apply: an outlet profile of the conference and a topic profile for the terms (`d3-scientific-wording`, Step 1b). Print: `[HH:MM:SS] ENRICHMENT: [skipped|recall|notebooklm|both] [+ wording profile]`.
 3. **Resolve save location and create folder** (see Project setup section above).
 4. **Initialize progress.md** with phase-by-phase timestamps.
+5. **Wording brief.** Invoke `d3-scientific-wording` (Skill tool: `d3-scientific-wording:d3-scientific-wording`; when it is not listed, read `<wording-dir>/SKILL.md`). Genre `poster`; the outlet is the conference, the reader its attendees, the field comes from the paper. Ask together with the outline approval of Pass 0, not in a separate round: *"Wording: standard scientific (default) or Simplified Technical English (ASD-STE100: at most 25 words per sentence, one meaning per word; helps a mixed-language audience)?"* Record the brief under `## Wording` in `progress.md`. Print: `[HH:MM:SS] WORDING: poster, [venue], [standard|STE]`.
 
 ### Phase 2: Multi-pass build
 
@@ -415,6 +416,8 @@ Default budgets for the 2-column layout:
 | Empirical Results (col 1, bottom) | 30-60 words + 2-3 infoboxes + 1 comparison table + 3-citation Literature paragraph |
 
 If you exceed these by more than ~20%, you are overpacking. Cut sentences before adding line-spacing tweaks.
+
+**Wording.** Every sentence on the poster follows `d3-scientific-wording` (`<wording-dir>/references/rules.md`; with STE also `<wording-dir>/references/ste.md`): direct claims instead of "not X but Y", related work reported neutrally, claims within the evidence, one term per concept. The rules below are the poster's form on top of them.
 
 **Concise writing rules (apply during Pass 2):**
 
@@ -507,6 +510,14 @@ grep -c "Overfull\|Warning" poster.log
 
 A handful of underfull-hbox warnings is expected. Investigate `Overfull \hbox` exceeding 50pt (content too wide), `Font ... not found` (use XeLaTeX), or `File ... not found` (missing logo / figure / baposter.cls).
 
+### Step 4: Lint the wording
+
+Lint the wording of the source (add `--ste` when the user chose Simplified Technical English); fix every error and decide every warning:
+
+```bash
+uv run <wording-dir>/scripts/check_wording.py poster.tex --genre poster
+```
+
 ## Overflow & clipping
 
 baposter does NOT push overflow to a new page like the article class — **it silently clips**. This is the #1 cause of broken posters. There's no LaTeX error; you only see it in the rendered PNG.
@@ -575,7 +586,9 @@ When editing an EXISTING poster, **use git, not filename prefixes**. The working
    ```
 6. **Compile and validate** — see Compilation and validation above.
 
-**Promotion to `final/`:** when the user approves, copy `poster/drafts/{poster.tex, poster.pdf, baposter.cls, assets/}` into `poster/final/` with the SAME filenames. Write `final/README.md` capturing the date, short title, venue, and final review scores.
+**Wording corrections** from the user are logged verbatim under `## Wording` in `progress.md`, and each stated fix is applied everywhere it recurs on the poster.
+
+**Promotion to `final/`:** before copying, ask the watermark question of `d3-scientific-wording` (Step 5) once; clean `poster.tex` only on a yes, then recompile and rerun the checks. When the user approves, copy `poster/drafts/{poster.tex, poster.pdf, baposter.cls, assets/}` into `poster/final/` with the SAME filenames. Write `final/README.md` capturing the date, short title, venue, and final review scores.
 
 ## Macros & styling — at a glance
 
@@ -636,6 +649,7 @@ Before marking a poster complete:
 - [ ] Only D3 colors used
 - [ ] Tables use `booktabs` and NeurIPS style (baselines above `\midrule`)
 - [ ] Conciseness rules applied (no throat-clearing, verb-first bullets, one idea per sentence)
+- [ ] Wording: `check_wording.py` reports 0 errors, every warning decided; brief and corrections under `## Wording`
 
 **Visual validation**
 - [ ] PDF rendered to PNG and inspected
@@ -666,6 +680,8 @@ Before marking a poster complete:
 - **Bibliography filtering** — which 3-5 references to feature in the Literature paragraph
 - **Knowledge enrichment** — vault recall / NotebookLM / both / skip (only when the request is high-level)
 - **Review depth** — do not ask; use `standard` unless the user's words pick `light` or `full`, and say which one runs
+- **Wording mode** — standard scientific wording (default) or Simplified Technical English; asked with the outline approval
+- **Invisible marks** — the watermark question of `d3-scientific-wording`, once, before promotion to `final/`
 
 ### Decide independently
 

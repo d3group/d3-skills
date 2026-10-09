@@ -1,0 +1,22 @@
+<section id="estimator" data-nav="The clipped estimator" data-kicker="Core idea" data-hud="3">
+  <h2>Clipping the weights trades a little bias for a lot of variance</h2>
+
+  <p>The inverse propensity score (IPS) estimator, which reweights every logged reward by the ratio of the target policy's probability to the logging policy's probability, is unbiased whenever the logging policy puts positive probability on every action the target policy takes; however, its variance grows without bound as the logged propensities approach zero. [[paper:eq:ips]]</p>
+
+  <div class="eq" data-label="eq:ips"></div>
+
+  <p>Our estimator is carried out in two steps: the weights are first computed from the estimated propensities, and they are then clipped at a threshold $\tau$ that is set up by cross-validation on the logged data. It turns out that clipping at $\tau = 10$ removes 94 % of the variance while adding a bias of only 0.8 % on the simulated logs. [[result:results/clipping.csv]]</p>
+
+  <figure class="widget" id="fig-clip">
+    <figcaption><b>{fig}. Bias and variance as the threshold moves.</b>
+      <span class="try">Drag the threshold slider from 1 to 100 and watch how the two curves move, then switch the logging policy to the greedy one and look at what happens to the variance at small thresholds.</span>
+      <span class="notice">The variance is dominated by a handful of logged actions with tiny propensities; clipping them is what buys the reduction, and the bias stays small because those actions carry little reward.</span>
+    </figcaption>
+  </figure>
+
+  <div class="derivation" id="deriv-bias" data-title="Where the bias comes from">
+    <div class="dstep" data-why="The clipped weight equals the true weight whenever the true weight is below the threshold, so the bias only comes from the actions whose weight is above $\tau$, which are exactly the actions that the logging policy rarely takes.">
+      $$\mathbb{E}[\hat V_\tau] - V = -\,\mathbb{E}\big[(w - \tau)^+ \, r\big]$$
+    </div>
+  </div>
+</section>

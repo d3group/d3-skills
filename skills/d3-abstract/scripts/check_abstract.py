@@ -25,6 +25,7 @@ COMMENT = re.compile(r"(?<!\\)%.*$", re.MULTILINE)
 TIKZ_PATH_LINE = re.compile(r"\\(draw|path|fill|filldraw|clip|addplot)\b")
 
 # (level, label, pattern, advice). Patterns run on comment-stripped source, case-insensitive.
+# The mechanical core of d3-scientific-wording; its scripts/check_wording.py adds length, claims and hedging.
 WORDING_RULES: list[tuple[str, str, str, str]] = [
     # Dashes as punctuation
     ("E", "dash", r"---", "rewrite with a comma, colon, parentheses, or two sentences"),

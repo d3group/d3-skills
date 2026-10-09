@@ -26,11 +26,12 @@ Score each category 0-10 (10 = production-ready, 9 = ship-able with no fixes, <=
 Categories:
 1. Glance test -- title + box headers + headline number telegraph the contribution at 2m?
 2. Information hierarchy -- Motivation -> Problem -> Approach -> Results flows logically?
-3. Writing style -- concise, active voice, parallel lists, no LLM-isms ("leverage", "delve into", "key insight" filler)?
+3. Writing style -- the rules of d3-scientific-wording (<abs path to d3-scientific-wording/references/rules.md>; with STE also references/ste.md): direct claims (no "not X but Y"), related work reported neutrally, claims within the evidence, one idea per sentence, plain vocabulary, one term per concept; concise, active voice, parallel lists?
 4. Domain adaptation -- notation appropriate for the research field?
 5. Emphasis discipline -- \highlight{} <= 3 per box, \keypoint{} <= 1 per box?
 6. One message per box -- each box makes exactly one point?
 7. Bibliography -- 3-5 references, bold venue names, no orphan citations?
+8. Cold read -- read the poster as an attendee of <venue> who has only the poster: does every claim follow from what the boxes say before it, and is every term explained or standard for the venue? (This is the cold read of d3-scientific-wording, Step 4; no other agent runs it.)
 
 Output strictly in this Markdown format (the orchestrator will parse it):
 
@@ -44,6 +45,7 @@ Output strictly in this Markdown format (the orchestrator will parse it):
 | Emphasis discipline | N/10 | ... |
 | One message per box | N/10 | ... |
 | Bibliography | N/10 | ... |
+| Cold read | N/10 | sentences whose claim does not follow, terms used before explained |
 | **Overall** | **N/10** | minimum of the above |
 
 ### Specific fixes (only if Overall < 9)

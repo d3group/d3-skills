@@ -12,7 +12,7 @@ description: |
 
 # D3 Abstract
 
-> **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-abstract`; copied by hand: `~/.claude/skills/d3-abstract`). Substitute the real path in every command.
+> **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-abstract`; copied by hand: `~/.claude/skills/d3-abstract`). Substitute the real path in every command. `<wording-dir>` means `<skill-dir>/../d3-scientific-wording`, the shared wording skill that every D3 plugin ships.
 
 Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg branding. The default is one page. The user can choose two pages or more, for example for an extended abstract submission. The layout is slot-based: a `.tex` file fills a handful of macros, and each call of the page template produces one page with header, lead paragraph, two columns, and footer. Font: Inter. **Requires XeLaTeX. All Python runs through `uv`.**
 
@@ -32,7 +32,7 @@ Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg 
 │   └── check_abstract.py             # uv-run checker: pages, fill, wording, emphasis
 └── references/
     ├── macros.md                     # macros, cards, tables, charts, colors, fonts
-    ├── writing-style.md              # style and wording rules with examples
+    ├── writing-style.md              # information hierarchy, lead paragraph, style by document type
     ├── content-mapping.md            # input to LaTeX mapping, sections per document type
     ├── questions.md                  # question section guide (internal documents)
     └── troubleshooting.md            # compile errors and fixes
@@ -239,6 +239,7 @@ Every `Print:` line goes to the chat and gets appended to `progress.md`.
    5. **Missing content:** *"Is there anything outside your notes that belongs in the document, such as new results, a decision, or a blocker?"* For research documents add: *"Can you give me the formal setup and notation, or point me to the section of the draft that has it?"*
    6. **Figures:** *"Which figures exist already, and which are planned?"* Internal documents may use placeholders. Submission abstracts need the final figures.
    7. **Submission Abstract only:** authors and affiliations, venue and deadline, whether references count toward the page limit, whether the venue requires its own template, and the comparison conditions of the experiments (same data, same features, same tuning budget). The deadline goes into `progress.md` and `SUMMARY.md`. The document itself carries venue and page limit in the footer.
+   8. **Wording brief** (see Wording Rules): document type, venue and the request usually answer genre, outlet, field and reader. Ask in this round only for what is still open, typically the reader of an internal document. Simplified Technical English is used only when the user asks for it.
 
 3. **Knowledge enrichment (optional).**
 
@@ -251,6 +252,7 @@ Every `Print:` line goes to the chat and gets appended to `progress.md`.
    2. Ask NotebookLM: query your notebook for literature insights
    3. Both: vault context plus literature
    4. Skip: proceed with what you have provided
+   5. Wording profile (combinable with 1 to 3): measure how your papers, the venue or the topic's literature is written
 
    For 1 to 3: which topic or question should I search for?
    ```
@@ -281,7 +283,9 @@ Every `Print:` line goes to the chat and gets appended to `progress.md`.
 
    **Fallbacks.** QMD missing: offer NotebookLM or skip. NotebookLM authentication expired: suggest `notebooklm login` or skip. No results: offer different keywords or skip.
 
-   Print: `[HH:MM:SS] ENRICHMENT: [skipped | recall | notebooklm | both]`
+   **Wording profile.** Offer option 5 also when the triggers above do not apply but a literature folder, a vault or a NotebookLM notebook is at hand. On a yes, follow Step 1b of `d3-scientific-wording` (`<wording-dir>/references/profiles.md`): an outlet profile of the venue for a Submission Abstract, a topic profile for the terms.
+
+   Print: `[HH:MM:SS] ENRICHMENT: [skipped | recall | notebooklm | both] [+ wording profile]`
 
 4. **Create the project folder** (see Project Structure) with `drafts/` and `final/`, and copy `assets/` into `drafts/`.
    Print: `[HH:MM:SS] CREATED: Project folder structure`
@@ -368,7 +372,7 @@ Write LaTeX only after the user has approved the outline.
 
 #### Pass 2: Fill and Compile
 
-Read `references/writing-style.md` and `references/macros.md` before filling. On compile errors, read `references/troubleshooting.md`.
+Invoke `d3-scientific-wording` (see Wording Rules) and read `references/writing-style.md` and `references/macros.md` before filling. On compile errors, read `references/troubleshooting.md`.
 
 Work page by page:
 
@@ -408,6 +412,12 @@ Work page by page:
    | LOG | Every TeX error, overfull boxes |
 
    Fix every error (`E`). Read every warning (`W`) and either fix it or confirm that it is legitimate, for example an established technical term. Rerun until the result is `PASS`. The fill value measures the lowest element of each column. Gaps inside a column show only in the page image.
+
+   Then run the wording lint, which adds sentence length, claims beyond the evidence and stacked hedges to the checker's WORDING section (add `--ste` when the user chose Simplified Technical English):
+
+   ```bash
+   uv run <wording-dir>/scripts/check_wording.py v1_abstract.tex --genre abstract
+   ```
 
 3. **Inspect every page image** in `review/` with the Read tool:
    - Page count equals N, and the footer shows `page / N` for N above 1
@@ -452,12 +462,13 @@ Dispatch two review subagents in parallel through the Agent or Task tool. Give e
 Scoring: 10 means no findings. 9 means cosmetic findings only. Every violated rubric item costs at least 2 points, so a review with one violated item scores 8 or lower. Record both scores and both fix lists in `progress.md` for every round.
 
 **Reviewer 1: Content**
+- Cold read first, before opening the user's material: the text as a reader of the venue with only this page sees it. Every sentence's claim follows from what precedes it, and every term is explained before it is used (the cold read of `d3-scientific-wording`, Step 4; no other agent runs it)
 - Lead paragraph states a claim with a number
 - Scan Test passes for page 1
 - Most important information comes first in each column
 - One message per section, parallel lists, active voice
 - Notation fits the research domain
-- Wording rules hold: dashes, contrast constructions, neutral tone toward related work
+- Wording rules of `d3-scientific-wording` hold (`<wording-dir>/references/rules.md`): direct claims, neutral related work, claims within the evidence, short sentences, plain vocabulary, one term per concept
 - Every number and every reference is traceable to the user's material, and every added statement is on the list for the user (see Content Integrity)
 - Multi-page documents: page 1 is self-contained, and every later page adds information
 
@@ -477,8 +488,9 @@ Scoring: 10 means no findings. 9 means cosmetic findings only. Every violated ru
    - **Completeness:** *"Is anything missing that you would like added?"*
    - **Accuracy:** *"Are all numbers and claims accurate, or does anything need correction?"*
    - **Approval:** *"Do you approve this version as final?"*
+   - **Invisible marks (optional):** the watermark question of `d3-scientific-wording` (Step 5), once. Clean `v<N>_abstract.tex` only on a yes, then recompile and rerun both checks.
 
-   Corrections lead to a new version (see Version Management) and a new validation.
+   Corrections lead to a new version (see Version Management) and a new validation. Log the user's wording corrections verbatim under `## Wording` in `progress.md` and apply each stated fix everywhere it recurs.
 2. After approval, copy the version to `final/` as `YYYYMMDD_short_title.tex` and `.pdf`, together with a copy of `assets/`. Compile once in `final/` to confirm that it builds there, then delete `.aux`, `.log`, and `.out` files in `drafts/` and `final/`.
 3. Create `SUMMARY.md`:
 
@@ -558,24 +570,16 @@ Rules:
 
 ## Wording Rules
 
-These rules apply to every sentence in the document, including captions, table notes, and questions. The checker reports clear violations as errors and patterns with legitimate uses as warnings. Both need a decision. `references/writing-style.md` has the full guide with examples.
+The wording of every sentence, including captions, table notes and questions, follows the **`d3-scientific-wording`** skill. Invoke it before Pass 2 (Skill tool: `d3-scientific-wording:d3-scientific-wording`). When it is not listed as a skill, read `<wording-dir>/SKILL.md` instead: `<wording-dir>` means `<skill-dir>/../d3-scientific-wording`, which every installation of a D3 plugin ships.
 
-1. **Dashes only in number ranges.** Write ranges as `2024--2026` or `9--26`. Sentences use commas, colons, parentheses, or a full stop. Titles, subtitles, and footers separate parts with `\enspace|\enspace`. Bold run-in labels end with a period: `\textbf{Sepsis model v2.} Retrained on ...`
-2. **State the claim directly.** Write what the method is and does. Constructions of the "not X but Y" family (also "not only X", "X, not Y", "rather than X") get replaced by the positive statement. If a contrast carries information, give both facts in separate sentences.
+- **Brief.** Genre: `abstract` (Submission Abstract, extended abstract) or `internal update` (Research Update, Weekly Update, Project Overview). Outlet: the venue, or the group meeting. Field and reader: from the content and question 8 of Phase 1. Mode: standard, Simplified Technical English only on request. Record the brief, the term sheet and the user's wording corrections under `## Wording` in `progress.md`.
+- **Core rules,** in short: direct claims (no "not X but Y" family), neutral related work, claims within the evidence, one idea per sentence, plain vocabulary, one term per concept. The rules with examples are in `<wording-dir>/references/rules.md`.
+- **Checks.** `check_abstract.py` enforces the mechanical core and reports clear violations as errors and patterns with legitimate uses as warnings. `check_wording.py` adds sentence length, claims beyond the evidence and stacked hedges. Both need a decision for every finding.
 
-   | Before | After |
-   |--------|-------|
-   | "Our method is not a heuristic but an exact algorithm." | "Our method is an exact algorithm." |
-   | "We optimize decisions rather than predictions." | "We train the forecast on the dispatch cost." |
+Rules of the abstract's form stay here, because they concern the layout:
 
-3. **Report related work neutrally.** For each cited work, state what it does, under which assumptions, and with which result. Then state your setting as a fact. No grades in either direction: neither dismissal ("fails to", "suffers from", "merely", "overlooks") nor courtesy praise ("seminal", "a valuable first step", "significant strides").
-
-   | Before | After |
-   |--------|-------|
-   | "While prior work has made significant strides, existing methods fail to handle state constraints." | "SPO+ [1] covers linear objectives. Storage scheduling adds inter-temporal state constraints." |
-   | "Unlike previous approaches, we ..." | "Method A [2] assumes i.i.d. prices. We study autocorrelated prices." |
-
-4. **Plain vocabulary.** "Use" for "leverage", "utilize", "harness". "To" for "in order to". "Main" or "central" for "key". Delete "it is worth noting", "comprehensive", "crucial", "pivotal", "seamless". State findings directly in place of "delve into", "shed light on", "pave the way".
+1. **Dashes only in number ranges.** Write ranges as `2024--2026` or `9--26`. Titles, subtitles, and footers separate parts with `\enspace|\enspace`. Bold run-in labels end with a period: `\textbf{Sepsis model v2.} Retrained on ...`
+2. **Lead paragraph and Scan Test** as in `references/writing-style.md`, sections 1 and 2.
 
 ## Content Integrity
 
@@ -670,11 +674,12 @@ List 2 to 5 questions and write them into LaTeX after the user approves or edits
 - [ ] Internal documents: question section approved by the user
 - [ ] Submission abstracts: no placeholders, no question section, references verified
 
-**Wording**
+**Wording** (`d3-scientific-wording`)
 - [ ] Checker reports 0 errors, and every warning was read
-- [ ] No dashes outside number ranges
-- [ ] No "not X but Y" constructions
-- [ ] Related work reported neutrally
+- [ ] `check_wording.py` reports 0 errors, and every warning was decided
+- [ ] No dashes outside number ranges, no "not X but Y" constructions
+- [ ] Related work reported neutrally; claims within the evidence
+- [ ] Wording brief and corrections recorded under `## Wording` in `progress.md`
 
 **Visual**
 - [ ] Every page image inspected
@@ -694,7 +699,7 @@ List 2 to 5 questions and write them into LaTeX after the user approves or edits
 8. **Lead paragraph = claim** with a number, at most 50 words
 9. **Page 1 is self-contained** in multi-page documents
 10. **Emphasis limits**: 3 `\highlight{}` and 3 infoboxes per page, 1 `\keypoint{}` per column, headline number in the lead, other numbers in infoboxes
-11. **Wording**: dashes only in number ranges, direct claims, neutral related work, plain vocabulary
+11. **Wording**: invoke `d3-scientific-wording`; dashes only in number ranges, direct claims, neutral related work, claims within the evidence, plain vocabulary; run `check_wording.py`
 12. **Content integrity**: numbers and references from the user's material, added statements listed for the user
 13. **Only D3 colors**: no new `\definecolor`, no hex codes
 14. **Run the checker** after every full compile (`--submission` for submissions), then inspect every page image

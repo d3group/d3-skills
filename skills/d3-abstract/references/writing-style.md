@@ -1,13 +1,13 @@
 # Writing Style
 
-Read this before filling content (Pass 2). The goal is text that reads as written by a researcher in the group: direct, specific, and free of stock phrasing. The checker (`scripts/check_abstract.py`) enforces the mechanical part of these rules.
+Read this before filling content (Pass 2), after invoking `d3-scientific-wording`. The goal is text that reads as written by a researcher in the group: direct, specific, and free of stock phrasing. The wording rules themselves live in `<wording-dir>/references/rules.md` (`<wording-dir>` is `<skill-dir>/../d3-scientific-wording`); this file covers what is specific to abstracts. The checker (`scripts/check_abstract.py`) enforces the mechanical part.
 
 ## Contents
 
 1. Information hierarchy
 2. Lead paragraph
 3. Sentence and section rules
-4. Wording rules (dashes, direct claims, related work, vocabulary)
+4. Wording rules: dashes in LaTeX, and where the shared rules live
 5. References
 6. Style by document type
 7. Domain adaptation
@@ -80,61 +80,13 @@ The lead paragraph is the most-read element after the title.
 | "Research Update -- March 6, 2026" | "Research Update\enspace\|\enspace March 6, 2026" |
 | "One result stands out -- the regret halves." | "One result stands out: the regret halves." |
 
-### 4.2 State the claim directly
+### 4.2 The shared wording rules
 
-Say what the method is, what it does, and what was measured. The "not X but Y" family announces a correction of something nobody said, and the reader has to process X only to discard it.
+Direct claims instead of the "not X but Y" family, neutral reports of related work, claims within the evidence, short sentences and plain vocabulary are the rules of all D3 documents. They live in one place, with before/after examples: `<wording-dir>/references/rules.md`, sections 1 (direct claims), 2 (related work), 3 (claims and evidence), 4 (sentences) and 5 (vocabulary). For abstracts, three of them matter most:
 
-Patterns to replace: "not X but Y", "not only X but also Y", "not just X", "X, not Y", "rather than X", "it is not about X, it is about Y", "more than just X", "goes beyond X".
-
-| Before | After |
-|--------|-------|
-| "Our method is not a heuristic but an exact algorithm." | "Our method is an exact algorithm." |
-| "We not only reduce regret but also cut runtime." | "We reduce regret by 31\% and runtime by 58\%." |
-| "The bottleneck is the solver, not the network." | "The solver accounts for 85\% of the training time." |
-| "We optimize decisions rather than predictions." | "We train the forecast on the dispatch cost." |
-
-If a contrast carries information, give both facts their own sentence: "The two-stage model minimizes RMSE. The decision-focused model minimizes regret."
-
-### 4.3 Report related work neutrally
-
-For each cited work, state what it does, under which assumptions, and with which result. Then state your own setting as a fact. The difference between the two sentences is your positioning. It needs no adjectives.
-
-Avoid grades in both directions:
-
-- Dismissal: "fails to", "suffers from", "struggles with", "overlooks", "neglects", "falls short", "merely", "unlike previous approaches", "existing methods cannot"
-- Courtesy praise before a dismissal: "seminal", "pioneering", "a valuable first step", "has made significant strides", "laid the groundwork", "While prior work ..., it ..."
-
-| Before | After |
-|--------|-------|
-| "While prior work has made significant strides, existing methods fail to handle state constraints." | "SPO+ [1] covers linear objectives without state dynamics. Storage scheduling adds inter-temporal state constraints." |
-| "Unlike previous approaches, which suffer from high variance, our estimator is stable." | "The IPS estimator [2] has variance proportional to the inverse propensity. Our estimator bounds the weights at $\tau$." |
-| "The seminal work of Smith [3] overlooks delayed feedback." | "Smith [3] studies immediate feedback. We study delays of up to 7 days." |
-| "Naive two-stage baselines" | "Two-stage models trained on MSE" |
-
-Further conventions:
-
-- Name comparison methods by their published names, and cite them when bibliographic data is available
-- Report the comparison conditions that the user has confirmed: same data, same features, same tuning budget
-- When the user supplies only a bare citation, describe the work at the level of its title
-- Words with an established technical meaning stay: "Naive Bayes", "robust optimization", "doubly robust estimator"
-- State the limits of your own work in the same neutral register ("Scope: price-taking operator, perfect foresight of the battery state")
-
-### 4.4 Plain vocabulary
-
-| Avoid | Write |
-|-------|-------|
-| "key" as adjective ("key insight") | "main", "central", or drop it |
-| "It is important to note that", "It is worth noting" | delete and state the point |
-| "leverage", "utilize", "harness" | "use" |
-| "delve into" | "examine", or state the finding |
-| "in order to" | "to" |
-| "plays a crucial role" | name the specific role |
-| "robust" without technical meaning | name the property |
-| "comprehensive" | delete, or name what is covered |
-| "shed light on" | "clarify", or state the finding |
-| "pave the way" | state what it enables |
-| "crucial", "pivotal", "seamless", "cutting-edge" | a specific, measurable description |
-| "showcase", "underscore" | "show" |
+- **The lead paragraph states a claim with its number** (section 2 above) and stays within the evidence: "lowers regret by 31\%", never "dramatically improves".
+- **Related work in 2 to 4 sentences**, each saying what a work does, under which assumptions, with which result. The own setting follows as a fact.
+- **A Submission Abstract argues; it does not list definitions.** At most the one central definition, verbatim as in the paper.
 
 ## 5. References
 

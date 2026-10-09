@@ -26,10 +26,10 @@ my-presentation/          <-- Create this folder FIRST
 
 1. **Create subfolder**: `mkdir <presentation-name>` - DO THIS FIRST!
 2. **Assemble assets**: `mkdir <name>/assets && cp -r <skill-dir>/assets/latex/* <skill-dir>/assets/fonts <name>/assets/` (the `.sty` expects `assets/d3-beamer.sty`, `assets/Slide_template.pdf`, `assets/fonts/` next to the `.tex` file)
-3. **Read the style guide**: [style-guide.md](style-guide.md), including the Wording section
+3. **Invoke `d3-scientific-wording` and read the style guide**: [style-guide.md](style-guide.md), including the Wording section (SKILL.md, Workflow step 3)
 4. **Create .tex file**: In the subfolder, use the template structure below
 5. **Compile**: Run `xelatex <filename>.tex` twice (required for hyperlinks and TikZ positioning)
-6. **Verify** at the review depth chosen in SKILL.md Step 0 (light: compile log clean; standard: one reviewer pass over the .tex and the PDF pages; full: the two-agent loop)
+6. **Verify** at the review depth chosen in SKILL.md Step 0, after the wording lint (`uv run <wording-dir>/scripts/check_wording.py <name>.tex`) (light: compile log clean; standard: one reviewer pass over the .tex and the PDF pages; full: the two-agent loop)
 
 ## Template Structure
 

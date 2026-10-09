@@ -150,15 +150,18 @@ Checked at full size, on every build step, not only on the contact sheet:
 
 ## 4. Wording (both formats)
 
-Prose must read as written by the presenter.
+Prose must read as written by the presenter. The wording rules of all D3 documents live in the `d3-scientific-wording` skill: `<wording-dir>/references/rules.md` (`<wording-dir>` is `<skill-dir>/../d3-scientific-wording`), and in STE mode also `references/ste.md`. Its lint reads `slides.py` and `.tex` decks. In short:
 
 - No "not X, but Y" and no "it's not about X, it's about Y" constructions. State Y.
 - No em-dashes. Use a comma, a colon, or a new sentence.
-- Related work: say what it contributed and state the gap as a fact. No "merely", "simply", "fail to", "only", "overlook".
-- No marker vocabulary: leverage, robust framework, comprehensive, transformative, synergies, delve, seamless.
-- Titles vary in length, from two words to a full sentence. No forced groups of three.
+- Related work: say what it contributed and state the gap as a fact. No "merely", "simply", "fail to", "overlook".
+- Claims within the evidence: numbers instead of "dramatically" or "large-scale", "significant" only with a test.
 - First person plural for own work: we analysed, we observe, our approach.
-- Concrete numbers instead of "large-scale"; one condition clause instead of an adjective stack.
+
+What is specific to slides:
+
+- Titles vary in length, from two words to a full sentence. No forced groups of three.
+- One condition clause instead of an adjective stack; labels on objects, full sentences in the notes.
 
 ### Voice and rigour
 - **Present, do not defend.** The slide states what the research does and finds. No pre-emptive defences ("the theory makes no claim that ...", "the weakest joint is ..."); objections belong on backup slides titled as the answer.

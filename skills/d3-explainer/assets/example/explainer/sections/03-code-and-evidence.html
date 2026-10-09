@@ -1,7 +1,7 @@
 <section id="code-and-evidence" data-nav="Code and evidence" data-kicker="Realization" data-hud="5">
   <h2>How the code realizes it, and what the simulation shows</h2>
 
-  <p>The repository computes the same number twice, once from the formula and once by simulating queues, and the two routes meet only in the results file.</p>
+  <p>The repository computes the same number twice: once from the formula and once from simulated queues. The two routes meet only in the results file.</p>
 
   <figure class="widget" id="fig-pipeline">
     <figcaption><b>{fig}. Two routes to the same number.</b>
@@ -32,7 +32,7 @@
   <figure class="widget" id="fig-results">
     <figcaption><b>{fig}. Simulated against exact success rates, from <code>results/success.json</code>.</b>
       <span class="try">Hover the curves, switch to $n = 100$, then show the difference.</span>
-      <span class="notice">Simulation and formula differ by at most 0.007, about two standard errors of a share estimated from 20,000 runs. For $n = 100$ the grid moves in steps of five, so the best stored point of the exact series (35 skipped, gray line) is not the true optimum (37 skipped).</span>
+      <span class="notice">Simulation and formula differ by at most 0.007, about two standard errors of a share estimated from 20,000 runs. For $n = 100$ the grid moves in steps of five. The best stored point of the exact series (35 skipped, gray line) therefore differs from the true optimum (37 skipped).</span>
     </figcaption>
   </figure>
   <script type="application/json" id="data-success" data-src="results/success.json"></script>
@@ -64,8 +64,8 @@
   <h3>What a single queue looks like</h3>
   <figure class="widget" id="fig-queue">
     <figcaption><b>{fig}. One arrival order, one decision.</b>
-      <span class="try">Press <em>New queue</em> a few times, then press <em>Impatient: 10 %</em> and repeat.</span>
-      <span class="notice">At 37 % close to four in ten queues end with the best candidate; the tally over 400 fresh queues says so. At 10 % the rule usually stops at an early, mediocre record and the tally drops to about a quarter.</span>
+      <span class="try">Press <em>New queue</em> a few times. Then press <em>Impatient: 10 %</em> and repeat.</span>
+      <span class="notice">At 37 % close to four in ten queues end with the best candidate. The tally over 400 new queues shows this. At 10 % the rule usually stops at an early, mediocre record. The tally then decreases to about a quarter.</span>
     </figcaption>
   </figure>
   <script>
