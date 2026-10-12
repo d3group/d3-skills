@@ -363,7 +363,7 @@ body.look-uni .stepdots{left:74px;right:auto;top:660px}
 body.look-uni ul>li::before{background:var(--uwblue)}
 body.look-uni .colhead{font-size:18px;font-weight:600;color:var(--navy);margin-bottom:8px}
 body.look-uni .hl{color:var(--berry)}
-body.look-uni .take{position:absolute;left:74px;top:578px;width:902px;min-height:84px;box-sizing:border-box;display:block;
+body.look-uni .take{position:absolute;left:74px;bottom:58px;width:902px;min-height:84px;box-sizing:border-box;display:block;
  background:var(--sand);border:0;padding:28px 24px 26px 72px;font-size:20px;font-weight:500;color:#000;line-height:1.35}
 body.look-uni .take::before{content:'';position:absolute;left:14px;top:50%;width:37px;height:32px;transform:translateY(-50%);
  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 37 32'%3E%3Cpath d='M0 16h35M19 .5 35 16 19 31.5' stroke='%231E1F1C' stroke-width='1.5' fill='none'/%3E%3C/svg%3E") center/contain no-repeat}
@@ -417,4 +417,21 @@ body.look-uni .uw-thx{position:absolute;left:74px;top:171px;width:514px;height:1
 body.look-uni .uw-contact{top:426px;padding:40px 35px 0;box-sizing:border-box;color:#fff;font-size:21px;line-height:1.7}
 body.look-uni .uw-contact b{display:block;font-weight:700;margin-bottom:6px}
 body.look-uni .uw-web{margin-top:4px}
+/* kit objects toned down to the master's plain style: no cards, no icons, sans-serif labels */
+body.look-uni :is(.k-tkick,.k-lane,.k-why,.k-cname,.k-rk,.k-lcap,.k-legend,.k-ulegend,.k-gends,.k-vrow .m,.k-bl,.prov){
+ font-family:inherit;letter-spacing:.01em;text-transform:none;font-size:14px}
+body.look-uni .k-tile{background:none;border:0;border-top:1px solid #D3D6DC;border-radius:0;padding:12px 4px 4px;color:#000;font-size:20px}
+body.look-uni .k-tile.orange{border-top:2px solid var(--coral)}
+body.look-uni .k-tkick{font-size:15px;font-weight:600;color:var(--uwblue)}
+body.look-uni .k-tkick .ico{display:none}
+body.look-uni .k-tbig,body.look-uni .k-tile.teal .k-tbig,body.look-uni .k-tile.gray .k-tbig{color:var(--navy);font-size:22px;margin-top:4px}
+body.look-uni .k-tile.orange .k-tbig{color:var(--berry)}
+body.look-uni .k-tlines{font-size:19px;gap:4px}
+body.look-uni .sl .k-tlines>li::before{background:var(--uwblue);width:7px;height:7px}
+body.look-uni .k-callout{border-radius:0}
+body.look-uni .k-callout.quiet{background:var(--sand);border:0;color:#000}
+body.look-uni .k-callout.quiet b{color:var(--berry)}
+body.look-uni .k-chip{border-radius:0;border-color:#D3D6DC}
+body.look-uni .k-proof .k-pbox{border-radius:0}
+body.look-uni .k-table th{font-family:inherit;letter-spacing:.01em;text-transform:none;font-size:15px;font-weight:600;color:var(--navy)}
 """
