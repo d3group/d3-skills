@@ -24,6 +24,8 @@ class Model(unittest.TestCase):
         self.assertIn('width:1133px;height:432px', K.model([K.node('a', 'A', x=0, y=0)], []))
         self.assertIn('width:547px;height:432px', K.model([K.node('a', 'A', x=0, y=0)], [], box='col'))
         self.assertIn('width:300px;height:200px', K.model([K.node('a', 'A', x=0, y=0, w=100)], [], box=(300, 200)))
+        B.meta(title='T', look='uni')
+        self.assertIn('width:1137px;height:420px', K.model([K.node('a', 'A', x=0, y=0)], []))
 
     def test_arrow_tip_touches_the_target_border(self):
         html = K.model([K.node('a', 'A', x=0, y=100, w=200, h=60), K.node('b', 'B', x=500, y=100, w=200, h=60)],

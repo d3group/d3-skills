@@ -27,7 +27,8 @@ SIGN_LABEL = {'pos': 'positive', 'neg': 'negative', 'ind': 'indeterminate', 'mod
 
 # Region sizes per look, in px: the body box and the column boxes of onecol/twocol/twocoltakeaway (chrome.py).
 BOX = {'klar': {'body': (1108, 400), 'col': (530, 400), 'short': (530, 318)},
-       'beamer': {'body': (1133, 432), 'col': (547, 432), 'short': (547, 274)}}
+       'beamer': {'body': (1133, 432), 'col': (547, 432), 'short': (547, 274)},
+       'uni': {'body': (1137, 420), 'col': (548, 420), 'short': (548, 335)}}
 
 
 def _attr(s=None, k=None, soft=False):

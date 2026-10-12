@@ -23,7 +23,7 @@ Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abst
 |-------|---------|-------------|-----------|
 | [d3-abstract](skills/d3-abstract/) | 1.1.0 | Abstracts, extended abstracts, one-pagers and research updates as A4 PDFs | LaTeX template, style checker |
 | [d3-poster](skills/d3-poster/) | 1.1.0 | A0 conference posters from a paper, an Overleaf submodule or a repo of results | baposter class, TikZ recipes, two-agent review |
-| [d3-presentation](skills/d3-presentation/) | 1.4.0 | Presentations as LaTeX Beamer PDFs or interactive HTML decks where every slide centres on a designed object: model figures that build, bars, gauges, replayed stimuli, live instruments; presenter window with pace, overview and Q&A interactions | Beamer theme, HTML deck engine and component kit, layout and signature lint |
+| [d3-presentation](skills/d3-presentation/) | 1.5.0 | Presentations as LaTeX Beamer PDFs or interactive HTML decks (also in the University of Würzburg design for teaching, `look='uni'`) where every slide centres on a designed object: model figures that build, bars, gauges, replayed stimuli, live instruments; presenter window with pace, overview and Q&A interactions | Beamer theme, HTML deck engine and component kit, layout and signature lint |
 | [d3-explainer](skills/d3-explainer/) | 0.10.0 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 
 ## Review depth: how many tokens a run spends
