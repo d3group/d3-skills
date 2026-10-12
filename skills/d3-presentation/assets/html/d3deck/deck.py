@@ -459,7 +459,7 @@ def _calm(i, s, inner):
     if 'class="refs"' in inner:
         return
     text = _strip(MATH.sub(' formula ', re.sub(r'<(pre|svg|style)\b.*?</\1>', ' ', inner, flags=re.S)))   # a formula reads as one word, not as its TeX tokens
-    words, bullets = len(text.split()), inner.count('<li')
+    words, bullets = len(text.split()), len(re.findall(r'<li[\s>]', inner))   # not <line> in an svg
     kinds = [k for k, pat in KINDS if re.search(pat, inner)]
     if s.steps > 4:
         warnings.warn(f'{name}: {s.steps} steps. More than 4 builds on one slide reads as fidgeting; split the slide or reveal clusters')

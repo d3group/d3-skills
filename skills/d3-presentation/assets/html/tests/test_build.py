@@ -231,6 +231,14 @@ class Output(unittest.TestCase):
         with self.assertRaises(ValueError):
             B.titleslide(cover='pink')
 
+    def test_svg_lines_are_not_bullets(self):
+        B.meta(title='T', look='uni')
+        B.onecol('Graph', '<svg>' + '<line x1="0" y1="0" x2="1" y2="1"/>' * 9 + '</svg><ul><li>a</li></ul>')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.build()
+        self.assertFalse([x for x in w if 'bullets' in str(x.message)])
+
     def test_footer_and_numbers_by_kind(self):
         small_deck()
         doc = self.build()

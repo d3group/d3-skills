@@ -354,7 +354,7 @@ body.look-uni .col{top:225px;width:548px;height:420px}
 body.look-uni .col.l{left:74px}
 body.look-uni .col.r{left:663px}
 body.look-uni .col.short{height:335px}
-body.look-uni .uw-foot{position:absolute;left:74px;top:680px;width:1060px;height:23px;display:flex;align-items:center;font-size:13.3px;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.look-uni .uw-foot{position:absolute;left:74px;top:680px;width:760px;height:23px;display:flex;align-items:center;font-size:13.3px;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body.look-uni .uw-num{position:absolute;left:1169px;top:671px;width:42px;height:49px;background:var(--navy);color:#fff;font-size:13.3px;
  display:flex;align-items:center;justify-content:center;line-height:1}
 body.look-uni .trk{left:700px;top:42px;width:511px;height:24px}

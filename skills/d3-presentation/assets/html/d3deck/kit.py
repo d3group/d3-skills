@@ -933,6 +933,7 @@ table.k-table tr:last-child td{border-bottom:0}
 body.look-klar .kf-foot .prov{margin-left:auto;margin-right:0;max-width:640px;font-size:10.5px}
 body.look-klar .kf-foot .prov+.kf-num{margin-left:22px}
 body.look-beamer .prov{position:absolute;right:75px;top:614px;max-width:900px;text-align:right}
+body.look-uni .prov{position:absolute;left:850px;top:680px;width:300px;height:23px;line-height:23px;text-align:right;color:#6B7688}
 """
 
 # ── JS ───────────────────────────────────────────────────────────────────
