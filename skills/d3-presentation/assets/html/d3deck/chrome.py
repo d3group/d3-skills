@@ -212,8 +212,9 @@ def uni_title(title, subtitle='', presenter='', date='', cover='navy'):
     """Deckblatt. cover='navy' (all navy, seal), 'band' (white, navy band with the seal), 'photo' (Würzburg skyline)."""
     if cover not in ('navy', 'band', 'photo'):
         raise ValueError("cover must be 'navy', 'band' or 'photo'")
-    lines = ''.join(f'<div class="{c}">{t}</div>' for c, t in
-                    (('uw-tsub', subtitle), ('uw-tname', presenter), ('uw-tdate', date)) if t)
+    who = ''.join(f'<div class="{c}">{t}</div>' for c, t in (('uw-tname', presenter), ('uw-tdate', date)) if t)
+    lines = (f'<div class="uw-meta">' + (f'<div class="uw-tsub">{subtitle}</div>' if subtitle else '<div></div>')
+             + f'<div class="uw-who">{who}</div></div>')
     h = f'<div class="uw-cover uw-c-{cover}">'
     if cover == 'photo':
         h += '<div class="uw-photo"></div><div class="uw-box"></div>'
@@ -346,7 +347,7 @@ body.look-uni{font-family:'Inclusive Sans UW',system-ui,sans-serif;
 body.look-uni .sl{color:#000;font-size:24px;line-height:1.4;font-weight:400}
 body.look-uni .uw-logo{position:absolute;left:72px;top:23px;width:186px;height:55px;background:center/contain no-repeat}
 body.look-uni .uw-rule{position:absolute;left:73px;top:94px;width:1138px;height:1px;background:#D3D6DC}
-body.look-uni .uw-title{position:absolute;left:74px;top:111px;width:1137px;font-size:32px;font-weight:600;line-height:1.2;color:var(--navy);text-wrap:balance}
+body.look-uni .uw-title{position:absolute;left:74px;top:111px;width:1137px;font-size:32px;font-weight:600;line-height:1.2;color:var(--navy);text-wrap:pretty}
 body.look-uni .uw-title .kick{color:var(--berry);margin-right:.3em}
 body.look-uni .uw-title .sub{display:block;font-size:19px;font-weight:400;line-height:1.45;color:#3C4658;margin-top:6px;max-width:80ch}
 body.look-uni .body{left:74px;top:225px;width:1137px;height:420px}
@@ -398,13 +399,16 @@ body.look-uni .uw-band{width:1202px}
 body.look-uni .uw-box{width:616px}
 body.look-uni .uw-photo{position:absolute;inset:0;background:center/cover no-repeat}
 body.look-uni .uw-ttitle{position:absolute;left:74px;top:202px;width:1137px;height:159px;display:flex;align-items:flex-end;
- font-size:40px;font-weight:700;line-height:1.15;text-wrap:balance}
+ font-size:40px;font-weight:700;line-height:1.15;text-wrap:pretty}
 body.look-uni .uw-c-band .uw-ttitle{top:168px;height:192px}
 body.look-uni .uw-c-photo .uw-ttitle{top:113px;font-size:56px;text-shadow:0 2px 18px rgba(0,0,0,.35)}
-body.look-uni .uw-tsub{position:absolute;left:74px;top:452px;width:858px;font-size:24px;font-weight:600;line-height:1.25;color:#fff}
-body.look-uni .uw-c-band .uw-tsub,body.look-uni .uw-c-photo .uw-tsub{width:567px}
-body.look-uni .uw-tname{position:absolute;left:73px;top:549px;width:567px;font-size:21px;color:#fff}
-body.look-uni .uw-tdate{position:absolute;left:73px;top:621px;width:567px;font-size:21px;color:#fff}
+body.look-uni .uw-meta{position:absolute;left:74px;top:440px;width:858px;height:215px;display:flex;flex-direction:column;
+ justify-content:space-between;color:#fff}
+body.look-uni .uw-c-band .uw-meta,body.look-uni .uw-c-photo .uw-meta{top:455px;width:546px;height:188px}
+body.look-uni .uw-tsub{font-size:24px;font-weight:600;line-height:1.3;text-wrap:pretty}
+body.look-uni .uw-tsub::before{content:'';display:block;width:44px;height:3px;background:var(--coral);margin-bottom:14px}
+body.look-uni .uw-tname{font-size:20px;font-weight:600}
+body.look-uni .uw-tdate{font-size:17px;opacity:.78;margin-top:4px}
 body.look-uni .uw-dark .uw-rule{background:rgba(255,255,255,.55)}
 body.look-uni .uw-sk{position:absolute;left:74px;top:350px;font-size:15px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--sky)}
 body.look-uni .uw-sn{position:absolute;left:68px;top:380px;font-size:133px;font-weight:700;line-height:1;color:var(--sky)}
