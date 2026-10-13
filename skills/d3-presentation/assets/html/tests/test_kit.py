@@ -19,10 +19,11 @@ class Model(unittest.TestCase):
 
     def test_region_size_follows_the_look(self):
         html = K.model([K.node('a', 'A', x=0, y=0)], [])
-        self.assertIn('width:1108px;height:400px', html)
+        self.assertIn('width:1137px;height:420px', html)                  # every look shares the master's body box
         B.meta(title='T', look='beamer')
-        self.assertIn('width:1133px;height:432px', K.model([K.node('a', 'A', x=0, y=0)], []))
-        self.assertIn('width:547px;height:432px', K.model([K.node('a', 'A', x=0, y=0)], [], box='col'))
+        self.assertIn('width:1137px;height:420px', K.model([K.node('a', 'A', x=0, y=0)], []))
+        self.assertIn('width:548px;height:420px', K.model([K.node('a', 'A', x=0, y=0)], [], box='col'))
+        self.assertIn('width:548px;height:335px', K.model([K.node('a', 'A', x=0, y=0)], [], box='short'))
         self.assertIn('width:300px;height:200px', K.model([K.node('a', 'A', x=0, y=0, w=100)], [], box=(300, 200)))
         B.meta(title='T', look='uni')
         self.assertIn('width:1137px;height:420px', K.model([K.node('a', 'A', x=0, y=0)], []))
@@ -53,9 +54,9 @@ class Model(unittest.TestCase):
     def test_lanes_centre_nodes(self):
         html = K.model([K.node('a', 'A', col=0, y=60, w=200), K.node('b', 'B', col=3, y=60, w=200)], [], lanes=['1', '2', '3', '4'])
         lefts = [float(x) for x in re.findall(r'k-node[^>]*left:([\d.]+)px', html)]
-        lane_w = (1108 - 3 * 40) / 4
+        lane_w = (1137 - 3 * 40) / 4
         self.assertAlmostEqual(lefts[0], (lane_w - 200) / 2, places=1)
-        self.assertAlmostEqual(lefts[1] + 200, 1108 - (lane_w - 200) / 2, places=1)
+        self.assertAlmostEqual(lefts[1] + 200, 1137 - (lane_w - 200) / 2, places=1)
 
     def test_guards(self):
         with self.assertRaises(ValueError):
@@ -193,7 +194,7 @@ class Build(unittest.TestCase):
         B.js('window.KIT_OK = 1;')
         doc = self.build()
         self.assertIn('"tm": 90', doc)
-        self.assertIn('<span class="prov">Table 3 · N = 38</span>', doc)
+        self.assertIn('<div class="prov">Table 3 · N = 38</div>', doc)
         self.assertIn('window.KIT_OK = 1;', doc)
         self.assertIn('.k-tile{', doc)
         self.assertIn('D3Deck=Object.assign', doc)

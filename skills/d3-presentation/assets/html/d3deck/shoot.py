@@ -85,7 +85,7 @@ LINT_JS = r"""(o) => {
   const cls = el => (el.className && el.className.baseVal !== undefined ? el.className.baseVal : String(el.className || ''));
   const label = el => ({tag: el.tagName.toLowerCase(), cls: cls(el).slice(0, 60),
     text: (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 60)});
-  const CHROME = '.kf-foot,.trk,.stepdots,.fr-foot,.fr-num,.prov,.fr-uni,.fr-d3,.fr-d3t,.fr-bar,.fr-tab,.uw-logo,.uw-rule,.uw-foot,.uw-num';
+  const CHROME = '.trk,.stepdots,.prov,.uw-logo,.uw-rule,.uw-foot,.uw-num,.d3-co';
   const texts = [];
   const w = document.createTreeWalker(s, NodeFilter.SHOW_TEXT);
   for (let n = w.nextNode(); n; n = w.nextNode()) {
@@ -157,7 +157,7 @@ LINT_JS = r"""(o) => {
 # a statement() slide is a deliberate one-sentence design and counts as one, and so does a references() list.
 SIGNATURE_JS = r"""() => {
   const s = document.querySelector('.sl.on');
-  const CHROME = '.kf-foot,.trk,.stepdots,.fr-foot,.fr-num,.prov,.fr-uni,.fr-d3,.fr-d3t,.fr-bar,.fr-tab,.uw-logo,.uw-rule,.uw-foot,.uw-num';
+  const CHROME = '.trk,.stepdots,.prov,.uw-logo,.uw-rule,.uw-foot,.uw-num,.d3-co';
   const OBJ = 'img, svg:not(.ico), table, pre, .chev, .tl, .stat, .facts, .bignum, .stmt, .refs, [class^="k-"], [class*=" k-"]';
   const own = el => !el.closest(CHROME) && !el.closest('mjx-container');
   return {obj: [...s.querySelectorAll(OBJ)].some(own),

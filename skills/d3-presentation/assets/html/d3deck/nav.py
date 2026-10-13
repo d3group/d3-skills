@@ -18,7 +18,7 @@ CSS = r"""
 #pal{position:fixed;inset:0;background:rgba(6,8,12,.55);z-index:90;display:none;align-items:flex-start;justify-content:center;padding-top:11vh}
 #pal.on{display:flex}
 #pal .palbox{width:640px;max-height:64vh;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.5);
- display:flex;flex-direction:column;font-family:'Inter',system-ui,sans-serif}
+ display:flex;flex-direction:column;font-family:'Inclusive Sans UW','D3 Symbols',system-ui,sans-serif}
 #pal .palin{padding:14px 18px;border-bottom:1px solid #E4E8ED}
 #pali{width:100%;border:0;outline:0;font-size:16px;font-family:inherit;color:#0A0C10}
 #pall{overflow-y:auto}

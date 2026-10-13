@@ -17,12 +17,13 @@ from . import chrome, components, engine, kit, nav, paths, presenter
 
 STRUCTURAL = ('title', 'agenda', 'section', 'thankyou')
 NUMBERED_KINDS = ('content', 'agenda', 'section', 'backuphome')
-FACES = (('Inter_18pt-Regular.ttf', 400, 'normal'), ('Inter_18pt-Italic.ttf', 400, 'italic'),
-         ('Inter_18pt-SemiBold.ttf', 600, 'normal'), ('Inter_18pt-Bold.ttf', 700, 'normal'),
-         ('Inter_18pt-BoldItalic.ttf', 700, 'italic'))
-UNI_FACES = (('InclusiveSansUW-Regular.ttf', 400, 'normal'), ('InclusiveSansUW-Italic.ttf', 400, 'italic'),
-             ('InclusiveSansUW-Medium.ttf', 500, 'normal'), ('InclusiveSansUW-SemiBold.ttf', 600, 'normal'),
-             ('InclusiveSansUW-Bold.ttf', 700, 'normal'))
+FACES = (('InclusiveSansUW-Regular.ttf', 400, 'normal'), ('InclusiveSansUW-Italic.ttf', 400, 'italic'),
+         ('InclusiveSansUW-Medium.ttf', 500, 'normal'), ('InclusiveSansUW-SemiBold.ttf', 600, 'normal'),
+         ('InclusiveSansUW-Bold.ttf', 700, 'normal'))
+UNI_FACES = FACES
+# Inclusive Sans UW has no Greek, primes, arrows or math operators: 'D3 Symbols' (an Inter subset) fills them in.
+SYMBOL_FACES = (('D3Symbols-Regular.ttf', 400), ('D3Symbols-Bold.ttf', 700))
+SYMBOL_RANGE = 'U+0370-03FF,U+2032-2033,U+2190-21FF,U+2200-22FF,U+2713'
 LOOKS = ('klar', 'beamer', 'uni')
 DEFAULT_CHAIR = 'Chair of Information Systems and Business Analytics'
 DEFAULT_CHAIR_DE = 'Lehrstuhl für Wirtschaftsinformatik und Business Analytics'
@@ -81,10 +82,13 @@ def meta(title, subtitle='', date='', presenter='', chair=None, sections=(),
     """Deck metadata; call once before the first slide. Resets the deck. date is stored for the
     manifest only, like \\date in LaTeX; put it into the subtitle if it should appear.
     chair=None: the chair line in the language of the deck (English, or German with lang='de'); pass a string to override.
-    look='klar' (default): calm content slides: section tracker on top, kicker and one-claim title, mono foot with the
-    D3 logo, takeaway on a fixed baseline. look='beamer': the frame of the LaTeX template (uni logo, bar, footer tab).
-    look='uni': the University of Würzburg PowerPoint master without D3 branding (teaching): new logo, Inclusive Sans UW,
-    university palette, navy covers and dividers, sand takeaway bar; lang='de' switches its labels to German.
+    Every look uses the frame of the University of Würzburg PowerPoint master (2025 corporate design): new logo top
+    left over a hairline, footer line 'presenter | chair | title', page number in a navy tab, Inclusive Sans UW.
+    look='klar' (default): the D3 look: D3 logo top right, section tracker in the header, orange kicker and one-claim
+    title, navy question dividers that list the part's slides, sand takeaway bar with an orange rule.
+    look='beamer': the same D3 frame with the conventions of the LaTeX theme (no tracker unless tracker=True, then in
+    the footer band; dividers without the slide list). look='uni': the university master without D3 branding, for
+    teaching (berry text accents, coral seal). lang='de' switches the labels to German.
     reveal='ghost' (default): later steps stand as pale grey ghosts, so nothing is ever removed and nothing moves.
     reveal='hide': later steps are invisible until their step (they keep their place).
     math=None (default): MathJax is embedded when a slide contains $...$, \\(...\\), $$...$$ or \\[...\\]; True / False force it.
@@ -138,15 +142,15 @@ def _add(kind, title, inner, steps=1, notes='', src='', cls='', group=None, num=
 
 # ── slide functions (twins of the LaTeX macros) ──────────────────────────
 
-def titleslide(cover='navy', **kw):
-    """Title slide. cover only matters in the 'uni' look: 'navy' (default), 'band' or 'photo' (Würzburg skyline,
-    adds about 0.3 MB)."""
+def titleslide(cover=None, **kw):
+    """Title slide after the master's Deckblatt: title, subtitle, presenter and date. cover: 'band' (white with a navy
+    band; the default of the D3 looks, D3 logo next to the university logo), 'navy' (all navy; the default of the uni
+    look) or 'photo' (Würzburg skyline, adds about 0.3 MB)."""
     _need_meta()
     m = D.meta
-    if m['look'] == 'uni':
-        inner = chrome.uni_title(m['title'], m['subtitle'], m['presenter'], m['date'], cover)
-    else:
-        inner = chrome.title_inner(m['title'], m['subtitle'])
+    uni = m['look'] == 'uni'
+    cover = cover or ('navy' if uni else 'band')
+    inner = chrome.cover_slide(m['title'], m['subtitle'], m['presenter'], m['date'], cover, d3=not uni)
     return _add('title', _strip(m['title']), inner, **kw)
 
 
@@ -158,9 +162,7 @@ def agenda(**kw):
     _need_meta()
 
     def inner():
-        if D.meta['look'] == 'uni':
-            return chrome.uni_agenda(D.meta['sections'], _links(), D.meta['lang'])
-        return '<div class="fr-title">Agenda</div>' + chrome.agenda_list(D.meta['sections'], None, _links())
+        return chrome.uni_agenda(D.meta['sections'], _links(), D.meta['lang'])
     return _add('agenda', 'Agenda', inner, **kw)
 
 
@@ -173,7 +175,7 @@ def K(kick, claim, sub=''):
 
 def section(n, question='', **kw):
     """Section divider n (1-based); also makes n the current section.
-    question: the question this part answers; in the 'klar' look the divider shows it instead of an agenda list."""
+    question: the question this part answers, shown under the part name. The klar divider also lists the part's slides."""
     _need_meta()
     secs = D.meta['sections']
     if not 1 <= n <= len(secs):
@@ -184,11 +186,8 @@ def section(n, question='', **kw):
     mark(f'sec-{n}')
 
     def inner():
-        if D.meta.get('look') == 'klar':
-            return chrome.klar_divider(n, secs, question, _part(idx))
-        if D.meta.get('look') == 'uni':
-            return chrome.uni_divider(n, secs, question, D.meta['lang'])
-        return chrome.agenda_list(secs, n, _links())
+        part = _part(idx) if D.meta.get('look') == 'klar' else None
+        return chrome.divider(n, secs, question, D.meta['lang'], part)
     idx = _add('section', secs[n - 1], inner, **kw)
     D.section_slides[n - 1] = idx
     return idx
@@ -255,15 +254,14 @@ def slide(title, body, **kw):
 
 
 def thankyou(text='', contact=None, **kw):
-    """Closing slide. In the 'uni' look: text replaces 'Thank you' / 'Vielen Dank', contact lists the lines of the
-    navy contact box (default: presenter and chair), for example ['Prof. Dr. A. B.', 'Tel. +49 931 31-0', 'a.b@uni-wuerzburg.de']."""
+    """Closing slide after the master's Abschlussseite: text replaces 'Thank you' / 'Vielen Dank', contact lists the
+    lines of the navy contact box (default: presenter and chair), for example
+    ['Prof. Dr. A. B.', 'Tel. +49 931 31-0', 'a.b@uni-wuerzburg.de']. The D3 looks add the D3 logo."""
     _need_meta()
     m = D.meta
-    if m['look'] == 'uni':
-        lines = list(contact) if contact is not None else [m['presenter'], m['chair']]
-        inner = chrome.uni_thankyou(text, lines, m['lang'])
-        return _add('thankyou', _strip(text) or chrome.uni_words(m['lang'])['thanks'], inner, **kw)
-    return _add('thankyou', 'Thank You!', chrome.thankyou_inner(m['presenter']), **kw)
+    lines = list(contact) if contact is not None else [m['presenter'], m['chair']]
+    inner = chrome.uni_thankyou(text, lines, m['lang'], d3=m['look'] != 'uni')
+    return _add('thankyou', _strip(text) or chrome.uni_words(m['lang'])['thanks'], inner, **kw)
 
 
 def references(items, title='', **kw):
@@ -377,9 +375,18 @@ def page_labels(slides, mode, backup_at):
 # ── fonts ────────────────────────────────────────────────────────────────
 
 def fonts_css(font_dir=None, look='klar'):
+    """@font-face rules for every look: Inclusive Sans UW (5 faces) and the D3 Symbols fallback (Greek, math)."""
     font_dir = font_dir or paths.asset_dir('fonts')
-    family, faces = ('Inclusive Sans UW', UNI_FACES) if look == 'uni' else ('Inter', FACES)
+    family, faces = 'Inclusive Sans UW', FACES
     out = []
+    for f, w in SYMBOL_FACES:
+        p = os.path.join(font_dir, f)
+        if not os.path.exists(p):
+            raise FileNotFoundError(f'{p} missing; run init.py to copy the fonts into d3deck/fonts/')
+        with open(p, 'rb') as fh:
+            b = base64.b64encode(fh.read()).decode()
+        out.append(f"@font-face{{font-family:'D3 Symbols';font-weight:{w};font-style:normal;font-display:block;"
+                   f"unicode-range:{SYMBOL_RANGE};src:url(data:font/ttf;base64,{b}) format('truetype')}}")
     for f, w, s in faces:
         p = os.path.join(font_dir, f)
         if not os.path.exists(p):
@@ -495,33 +502,23 @@ def render_slides():
             _calm(i, s, inner)
         dots = ('<div class="stepdots">' + '<i></i>' * s.steps + '</div>') if s.steps > 1 else ''
         in_backup = D.backup_at is not None and i >= D.backup_at
-        if m.get('look') == 'uni' and s.kind in ('title', 'thankyou'):
-            body = inner if s.kind == 'title' else chrome.uni_logo() + inner
-        elif m.get('look') == 'uni' and s.kind == 'section':
+        look = m.get('look', 'klar')
+        if s.kind == 'title' or s.kind == 'section':
             body = inner
-        elif m.get('look') == 'uni':
-            trk = ''
-            if m['tracker'] and s.kind == 'content' and not in_backup and s.sec is not None:
-                trk = chrome.tracker(m['sections'], s.sec)
-            foot_text = ' | '.join(x for x in (m['presenter'], m['chair'], _strip(m['title'])) if x)
-            title = s.title if s.kind in ('content', 'backuphome') else ''
-            body = chrome.uni_frame(title, inner, tab.split('/')[0], foot_text, trk, dots, s.provenance)
-        elif s.kind in ('title', 'thankyou'):
-            body = chrome.title_frame(inner)
+        elif s.kind == 'thankyou':
+            body = chrome.uni_logo() + inner
         else:
             trk = ''
+            on_track = s.kind == 'content' and not in_backup and s.sec is not None and m['sections']
+            if on_track and (look == 'klar' or m['tracker']):      # klar always shows it, the others on request
+                trk = chrome.tracker(m['sections'], s.sec)
+            foot_text = ' | '.join(x for x in (m['presenter'], m['chair'], _strip(m['title'])) if x)
+            if in_backup:
+                foot_text = 'Backup | ' + foot_text
+            if trk and look == 'beamer':                            # beamer: the tracker takes the footer band
+                foot_text = ''
             title = s.title if s.kind in ('content', 'backuphome') else ''
-            if m.get('look') == 'klar':
-                if s.sec is not None and not in_backup and m['sections']:
-                    trk = chrome.tracker(m['sections'], s.sec)
-                foot_text = 'Backup' if in_backup else (m['sections'][s.sec] if s.sec is not None and m['sections'] else m['presenter'])
-                body = chrome.klar_frame(title, inner, foot or tab, foot_text, trk, dots, s.provenance)
-            else:
-                foot_text = f"{m['chair']} | {m['presenter']}"
-                if m['tracker'] and s.kind == 'content' and not in_backup and s.sec is not None:
-                    trk = chrome.tracker(m['sections'], s.sec)
-                    foot_text = ''
-                body = chrome.content_frame(title, inner, tab, foot_text, trk, dots, s.provenance)
+            body = chrome.frame(title, inner, tab.split('/')[0], foot_text, trk, dots, s.provenance, d3=look != 'uni')
         cls = f'sl k-{s.kind}' + (f' {s.cls}' if s.cls else '')
         secs.append(f'<section class="{cls}" data-steps="{s.steps}" data-i="{i}">{body}</section>')
         manifest.append(dict(i=i, k=s.kind, t=claim(s.title) if s.kind == 'content' else _strip(s.title), kk=kicker(s.title), g=s.group, s=s.src, n=s.notes,
@@ -565,8 +562,7 @@ def build(name, out=None, embed_fonts=True, notes=True):
     meta_json = json.dumps(manifest, ensure_ascii=False).replace('<', '\\u003c')
     fonts = fonts_css(look=m.get('look', 'klar')) if embed_fonts else ''
     extra = '\n'.join(D.extra_css)
-    if m.get('look') == 'uni':
-        extra = chrome.uni_assets_css(cover='class="uw-photo"' in body) + extra
+    extra = chrome.assets_css(m.get('look', 'klar'), photo='class="uw-photo"' in body) + extra
     math_css, math_js = math_head(body)
     doc = f'''<!doctype html><html lang="{m['lang']}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">

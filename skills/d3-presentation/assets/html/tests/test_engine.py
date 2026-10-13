@@ -7,7 +7,8 @@ from d3deck import nav, presenter
 
 class Engine(unittest.TestCase):
     def test_tokens(self):
-        for needle in ('--navy:#153F87', '--orange:#F29100', '--bar:#004389', '--navy-15:#DCE2ED',
+        for needle in ('--navy:#02246C', '--orange:#F29100', '--bar:#02246C', '--navy-15:#D9DEE9', '--blue:#5E8AC7',
+                       '--sky:#5AA1D8', '--sand:#F1EBDF', '--teal:#009485', "'Inclusive Sans UW','D3 Symbols'",
                        '--fs-Large:41px', '--fs-small:28px', '--fs-tiny:17px', '--fs-chrome:13px',
                        '--fs-display:150px'):
             self.assertIn(needle, engine.CSS, needle)

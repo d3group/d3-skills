@@ -4,7 +4,7 @@
 
 ### Viewport Rules
 - **Header**: Title area at top (assume 2-line titles for consistent spacing)
-- **Footer**: Page number and chair/presenter info - reserved for footnotes only
+- **Footer**: `presenter | chair | title` bottom left, page number in a navy tab bottom right - reserved for footnotes only
 - **Viewport**: All content must fit between header and footer, never overlap
 - Content is **top-aligned** within the viewport (handled automatically by template). In HTML, a short object is centred in its region with `middle()` rather than leaving the lower half empty
 
@@ -14,11 +14,12 @@
 - Make box heights consistent based on largest character
 - Apply the **squint test**: key messages visible from distance
 
-### Font Sizes (from template)
-- Title: 14pt
-- Subtitle: 7pt
-- Body text: 8pt
-- Column header: 10pt bold
+### Font Sizes (Inclusive Sans UW)
+- Title: 32 px SemiBold navy (LaTeX 11.3 pt)
+- Body text: LaTeX `\small` (10 pt); HTML 22 px in the klar look
+- Column header: 11 pt SemiBold navy
+- Takeaway: Medium, about 8.5 pt in LaTeX, 20 px in HTML
+- Footer: 13.3 px
 - Use only these sizes - if text doesn't fit, shorten it
 
 ### TikZ and Graphics
@@ -86,9 +87,9 @@ Remove slides that don't strengthen the narrative.
 | Project phases over time | Timeline slide |
 | Code examples | Use `codebox`, `errorbox`, or `terminalbox` (same names in HTML) |
 
-**Chevron slides**: Use `\twochevron`, `\threechevron`, or `\fourchevron` depending on the number of phases. First argument (N) highlights that phase. Each phase has a label and title (e.g., `{Phase 1:}{Planning}`). The legacy `\fourcolchevron{N}{...}` uses single labels. Highlighted phases use `d3-navy`, others use `d3-navy!15`.
+**Chevron slides**: Use `\twochevron`, `\threechevron`, or `\fourchevron` depending on the number of phases. First argument (N) highlights that phase. Each phase has a label and title (e.g., `{Phase 1:}{Planning}`). The legacy `\fourcolchevron{N}{...}` uses single labels. Highlighted phases use `d3-navy`, others use `d3-lightblue`.
 
-**Agenda slides**: Use `\showagenda` once, then `\showsection{n}` throughout presentation to highlight the current section. All items are clickable.
+**Agenda slides**: Use `\showagenda` once, then `\showsection{n}` (optionally `\showsection[question]{n}`) to open each part with a navy divider: PART n OF N, the number in sky blue, the part name. All agenda items are clickable. The package option `agendadividers` repeats the agenda instead, with the current part highlighted.
 
 ---
 

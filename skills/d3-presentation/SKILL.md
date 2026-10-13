@@ -58,7 +58,7 @@ Folder name: 1 to 3 lowercase words joined by `_` (for example `ai_healthcare`, 
 ## Workflow (both formats)
 
 1. **Create the subfolder.** HTML: `uv run <skill-dir>/assets/html/init.py <name>` creates it with everything inside. LaTeX: `mkdir <name>`.
-2. **Assemble the assets.** LaTeX: `mkdir <name>/assets && cp -r <skill-dir>/assets/latex/* <skill-dir>/assets/fonts <name>/assets/`. HTML: done by `init.py`.
+2. **Assemble the assets.** LaTeX: `mkdir -p <name>/assets/logos && cp -r <skill-dir>/assets/latex/* <skill-dir>/assets/fonts <name>/assets/ && cp <skill-dir>/assets/logos/{logo-d3,uw-logo-navy,uw-logo-white,uw-seal-blue,uw-seal-faint}.pdf <name>/assets/logos/`. HTML: done by `init.py`.
 3. **Invoke `d3-scientific-wording`** (Skill tool: `d3-scientific-wording:d3-scientific-wording`; when it is not listed, read `<wording-dir>/SKILL.md`) with the brief from Step 1: genre `slides`, the venue or occasion as outlet, the audience as reader, the chosen wording mode. Record the brief under `## Wording` in `storyline.md`. **Then read the style guide:** [references/style-guide.md](references/style-guide.md), including the Wording section and, for HTML, the Step builds section. For HTML also read [references/html-components.md](references/html-components.md) before designing the slides: it sets the bar and lists the objects.
 4. **Agree on the storyline** (Step 1 above). No slide is written before the user has set or approved it.
 5. **Write the deck** following the workflow reference for the format.
@@ -73,9 +73,9 @@ All Python in this skill runs through uv (`uv run`, `uv run --with <pkg>`); neve
 | Slide | LaTeX | HTML |
 |---|---|---|
 | Title | `\titleslide` | `titleslide()` |
-| Agenda (clickable) | `\showagenda` | `agenda()` (klar look: none, use `section(n, question=...)`) |
+| Agenda (clickable) | `\showagenda` | `agenda()` (klar look: usually none, use `section(n, question=...)`) |
 | Statement, headline numbers | none | `statement()`, `facts()` |
-| Section divider n | `\showsection{n}` | `section(n)` |
+| Section divider n | `\showsection{n}` (`\showsection[question]{n}`) | `section(n, question=...)` |
 | One column | `\onecol{title}{content}` | `onecol(title, html)` |
 | Two columns | `\twocol{title}{left}{right}` | `twocol(title, left, right)` |
 | Two columns + takeaway | `\twocoltakeaway{title}{l}{r}{takeaway}` | `twocoltakeaway(title, l, r, takeaway)` |
@@ -94,27 +94,39 @@ Equations: LaTeX decks use Beamer's math as usual; HTML decks take the same LaTe
 
 ## Rules that apply to both formats
 
+### Corporate design: University of Würzburg 2025 with D3 co-branding
+
+The D3 design sits on the 2025 corporate design of the University of Würzburg (PowerPoint master `PPT-Master-Universitaet-Wuerzburg.potx`): the new round university logo top left over a hairline, the D3 logo in the master's co-branding slot (top right; next to the university logo on title and closing slides), the footer line `presenter | chair | title`, the page number in a navy tab, navy dividers, and the house font **Inclusive Sans UW** (SIL OFL) in both formats. D3 keeps its logo, its orange accent, the orange kicker and takeaway rule and the chair line. The seal stands on title, divider and closing slides; the CD will replace it by a faculty ornament in faculty communication, so it is interim until that package is released. Both formats set Inclusive Sans UW (Regular, Italic, Medium, SemiBold, Bold; SIL OFL 1.1). It has no Greek letters or math operators: HTML falls back to the embedded D3 Symbols font; LaTeX loads the font from `assets/fonts/`, slants the Bold for bold italic, and maps Greek letters and math symbols in running text (α–ω, ≤ ≥ ≈ ≠ ∞ √ ∈ ∑ ∫ ∂ ⇒ ′ ″ ✓, ² ³ µ) to math mode; arrows come from the font. `meta(look='uni')` drops the D3 branding for teaching decks.
+
 ### Brand colors: use only these
 
 | Name | LaTeX | CSS token | Hex | Usage |
 |---|---|---|---|---|
-| Navy | `d3-navy` | `var(--navy)` | #153F87 | text, titles, dark elements |
-| Orange | `d3-orange` | `var(--orange)` | #F29100 | accents, highlights, takeaways |
+| Navy | `d3-navy` | `var(--navy)` | #02246C | titles, structure, bars, dark surfaces (university navy) |
+| Orange | `d3-orange` | `var(--orange)` | #F29100 | D3 accent: kickers, highlights, takeaway rule |
 | Gray | `d3-gray` | `var(--gray)` | #808080 | subtle text, borders |
-| Light blue | `d3-lightblue` | `var(--lightblue)` | #C8DCF0 | chart fills, backgrounds |
-| Dark blue | `d3-darkblue` | `var(--darkblue)` | #0A2864 | darker variant |
-| Chart colors | `d3-teal`, `d3-yellow`, `d3-peach`, `d3-lavender` | `--teal`, `--yellow`, `--peach`, `--lavender` | #4D9AAA, #D8DE6F, #F5C8AA, #C5CAE9 | timeline bars, series |
+| Light blue | `d3-lightblue` | `var(--lightblue)` | #CBD9EE | chart fills, backgrounds |
+| Dark blue | `d3-darkblue` | `var(--darkblue)` | #011646 | darkest surfaces |
+| Blue | `d3-blue` | `var(--blue)` | #5E8AC7 | cornflower: bullets, rules, secondary series |
+| Sky | `d3-sky` | `var(--sky)` | #5AA1D8 | large part and agenda numerals |
+| Sand | `d3-sand` | `var(--sand)` | #F1EBDF | takeaway bar, quiet boxes |
+| Orange ink | `d3-orange-ink` | `var(--orange-ink)` | #B86E00 | orange as small text on white |
+| Teal ink | `d3-teal-ink` | `var(--teal-ink)` | #007A6E | teal as text on white |
+| Hairline | `d3-hairline` | (frame) | #D3D6DC | rule under the logo row |
+| Chart colors | `d3-teal`, `d3-yellow`, `d3-berry`, `d3-peach`, `d3-lavender` | `--teal`, `--yellow`, `--berry`, `--peach`, `--lavender` | #009485, #F8C300, #821044, #FCE4BF, #D9CCE6 | timeline bars, series |
+
+Body text is black, as in the university master. Series order in charts: navy, orange, blue, teal, yellow, berry, gray. The university's coral #ED6A5B is not used in D3 decks (it would clash with D3 orange); only the uni look uses it.
 
 **NEVER** use `red`, `blue`, `green`, or arbitrary hex codes. Lighter tints follow the xcolor syntax in both formats: `d3-navy!15` in LaTeX, `mix('navy!15')` in HTML.
 
-The HTML kit adds a few derived tokens and nothing else: `--teal-ink` #2F7A89 and `--orange-ink` #B86E00 (teal and orange dark enough for text on white), `--red` #C0392B (the errorbox family: wrong, removed, fails; never decoration) and tints such as `--navy-10`, `--teal-10`, `--orange-10`. Colour carries meaning: signed edges are teal for positive, orange for negative, navy for indeterminate and dashed grey for moderation; what teal and red stand for is decided once per deck and kept.
+The HTML kit adds a few derived tokens and nothing else: `--teal-ink` and `--orange-ink` (the ink rows above; in LaTeX `d3-teal-ink`, `d3-orange-ink`), `--red` #C0392B (the errorbox family: wrong, removed, fails; never decoration) and tints such as `--navy-10`, `--teal-10`, `--orange-10`. Colour carries meaning: signed edges are teal for positive, orange for negative, navy for indeterminate and dashed grey for moderation; what teal and red stand for is decided once per deck and kept.
 
 ### Content rules
 
 - **Action titles**: every slide title is a complete sentence stating the message; the titles alone must read as the argument.
 - **Parallel lists**: bullets are grammatically parallel.
 - **One message per slide, one visual idea per slide.** A figure, a row of stat cards, a process flow and a code box each get their own slide.
-- **HTML look.** HTML decks use the calm `klar` look by default (tracker on top, orange kicker plus one-claim title via `K()`, question dividers instead of an agenda, `statement()` and `facts()` slides, takeaway on a fixed baseline, D3 logo in the foot, university logo on the title slide). `meta(look='beamer')` reproduces the LaTeX frame when the HTML must match a PDF. `meta(look='uni')` is the University of Würzburg master without D3 branding, for teaching: new logo, Inclusive Sans UW, university palette (navy, coral, berry text accents, sand takeaway bar), navy covers and dividers with the coral seal; `lang='de'` gives German labels. In the uni look the palette tokens replace the D3 colours below. See "The look" in references/html-workflow.md.
+- **HTML look.** Every look uses the university master's frame (see "Corporate design" above). HTML decks use the D3 `klar` look by default (D3 logo top right, section tracker in the header, orange kicker plus one-claim title via `K()`, navy question dividers that list the part's slides instead of an agenda, `statement()` and `facts()` slides, the sand takeaway bar with an orange rule, the band cover with both logos). `meta(look='beamer')` follows the conventions of the LaTeX theme when the HTML must match a PDF. `meta(look='uni')` is the university master without D3 branding, for teaching (berry text accents, coral seal, navy cover). `lang='de'` gives German labels and the German chair line. See "The look" in references/html-workflow.md.
 - **Designed, not typed (HTML).** Every content slide centres on a designed object that carries its claim: a figure, a model, bars, a gauge, a table with effect bars, a comparison, an interface rebuilt in HTML, tiles with icons at the least. A slide whose main object is a bullet list is a draft; the build warns "text only". The words are labels on the object; the sentences go into the notes. The table "The draft says ... build instead" in references/html-components.md maps typical bullet slides to objects.
 - **Motion is earned.** Motion must report something: a relation drawn while it is said, a bar growing out of the previous one, a counted total, a stimulus replayed as participants saw it. The feel agreed in Step 1 sets the budget: `calm` keeps step builds to about one slide in three, `rich` and `interactive` build wherever a step adds one idea. Reveal a cluster or a region, never bullet by bullet, and keep to 2 to 4 steps. Later steps wait as pale ghosts in their final place, so nothing moves and nothing is removed. The build warns about slides that look busy; treat each warning as a request to simplify.
 - **Viewport**: content never overlaps the header, the footer, or the margins. In HTML, the body box crops overflow and the audit reports it. A short object is centred with `middle()` rather than glued to the top above an empty half; `shoot.py` reports such holes.

@@ -49,35 +49,36 @@ build('my_talk')          # writes dist/my_talk.html
 
 ## The look
 
-`meta(look='klar')` is the default and follows the talk design used for D3 defenses: every content slide has the section tracker on top, a title made of an orange kicker and one claim in a light weight, a body in dark ink at 22 px with generous whitespace, the takeaway on a fixed baseline with an orange tick, and a quiet mono foot with the section name, `page / total` and the D3 logo. The university logo and the seal appear on the title and thank-you slides only. There is no agenda slide: the tracker and the question dividers carry the structure (`agenda()` still works if an audience expects one). Each divider shows an outlined part numeral, `Part n of N`, the question the part answers and, beside it, the part's slides with their numbers (clickable, at most six listed).
+Every look is built on the University of Würzburg PowerPoint master (`PPT-Master-Universitaet-Wuerzburg.potx`, 2025 corporate design; the geometry is the master's layout boxes, 1 px = 9525 EMU) and set in the house font Inclusive Sans UW:
 
-`meta(look='beamer')` draws the frame of the LaTeX template instead (university logo, navy bar, footer tab, bold title; `tracker=True` moves the tracker into the footer band). Choose it when the HTML deck must match a PDF deck slide for slide.
+- **Content slides.** The new university logo sits top left over a hairline. The title is semibold navy at 32 px, the body box is 1137 by 420 px (two columns of 548 px). The foot reads `presenter | chair | deck title`, the provenance note (`provenance=`) sits right of it, and the page number stands in a navy tab at the bottom right.
+- **Covers.** `titleslide()` follows the master's Deckblatt: `cover='band'` (white with a navy band; the default of the D3 looks), `cover='navy'` (all navy; the default of the uni look) or `cover='photo'` (the Würzburg skyline, about 0.3 MB). Title, subtitle, presenter and date come from `meta()`.
+- **Structure slides.** `section(n, question=...)` is a navy divider (Trennseite) with `Part n of N`, a large sky-blue numeral, the part name and its question. `agenda()` lists two-digit numbers and topics. `thankyou(text=..., contact=[...])` is the closing slide (Abschlussseite) with its navy contact box.
+- **Seal.** Covers, dividers and the closing slide carry the rector's seal as a corner crop. The CD replaces it by a faculty ornament in faculty communication; until that package is released the seal stands in.
+- **Language.** `lang='de'` switches the labels (Teil n von N, Quellenangaben, Kontakt, Vielen Dank) and the default chair line.
+- **Fonts and logos.** Inclusive Sans UW (5 faces) and D3 Symbols (an Inter subset for the Greek letters, arrows and math operators Inclusive Sans UW lacks) are embedded, and the logos and seals as vector SVGs, once per file. The font has no tabular figures; numbers that must align go into a table or the mono labels.
 
-`meta(look='uni')` is the University of Würzburg master (PPT-Master-Universitaet-Wuerzburg.potx, 2025 corporate design) with no D3 branding, for teaching and other university decks. It sets everything in the house font Inclusive Sans UW and uses the university palette:
+`meta(look='klar')` is the default, the D3 look: the D3 logo stands in the master's co-branding slot (top right; on title and closing slides next to the university logo), the section tracker sits in the header between the logos, titles are an orange kicker plus one claim (`K()`), the body is black at 22 px with generous whitespace, and `takeaway=` is the sand bar with an orange rule on a fixed baseline. There is no agenda slide: the tracker and the question dividers carry the structure (`agenda()` still works if an audience expects one). Each divider also lists the part's slides with their numbers (clickable, at most six listed). Navy is the university navy `#02246C`; D3 orange `#F29100` is the only accent, and the seal is blue on navy.
 
-- **Colours.** Navy `#02246C` carries titles and dark surfaces. Coral `#ED6A5B` is the primary accent for graphic marks (accented numbers, the seal on navy, shipped as a pre-coloured PNG so it prints cleanly). Berry `#821044` takes the role of D3 orange for text accents (kickers, `<b>` in takeaways and statements), because coral is too light for small text on white. Further tokens: light blue `#5E8AC7` (bullets, rules), sky `#5AA1D8` (agenda and part numbers) and sand `#F1EBDF` (takeaway bar). The kit colours map onto the palette: `orange` becomes berry, `teal` becomes `#009485`.
-- **Content slides.** The new logo sits top left over a hairline. The title is semibold navy at 32 px, the body is 24 px black text. The foot reads `presenter | chair | deck title`, with the page number in a navy tab at the bottom right. `takeaway=` becomes the sand bar with an arrow from the master's info-box layout. `tracker=True` puts the section tracker in the header.
-- **Covers.** `titleslide(cover='navy')` (default) is the all-navy cover with the coral seal. `cover='band'` is white with a navy band, and `cover='photo'` adds the Würzburg skyline (about 0.3 MB).
-- **Structure slides.** `section(n, question=...)` is a navy divider with `Part n of N`, a large sky-blue numeral, the part name and its question. `agenda()` lists two-digit numbers and topics. `thankyou(text=..., contact=[...])` is the closing slide with its navy contact box.
-- **Language.** `lang='de'` switches the labels: Teil n von N, Quellenangaben, Kontakt, Vielen Dank.
+`meta(look='beamer')` is the same D3 frame with the conventions of the LaTeX theme: no tracker unless `tracker=True` (then it takes the footer band), dividers without the slide list, body text at Beamer sizes. Choose it when the HTML deck must match a PDF deck slide for slide.
 
-The logos, the seal and the fonts are embedded once per file.
+`meta(look='uni')` drops the D3 branding, for teaching and other university decks (for example a dean's office talk). Coral `#ED6A5B` is the accent for graphic marks (accented numbers, the seal on navy). Berry `#821044` takes the role of D3 orange for text accents (kickers, `<b>` in takeaways and statements), because coral is too light for small text on white. Light blue `#5E8AC7` marks bullets and rules, and `takeaway=` is the sand bar with the master's arrow. The kit colours map onto the palette: `orange` becomes berry. The kit objects are toned down to the master's plain style (no cards, no icons, sans-serif labels).
 
 ## 3. Slide functions
 
 | HTML | LaTeX | Notes |
 |---|---|---|
-| `titleslide(cover='navy')` | `\titleslide` | title template with the seal watermark; `cover` ('navy', 'band', 'photo') only in the uni look |
-| `agenda()` | `\showagenda` | numbered circles, clickable to the section dividers that exist |
-| `section(n, question='')` | `\showsection{n}` | 1-based; also sets the current section for tracker and jump tabs. In the klar look the divider shows `Part n of N` and the question this part answers |
-| `statement(html)` | none | one sentence at 50 px, alone on the slide; mark the one word that carries it with `<b>` (orange). A few per talk, at the turns of the argument |
+| `titleslide(cover=None)` | `\titleslide` | the master's cover: `'band'` (D3 default, both logos), `'navy'` (uni default) or `'photo'` |
+| `agenda()` | `\showagenda` | two-digit numbers in sky blue, clickable to the section dividers that exist |
+| `section(n, question='')` | `\showsection{n}` | 1-based; also sets the current section for tracker and jump tabs. The navy divider shows `Part n of N`, the part name and the question this part answers; in the klar look also the part's slides |
+| `statement(html)` | none | one sentence at 48 px in navy, alone on the slide; mark the one word that carries it with `<b>` (orange). A few per talk, at the turns of the argument |
 | `facts(title, items, takeaway='')` | none | one to four headline numbers side by side; `items` are `(value, label)` or `(value, label, True)` for the single accented number |
 | `K(kick, claim, sub='')` | none | builds a title: orange kicker (the category, one or two words) plus the claim; pass it wherever a title goes |
-| `onecol(title, html)` | `\onecol` | body box 1133 by 432 px |
-| `twocol(title, left, right)` | `\twocol` | two boxes of 547 px |
+| `onecol(title, html)` | `\onecol` | body box 1137 by 420 px |
+| `twocol(title, left, right)` | `\twocol` | two boxes of 548 px |
 | `twocoltakeaway(title, left, right, takeaway)` | `\twocoltakeaway` | shorter boxes, takeaway box below |
 | `slide(title, html)` | none | frame and title only; position elements yourself (for example a full-width figure) |
-| `thankyou(text='', contact=None)` | `\thankyouslide` | "Thank You!" and the presenter; in the uni look the closing slide with a contact box (`contact`: list of lines) |
+| `thankyou(text='', contact=None)` | `\thankyouslide` | closing slide: "Thank you" (or `text`) and a navy contact box (`contact`: list of lines; default presenter and chair) |
 | `references(items, title='')` | none | reference list (Quellenangaben), small, two columns; exempt from the busy-slide warnings and the text-only lint |
 | `appendix()` | `\appendix` | everything after is backup |
 | `backuphome(title='Backup')` | none | hub listing the backup slides by `group`; H jumps here |

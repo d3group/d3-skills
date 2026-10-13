@@ -7,10 +7,11 @@ HTML: stat cards, big numbers, step/scrim wrappers and breadcrumbs.
 """
 import html as _html
 
-TOKENS = {
-    'navy': (21, 63, 135), 'orange': (242, 145, 0), 'gray': (128, 128, 128),
-    'lightblue': (200, 220, 240), 'darkblue': (10, 40, 100), 'teal': (77, 154, 170),
-    'yellow': (216, 222, 111), 'peach': (245, 200, 170), 'lavender': (197, 202, 233),
+TOKENS = {   # University of Würzburg 2025 palette plus D3 orange (engine.py :root)
+    'navy': (2, 36, 108), 'orange': (242, 145, 0), 'gray': (128, 128, 128),
+    'lightblue': (203, 217, 238), 'darkblue': (1, 22, 70), 'teal': (0, 148, 133),
+    'yellow': (248, 195, 0), 'peach': (252, 228, 191), 'lavender': (217, 204, 230),
+    'blue': (94, 138, 199), 'sky': (90, 161, 216), 'sand': (241, 235, 223), 'berry': (130, 16, 68),
     'white': (255, 255, 255), 'black': (0, 0, 0),
 }
 

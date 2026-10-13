@@ -1,6 +1,6 @@
 # HTML Components: designed objects
 
-Load this before designing the slides of an HTML deck, and again when reviewing the contact sheet. The frame (klar or beamer look, Inter, D3 tokens) is the same in every D3 deck; what makes a deck worth watching is what happens inside the body region: objects that are built rather than typed, motion that reports something, and details that answer a question when the presenter points at them. The kit and this guide were distilled from M. Möhle's D3 talk decks and ported to the `slides.py` API. Every helper returns an HTML string and is imported with `from d3deck import *`; `assets/html/example-slides.py` (section 5) uses each one.
+Load this before designing the slides of an HTML deck, and again when reviewing the contact sheet. The frame (the University of Würzburg master with the D3 logo, Inclusive Sans UW, D3 tokens) is the same in every D3 deck; what makes a deck worth watching is what happens inside the body region: objects that are built rather than typed, motion that reports something, and details that answer a question when the presenter points at them. The kit and this guide were distilled from M. Möhle's D3 talk decks and ported to the `slides.py` API. Every helper returns an HTML string and is imported with `from d3deck import *`; `assets/html/example-slides.py` (section 5) uses each one.
 
 ## 1. The bar
 

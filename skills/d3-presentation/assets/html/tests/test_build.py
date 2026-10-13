@@ -168,9 +168,10 @@ class Output(unittest.TestCase):
         doc = self.build()
         one = doc[doc.index('data-i="3"'):doc.index('data-i="4"')]
         self.assertIn('<div class="trk">', one)
-        self.assertNotIn('fr-foot', one)
+        self.assertNotIn('uw-foot', one)                                  # beamer: the tracker takes the footer band
+        self.assertIn('class="d3-co"', one)
         sec = doc[doc.index('data-i="2"'):doc.index('data-i="3"')]
-        self.assertIn('fr-foot', sec)
+        self.assertIn('class="uw-dark"', sec)                             # dividers are navy, without frame or tracker
         self.assertNotIn('class="trk"', sec)
 
     def test_klar_look_is_default(self):
@@ -180,14 +181,20 @@ class Output(unittest.TestCase):
         doc = self.build()
         self.assertIn('look-klar', doc)
         one = doc[doc.index('data-i="3"'):doc.index('data-i="4"')]
-        self.assertIn('<div class="trk">', one)
-        self.assertIn('kf-d3', one)
-        self.assertNotIn('fr-uni', one)
-        self.assertIn('fr-seal', doc[doc.index('data-i="0"'):doc.index('data-i="1"')])
+        self.assertIn('<div class="trk">', one)                           # klar: the tracker always, in the header
+        self.assertIn('class="uw-logo uw-logo-navy"', one)                # university logo top left
+        self.assertIn('<div class="d3-co" role="img"', one)               # D3 logo in the co-branding slot
+        self.assertIn('<div class="uw-foot">Ada | Chair of Information Systems and Business Analytics | Title x</div>', one)
+        title = doc[doc.index('data-i="0"'):doc.index('data-i="1"')]
+        self.assertIn('uw-cover uw-c-band', title)                        # D3 default cover: white with a navy band
+        self.assertIn('class="d3-co cov"', title)
+        self.assertEqual(doc.count('.d3-co{background-image:url(data:image/svg+xml'), 1)   # logos embedded once
+        self.assertIn('.uw-seal{background-image:url(' + B.chrome.svg_uri('uw-seal-blue.svg'), doc)
         self.assertIn('<span class="kick">Result</span>Two numbers carry it', doc)
         self.assertIn('class="fact acc"', doc)
-        self.assertIn('class="secq has-part"', doc)
         divider = doc[doc.index('data-i="2"'):doc.index('data-i="3"')]
+        self.assertIn('class="uw-dark"', divider)
+        self.assertIn('class="uw-part"', divider)
         self.assertIn('In this part', divider)
         self.assertEqual(divider.count('class="spi"'), 2)          # One and Two; the thank-you slide ends the part
         self.assertIn('data-jump="3"', divider)
@@ -211,7 +218,9 @@ class Output(unittest.TestCase):
         self.assertNotIn("'Inter'", fonts)                               # only the university font is embedded
         self.assertNotIn('DataDrivenDecisions', doc)
         self.assertNotIn('class="kf-d3"', doc)
-        self.assertEqual(doc.count('.uw-logo-navy{background-image:url(data:image/png'), 1)   # each raster once
+        self.assertEqual(doc.count('.uw-logo-navy{background-image:url(data:image/svg+xml'), 1)   # each logo once
+        self.assertIn('.uw-seal{background-image:url(' + B.chrome.svg_uri('uw-seal-coral.svg'), doc)   # coral seal
+        self.assertNotIn('d3-co', doc[doc.index('<body'):])                # and no D3 logo
         self.assertNotIn('uw-photo{background-image', doc)              # the cover photo only when used
         self.assertIn('Teil 1 von 4', doc)
         self.assertIn('Quellenangaben', doc)
@@ -254,12 +263,12 @@ class Output(unittest.TestCase):
         small_deck()
         doc = self.build()
         title = doc[doc.index('data-i="0"'):doc.index('data-i="1"')]
-        self.assertNotIn('fr-num', title)
-        self.assertNotIn('fr-foot', title)
-        self.assertIn('fr-seal', title)
+        self.assertNotIn('uw-num', title)
+        self.assertNotIn('uw-foot', title)
+        self.assertIn('class="uw-seal"', title)
         two = doc[doc.index('data-i="4"'):doc.index('data-i="5"')]
-        self.assertIn('<div class="fr-num">5/6</div>', two)
-        self.assertIn('<div class="fr-foot">Chair of Information Systems and Business Analytics | Ada</div>', two)
+        self.assertIn('<div class="uw-num">5</div>', two)
+        self.assertIn('<div class="uw-foot">Ada | Chair of Information Systems and Business Analytics | Title x</div>', two)
         self.assertIn('<div class="col l">L</div><div class="col r">R</div>', two)
 
     def test_takeaway_and_css(self):
@@ -274,8 +283,11 @@ class Output(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             B.fonts_css(tempfile.mkdtemp())
         css = B.fonts_css()
-        self.assertEqual(css.count('@font-face'), 5)
-        self.assertIn("font-weight:700;font-style:italic", css)
+        self.assertEqual(css.count("font-family:'Inclusive Sans UW'"), 5)
+        self.assertEqual(css.count("font-family:'D3 Symbols'"), 2)          # Greek and math fallback, limited by unicode-range
+        self.assertIn('unicode-range:U+0370-03FF', css)
+        self.assertIn("font-weight:400;font-style:italic", css)
+        self.assertNotIn("'Inter'", css)
 
     def test_public_api(self):
         for name in ('meta', 'titleslide', 'agenda', 'section', 'onecol', 'twocol', 'twocoltakeaway', 'slide',

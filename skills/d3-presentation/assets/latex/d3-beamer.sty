@@ -1,20 +1,36 @@
 % D3 (Data Driven Decisions) Beamer Style
-% Uses PDF backgrounds with fixed-position content boxes
-% Version 4.0 - Modular structure with separate template library
-% REQUIRES: XeLaTeX (for Inter font)
+% University of Wuerzburg corporate design 2025 with D3 co-branding.
+% The frame is drawn with TikZ from vector logos; no background PDFs.
+% Version 5.0
+% REQUIRES: XeLaTeX (fontspec, Inclusive Sans UW), \documentclass[aspectratio=169]{beamer}
+%
+% Files expected next to the .tex file:
+%   assets/d3-beamer.sty, assets/fonts/InclusiveSansUW-*.ttf,
+%   assets/logos/{logo-d3,uw-logo-navy,uw-logo-white,uw-seal-blue,uw-seal-faint}.pdf
+%   (the logos may also sit directly in assets/)
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{d3-beamer}[2026/02/01 D3 Beamer Theme with PDF Backgrounds]
+\ProvidesPackage{d3-beamer}[2026/10/13 v5.0 D3 Beamer Theme, University of Wuerzburg CD 2025]
 
 % ============================================================================
 % OPTIONS
 % ============================================================================
 % contentnumbering: title, agenda, section-divider and thank-you frames do not
-% advance the frame counter, so the footer counts content slides only. Loads
-% appendixnumberbeamer, so \appendix after \thankyouslide restarts the numbering
-% for backup slides and makes the total the last content slide.
+%   advance the frame counter, so the page tab counts content slides only. Loads
+%   appendixnumberbeamer, so \appendix after \thankyouslide restarts the numbering
+%   for backup slides.
+% pagetotal: the page tab shows "n/N" instead of "n".
+% agendadividers: \showsection repeats the agenda with the current part
+%   highlighted (the pre-2025 divider) instead of the navy part divider.
+% german: German labels (Teil n von N, Vielen Dank) and chair line.
 \newif\ifd@contentnumbering
+\newif\ifd@pagetotal
+\newif\ifd@agendadividers
+\newif\ifd@german
 \DeclareOption{contentnumbering}{\d@contentnumberingtrue}
+\DeclareOption{pagetotal}{\d@pagetotaltrue}
+\DeclareOption{agendadividers}{\d@agendadividerstrue}
+\DeclareOption{german}{\d@germantrue}
 \ProcessOptions\relax
 
 % ============================================================================
@@ -25,6 +41,8 @@
 \RequirePackage{fontspec}         % Modern font handling (requires XeLaTeX)
 \RequirePackage{xcolor}
 \RequirePackage{etoolbox}         % For list handling
+\RequirePackage{amssymb}          % \checkmark for the text-mode check mark
+\RequirePackage{newunicodechar}   % Greek and symbols the house font lacks
 \hypersetup{hidelinks}            % For clickable navigation without colored boxes
 \RequirePackage{tcolorbox}        % For code boxes and highlighted boxes
 \ifd@contentnumbering\RequirePackage{appendixnumberbeamer}\fi
@@ -34,33 +52,87 @@
 \newif\ifd@nonumber
 \newcommand{\hidenumber}{\d@nonumbertrue}
 \newcommand{\shownumber}{\d@nonumberfalse}
-\newcommand{\d@framelabel}{\ifd@nonumber\else\insertframenumber/\inserttotalframenumber\fi}
-\newcommand{\d@structnumber}{\ifd@contentnumbering\else\insertframenumber/\inserttotalframenumber\fi}
+\newcommand{\d@pagelabel}{\insertframenumber\ifd@pagetotal/\inserttotalframenumber\fi}
+\newcommand{\d@framelabel}{\ifd@nonumber\else\d@pagelabel\fi}
+\newcommand{\d@structnumber}{\ifd@contentnumbering\else\d@framelabel\fi}
 
 % TikZ libraries for diagrams
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shapes.arrows, decorations.pathreplacing}
 
 % ============================================================================
-% FONT SETUP - Inter (bundled in assets/fonts/)
+% FONT SETUP - Inclusive Sans UW (bundled in assets/fonts/, SIL OFL 1.1)
 % ============================================================================
-% Using bundled Inter 18pt fonts for consistent rendering across systems
-\setsansfont{Inter}[
+% Regular, Italic, Medium (series mb), SemiBold (series sb), Bold. The font has no
+% Bold Italic (faked with a slant) and no tabular figures.
+\setsansfont{Inclusive Sans UW}[
     Path = assets/fonts/,
     Extension = .ttf,
-    UprightFont = Inter_18pt-Regular,
-    BoldFont = Inter_18pt-Bold,
-    ItalicFont = Inter_18pt-Italic,
-    BoldItalicFont = Inter_18pt-BoldItalic
+    UprightFont = InclusiveSansUW-Regular,
+    ItalicFont = InclusiveSansUW-Italic,
+    BoldFont = InclusiveSansUW-Bold,
+    BoldItalicFont = InclusiveSansUW-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2},
+    FontFace = {mb}{n}{Font=InclusiveSansUW-Medium},
+    FontFace = {mb}{it}{Font=InclusiveSansUW-Medium, FakeSlant=0.2},
+    FontFace = {sb}{n}{Font=InclusiveSansUW-SemiBold},
+    FontFace = {sb}{it}{Font=InclusiveSansUW-SemiBold, FakeSlant=0.2}
 ]
+\newcommand{\d@medium}{\fontseries{mb}\selectfont}
+\newcommand{\d@semibold}{\fontseries{sb}\selectfont}
+\DeclareTextFontCommand{\textsemibold}{\d@semibold}
+\DeclareTextFontCommand{\textmedium}{\d@medium}
+
+% Inclusive Sans UW has no Greek, no primes and no math symbols: without these
+% mappings such characters silently vanish. Arrows (-> <- <->) are in the font.
+\newcommand{\d@mathchar}[2]{\newunicodechar{#1}{\texorpdfstring{\ensuremath{#2}}{#1}}}
+\d@mathchar{α}{\alpha}   \d@mathchar{β}{\beta}    \d@mathchar{γ}{\gamma}
+\d@mathchar{δ}{\delta}   \d@mathchar{ε}{\varepsilon} \d@mathchar{ϵ}{\epsilon}
+\d@mathchar{ζ}{\zeta}    \d@mathchar{η}{\eta}     \d@mathchar{θ}{\theta}
+\d@mathchar{ϑ}{\vartheta} \d@mathchar{ι}{\iota}   \d@mathchar{κ}{\kappa}
+\d@mathchar{λ}{\lambda}  \d@mathchar{μ}{\mu}      \d@mathchar{µ}{\mu}
+\d@mathchar{ν}{\nu}      \d@mathchar{ξ}{\xi}      \d@mathchar{ο}{o}
+\d@mathchar{π}{\pi}      \d@mathchar{ρ}{\rho}     \d@mathchar{σ}{\sigma}
+\d@mathchar{ς}{\varsigma} \d@mathchar{τ}{\tau}    \d@mathchar{υ}{\upsilon}
+\d@mathchar{φ}{\varphi}  \d@mathchar{ϕ}{\phi}     \d@mathchar{χ}{\chi}
+\d@mathchar{ψ}{\psi}     \d@mathchar{ω}{\omega}
+\d@mathchar{Γ}{\Gamma}   \d@mathchar{Δ}{\Delta}   \d@mathchar{Θ}{\Theta}
+\d@mathchar{Λ}{\Lambda}  \d@mathchar{Ξ}{\Xi}      \d@mathchar{Π}{\Pi}
+\d@mathchar{Σ}{\Sigma}   \d@mathchar{Υ}{\Upsilon} \d@mathchar{Φ}{\Phi}
+\d@mathchar{Ψ}{\Psi}     \d@mathchar{Ω}{\Omega}
+\d@mathchar{≤}{\leq}     \d@mathchar{≥}{\geq}     \d@mathchar{≈}{\approx}
+\d@mathchar{≠}{\neq}     \d@mathchar{∞}{\infty}   \d@mathchar{√}{\surd}
+\d@mathchar{∈}{\in}      \d@mathchar{∑}{\sum}     \d@mathchar{∫}{\int}
+\d@mathchar{∂}{\partial} \d@mathchar{⇒}{\Rightarrow}
+\d@mathchar{′}{^{\prime}} \d@mathchar{″}{^{\prime\prime}}
+\d@mathchar{✓}{\checkmark}
+% Greek capitals that look like Latin letters use the text font
+\newunicodechar{Α}{A}\newunicodechar{Β}{B}\newunicodechar{Ε}{E}\newunicodechar{Ζ}{Z}
+\newunicodechar{Η}{H}\newunicodechar{Ι}{I}\newunicodechar{Κ}{K}\newunicodechar{Μ}{M}
+\newunicodechar{Ν}{N}\newunicodechar{Ο}{O}\newunicodechar{Ρ}{P}\newunicodechar{Τ}{T}
+\newunicodechar{Χ}{X}
+\newunicodechar{²}{\textsuperscript{2}}\newunicodechar{³}{\textsuperscript{3}}
 
 % ============================================================================
-% D3 BRAND COLORS
+% D3 BRAND COLORS (University of Wuerzburg CD 2025 + D3 orange)
 % ============================================================================
-\definecolor{d3-navy}{RGB}{21,63,135}    % University blue - primary
-\definecolor{d3-orange}{HTML}{f29100}    % Orange - accent/highlight
-\definecolor{d3-gray}{RGB}{128,128,128}  % Gray - subtle text, borders
-\definecolor{d3-lightblue}{RGB}{200,220,240}  % Light blue - chart fills
-\definecolor{d3-darkblue}{RGB}{10,40,100}     % Dark blue - darker variant
+\definecolor{d3-navy}{HTML}{02246C}       % University navy - titles, structure, page tab
+\definecolor{d3-darkblue}{HTML}{011646}   % Deepest surfaces
+\definecolor{d3-orange}{HTML}{F29100}     % D3 accent - kickers, highlights, takeaway rule
+\definecolor{d3-orange-ink}{HTML}{B86E00} % Orange as small text on white
+\definecolor{d3-gray}{HTML}{808080}       % Idle and secondary marks
+\definecolor{d3-lightblue}{HTML}{CBD9EE}  % Light fills, chart backgrounds
+\definecolor{d3-blue}{HTML}{5E8AC7}       % Cornflower - bullets, rules, secondary series
+\definecolor{d3-sky}{HTML}{5AA1D8}        % Part and agenda numerals
+\definecolor{d3-sand}{HTML}{F1EBDF}       % Quiet boxes, takeaway background
+\definecolor{d3-teal}{HTML}{009485}       % Chart series
+\definecolor{d3-teal-ink}{HTML}{007A6E}   % Teal as text on white
+\definecolor{d3-yellow}{HTML}{F8C300}     % Chart series
+\definecolor{d3-berry}{HTML}{821044}      % Chart series
+\definecolor{d3-peach}{HTML}{FCE4BF}      % Light orange fill (timeline work packages)
+\definecolor{d3-lavender}{HTML}{D9CCE6}   % Light fill
+\definecolor{d3-hairline}{HTML}{D3D6DC}   % Rule under the logo row
+\definecolor{d3-paleblue}{HTML}{DCE4F2}   % Secondary text on navy (divider question)
+\definecolor{d3-closing}{HTML}{F2F2F2}    % Right half of the closing slide
 
 % ============================================================================
 % BEAMER SETUP
@@ -73,26 +145,73 @@
 \setbeamertemplate{footline}{}
 \setbeamertemplate{frametitle}{}
 \setbeamertemplate{itemize items}[square]
-\setbeamercolor{itemize item}{fg=d3-navy}
-\setbeamercolor{itemize subitem}{fg=d3-navy}
-\setbeamercolor{itemize subsubitem}{fg=d3-navy}
+\setbeamercolor{itemize item}{fg=d3-blue}
+\setbeamercolor{itemize subitem}{fg=d3-blue}
+\setbeamercolor{itemize subsubitem}{fg=d3-blue}
 \setbeamercolor{enumerate item}{fg=d3-navy}
 \setbeamercolor{enumerate subitem}{fg=d3-navy}
 
-% Text colors
-\setbeamercolor{normal text}{fg=d3-navy}
+% Text colors: body text black, structure navy (as in the university master)
+\setbeamercolor{normal text}{fg=black}
 \setbeamercolor{structure}{fg=d3-navy}
 
 % Set geometry to use full slide area
 \setbeamersize{text margin left=0pt, text margin right=0pt}
 
 % ============================================================================
-% METADATA COMMANDS
+% GRID: the frame is laid out on the 1280 x 720 px grid of the university
+% master; 1 px = \paperwidth/1280 (0.125 mm on the 160 x 90 mm 16:9 page).
 % ============================================================================
-\newcommand{\d@chair}{Chair}
-\newcommand{\d@name}{Name}
+\newlength{\d@px}
+\setlength{\d@px}{\dimexpr\paperwidth/1280\relax}
+\tikzset{d3grid/.style={x=\d@px, y=-\d@px, shift={(current page.north west)}}}
+% font size and leading in px
+\newcommand{\d@pxfont}[2]{%
+  \edef\d@fsize{\the\dimexpr#1\d@px\relax}\edef\d@fskip{\the\dimexpr#2\d@px\relax}%
+  \fontsize{\d@fsize}{\d@fskip}\selectfont}
+\newsavebox{\d@box}
+\newsavebox{\d@tbox}  % emptiness tests
+
+% ============================================================================
+% LOGOS (vector PDFs)
+% ============================================================================
+\IfFileExists{assets/logos/uw-logo-navy.pdf}
+  {\def\d@logodir{assets/logos/}}
+  {\IfFileExists{assets/uw-logo-navy.pdf}
+     {\def\d@logodir{assets/}}
+     {\def\d@logodir{assets/logos/}%
+      \PackageError{d3-beamer}{Logos not found in assets/logos/. Copy
+        logo-d3.pdf, uw-logo-navy.pdf, uw-logo-white.pdf, uw-seal-blue.pdf and
+        uw-seal-faint.pdf from the skill's assets/logos/}{}}}
+\newcommand{\d@unilogo}[1]{\includegraphics[width=186\d@px]{\d@logodir uw-logo-#1.pdf}}
+\newcommand{\d@dlogo}{\includegraphics[width=174\d@px]{\d@logodir logo-d3.pdf}}
+\newcommand{\d@seal}[2]{\includegraphics[width=#2\d@px]{\d@logodir uw-seal-#1.pdf}}
+
+% ============================================================================
+% LABELS AND METADATA COMMANDS
+% ============================================================================
+\ifd@german
+  \newcommand{\d@chair}{Lehrstuhl für Wirtschaftsinformatik und Business Analytics}
+  \newcommand{\d@partlabel}[2]{Teil #1 von #2}
+  \newcommand{\d@thanksword}{Vielen Dank}
+\else
+  \newcommand{\d@chair}{Chair of Information Systems and Business Analytics}
+  \newcommand{\d@partlabel}[2]{Part #1 of #2}
+  \newcommand{\d@thanksword}{Thank you}
+\fi
+\newcommand{\d@agendaword}{Agenda}
+\newcommand{\d@name}{\insertshortauthor}
+\let\d@contact\@empty
 \newcommand{\chair}[1]{\renewcommand{\d@chair}{#1}}
 \newcommand{\presenter}[1]{\renewcommand{\d@name}{#1}}
+% optional lines for the thank-you box, separated by \\ (e-mail, phone, web)
+\newcommand{\contact}[1]{\renewcommand*{\d@contact}{#1}}
+% optional bold label in front of the takeaway text, e.g. \takeawaylabel{Key takeaway:}
+\newcommand{\d@takeawayword}{}
+\newcommand{\takeawaylabel}[1]{\renewcommand{\d@takeawayword}{#1}}
+% one-shot orange kicker in front of the next slide title
+\let\d@kicker\@empty
+\newcommand{\kicker}[1]{\gdef\d@kicker{#1}}
 
 % ============================================================================
 % REUSABLE SECTION NAME SYSTEM
@@ -105,6 +224,8 @@
 \newcommand{\d@secVI}{}
 \newcommand{\d@secVII}{}
 \newcommand{\d@numsections}{0}
+\newcommand{\d@secname}[1]{\ifcase#1\or\d@secI\or\d@secII\or\d@secIII\or\d@secIV\or\d@secV\or\d@secVI\or\d@secVII\fi}
+\newcommand{\d@twodigits}[1]{\ifnum#1<10 0\fi\number#1}
 
 \newcommand{\defsectionstwo}[2]{%
   \renewcommand{\d@secI}{#1}\renewcommand{\d@secII}{#2}\renewcommand{\d@numsections}{2}}
@@ -120,19 +241,68 @@
   \renewcommand{\d@secI}{#1}\renewcommand{\d@secII}{#2}\renewcommand{\d@secIII}{#3}\renewcommand{\d@secIV}{#4}\renewcommand{\d@secV}{#5}\renewcommand{\d@secVI}{#6}\renewcommand{\d@secVII}{#7}\renewcommand{\d@numsections}{7}}
 
 % ============================================================================
+% FRAME PARTS (all coordinates in px on the 1280 x 720 grid, y downwards)
+% ============================================================================
+% footer: presenter | chair | short title (empty parts are skipped)
+\newcommand{\d@footsep}{\hspace{0.45em}|\hspace{0.45em}}
+\newcommand{\d@footer}{%
+  \def\d@sep{}%
+  \sbox{\d@tbox}{\d@name}\ifdim\wd\d@tbox>0pt \d@name\def\d@sep{\d@footsep}\fi
+  \sbox{\d@tbox}{\d@chair}\ifdim\wd\d@tbox>0pt \d@sep\d@chair\def\d@sep{\d@footsep}\fi
+  \sbox{\d@tbox}{\insertshorttitle}\ifdim\wd\d@tbox>0pt \d@sep\insertshorttitle\fi}
+
+% the content frame: uni logo, D3 logo, hairline, footer, page tab (#1 = page label)
+\newcommand{\d@contentchrome}[1]{%
+  \node[anchor=north west, inner sep=0pt] at (72,23) {\d@unilogo{navy}};
+  \node[anchor=north east, inner sep=0pt] at (1211,35) {\d@dlogo};
+  \fill[d3-hairline] (73,94) rectangle (1211,95);
+  \node[anchor=base west, inner sep=0pt] at (74,696.2) {%
+    \sbox{\d@box}{\d@pxfont{13.3}{16}\color{black}\d@footer}%
+    \ifdim\wd\d@box>1070\d@px\resizebox{1070\d@px}{!}{\usebox{\d@box}}\else\usebox{\d@box}\fi};
+  \pgfinterruptpicture\global\setbox\d@box\hbox{\d@pxfont{13.3}{16}#1}\endpgfinterruptpicture
+  \ifdim\wd\d@box>0pt
+    \pgfmathsetmacro{\d@tabw}{max(42, \wd\d@box/\d@px + 14)}%
+    \fill[d3-navy] (1211-\d@tabw,671) rectangle (1211,720);
+    \node[anchor=base, inner sep=0pt, text=white] at (1211-\d@tabw/2,700.2) {\usebox{\d@box}};
+  \fi}
+
+% slide title, 32 px SemiBold navy, first baseline under the hairline
+\newcommand{\d@title}[1]{%
+  \node[anchor=base west, inner sep=0pt] at (74,141.4) {%
+    \parbox[t]{1137\d@px}{\raggedright\d@pxfont{32}{38.4}\d@semibold\leavevmode\color{d3-navy}%
+      \ifx\d@kicker\@empty\else{\color{d3-orange}\d@kicker}\hspace{0.35em}\fi#1}};}
+% the kicker is cleared after \end{frame}, so every overlay of the frame keeps it
+\newcommand{\d@endslide}{\global\let\d@kicker\@empty}
+
+% body boxes: one column 1137 x 420 at (74,225); two columns 548 wide at x 74 and 663.
+% They go into a second picture without the px grid, because a tikzpicture inside
+% the content inherits the options of the picture around it.
+\newcommand{\d@body}[4]{% #1 x, #2 width, #3 height, #4 content
+  \node[anchor=north west, inner sep=0pt]
+    at ([xshift=#1\d@px, yshift=-225\d@px]current page.north west) {%
+    \color{black}\small\begin{minipage}[t][#3\d@px][t]{#2\d@px}#4\end{minipage}};}
+
+% ============================================================================
 % TITLE SLIDE
 % ============================================================================
 \newcommand{\titleslide}{%
   \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Title_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.73\paperwidth, align=left]
-        at ([xshift=0.135\paperwidth, yshift=-0.33\paperheight]current page.north west) {%
-          \color{d3-navy}\LARGE\bfseries\inserttitle};
-      \node[anchor=north west, inner sep=0pt, text width=0.73\paperwidth, align=left]
-        at ([xshift=0.135\paperwidth, yshift=-0.50\paperheight]current page.north west) {%
-          \color{d3-navy}\large\insertsubtitle};
+    \begin{tikzpicture}[remember picture, overlay, d3grid]
+      \node[anchor=north west, inner sep=0pt] at (72,22) {\d@unilogo{navy}};
+      \node[anchor=north west, inner sep=0pt] at (295,35) {\d@dlogo};
+      % title: bottom-aligned in the box y 168-360
+      \node[anchor=base west, inner sep=0pt] at (74,350) {%
+        \parbox[b]{1137\d@px}{\raggedright\d@pxfont{40}{46}\bfseries\leavevmode\color{d3-navy}\inserttitle}};
+      % navy band with the seal cut at its bottom-right corner
+      \fill[d3-navy] (39,425) rectangle (1241,670);
+      \node[anchor=south east, inner sep=0pt] at (1241,670) {\d@seal{blue}{228}};
+      \fill[d3-orange] (74,455) rectangle (118,458);
+      \node[anchor=base west, inner sep=0pt] at (74,496) {%
+        \parbox[t]{858\d@px}{\raggedright\d@pxfont{24}{31.2}\d@semibold\leavevmode\color{white}\insertsubtitle}};
+      \node[anchor=base west, inner sep=0pt] at (74,613) {%
+        \d@pxfont{20}{24}\d@semibold\color{white}\d@name};
+      \node[anchor=base west, inner sep=0pt] at (74,638) {%
+        \d@pxfont{17}{20}\color{white!78!d3-navy}\insertdate};
     \end{tikzpicture}
   \end{frame}\d@uncount
 }
@@ -142,24 +312,14 @@
 % ============================================================================
 \newcommand{\onecol}[2]{%
   \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay, d3grid]
+      \d@contentchrome{\d@framelabel}
+      \d@title{#1}
+    \end{tikzpicture}%
     \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.72\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {%
-          \color{d3-navy}\Large\bfseries\linespread{1.15}\selectfont #1};
-      \node[anchor=north west, inner sep=0pt, text width=0.885\paperwidth, align=left]
-        at ([xshift=0.057\paperwidth, yshift=-0.24\paperheight]current page.north west) {%
-          \color{d3-navy}\small%
-          \begin{minipage}[t][0.60\paperheight][t]{0.885\paperwidth}#2\end{minipage}};
-      \node[anchor=south west, inner sep=0pt]
-        at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {%
-          \color{white}\tiny\d@framelabel};
-      \node[anchor=south west, inner sep=0pt]
-        at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {%
-          \color{black}\tiny \d@chair~|~\d@name};
+      \d@body{74}{1137}{420}{#2}
     \end{tikzpicture}
-  \end{frame}
+  \end{frame}\d@endslide
 }
 
 % ============================================================================
@@ -167,332 +327,138 @@
 % ============================================================================
 \newcommand{\twocol}[3]{%
   \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay, d3grid]
+      \d@contentchrome{\d@framelabel}
+      \d@title{#1}
+    \end{tikzpicture}%
     \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.72\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {%
-          \color{d3-navy}\Large\bfseries\linespread{1.15}\selectfont #1};
-      \node[anchor=north west, inner sep=0pt, text width=0.427\paperwidth, align=left]
-        at ([xshift=0.057\paperwidth, yshift=-0.24\paperheight]current page.north west) {%
-          \color{d3-navy}\small%
-          \begin{minipage}[t][0.60\paperheight][t]{0.427\paperwidth}#2\end{minipage}};
-      \node[anchor=north west, inner sep=0pt, text width=0.427\paperwidth, align=left]
-        at ([xshift=0.51\paperwidth, yshift=-0.24\paperheight]current page.north west) {%
-          \color{d3-navy}\small%
-          \begin{minipage}[t][0.60\paperheight][t]{0.427\paperwidth}#3\end{minipage}};
-      \node[anchor=south west, inner sep=0pt]
-        at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {%
-          \color{white}\tiny\d@framelabel};
-      \node[anchor=south west, inner sep=0pt]
-        at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {%
-          \color{black}\tiny \d@chair~|~\d@name};
+      \d@body{74}{548}{420}{#2}
+      \d@body{663}{548}{420}{#3}
     \end{tikzpicture}
-  \end{frame}
+  \end{frame}\d@endslide
 }
 
 % ============================================================================
-% CONTENT SLIDE - TWO COLUMNS WITH TAKEAWAY BOX
+% CONTENT SLIDE - TWO COLUMNS WITH TAKEAWAY BAR
 % ============================================================================
-% per-slide vertical offset for the takeaway box (positive = lower); reset after use
+% Sand bar above the footer (bottom edge at y 662, 902 px wide, at least 84 px
+% high) with a 4 px orange rule on the left. Bold words inside turn orange-ink.
+% per-slide vertical offset for the takeaway bar (positive = lower); reset after use
 \newlength{\d@takeawayshift}\setlength{\d@takeawayshift}{0pt}
 \newcommand{\takeawayshift}[1]{\setlength{\d@takeawayshift}{#1}}
+\newcommand{\d@takeaway}[1]{%
+  \node[anchor=south west, inner sep=0pt, outer sep=0pt, fill=d3-sand,
+        minimum width=902\d@px, minimum height=84\d@px] (d3take)
+    at ([yshift=-\d@takeawayshift]74,662) {%
+      \hspace*{30\d@px}\parbox{848\d@px}{\vspace*{14\d@px}\raggedright
+        \d@pxfont{24}{31}\d@medium\color{black}%
+        \let\d@textbf\textbf\renewcommand{\textbf}[1]{{\color{d3-orange-ink}\d@textbf{##1}}}%
+        \sbox{\d@tbox}{\d@takeawayword}\ifdim\wd\d@tbox>0pt \textbf{\d@takeawayword}\space\fi
+        #1\par\vspace*{14\d@px}}\hspace*{24\d@px}};
+  \fill[d3-orange] (d3take.south west) rectangle ([xshift=4\d@px]d3take.north west);}
 \newcommand{\twocoltakeaway}[4]{%
   \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay, d3grid]
+      \d@contentchrome{\d@framelabel}
+      \d@title{#1}
+      \d@takeaway{#4}
+    \end{tikzpicture}%
     \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.72\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {%
-          \color{d3-navy}\Large\bfseries\linespread{1.15}\selectfont #1};
-      \node[anchor=north west, inner sep=0pt, text width=0.427\paperwidth, align=left]
-        at ([xshift=0.057\paperwidth, yshift=-0.24\paperheight]current page.north west) {%
-          \color{d3-navy}\small%
-          \begin{minipage}[t][0.38\paperheight][t]{0.427\paperwidth}#2\end{minipage}};
-      \node[anchor=north west, inner sep=0pt, text width=0.427\paperwidth, align=left]
-        at ([xshift=0.51\paperwidth, yshift=-0.24\paperheight]current page.north west) {%
-          \color{d3-navy}\small%
-          \begin{minipage}[t][0.38\paperheight][t]{0.427\paperwidth}#3\end{minipage}};
-      \node[anchor=north west, inner sep=0pt, text width=0.87\paperwidth, align=left]
-        at ([xshift=0.057\paperwidth, yshift={-0.66\paperheight-\d@takeawayshift}]current page.north west) {%
-          \color{d3-navy}\small%
-          \begin{tcolorbox}[colback=d3-orange!5,colframe=d3-orange,boxrule=0pt,leftrule=3pt,arc=0pt,left=6pt,right=6pt,top=4pt,bottom=4pt]
-            \textbf{\color{d3-orange}Key Takeaway:} #4%
-          \end{tcolorbox}};
-      \node[anchor=south west, inner sep=0pt]
-        at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {%
-          \color{white}\tiny\d@framelabel};
-      \node[anchor=south west, inner sep=0pt]
-        at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {%
-          \color{black}\tiny \d@chair~|~\d@name};
+      \d@body{74}{548}{335}{#2}
+      \d@body{663}{548}{335}{#3}
     \end{tikzpicture}
-  \end{frame}
+  \end{frame}\setlength{\d@takeawayshift}{0pt}\d@endslide
 }
 
 % ============================================================================
-% SECTION SLIDE
+% SECTION DIVIDERS (navy full bleed)
 % ============================================================================
-\newcommand{\sectionslide}[1]{%
-  \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Title_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.73\paperwidth, align=left]
-        at ([xshift=0.135\paperwidth, yshift=-0.40\paperheight]current page.north west) {%
-          \color{d3-navy}\LARGE\bfseries #1};
+% #1 = part number (0: no number), #2 = title, #3 = optional question
+\newcommand{\d@divider}[3]{%
+  \begin{frame}[plain]\ifnum#1>0 \hypertarget{d3sec-#1}{}\fi%
+    \begin{tikzpicture}[remember picture, overlay, d3grid]
+      \fill[d3-navy] (0,0) rectangle (1280,720);
+      \node[anchor=south east, inner sep=0pt] at (1280,720) {\d@seal{blue}{308}};
+      \node[anchor=north west, inner sep=0pt] at (72,22) {\d@unilogo{white}};
+      \fill[white, opacity=0.55] (73,94) rectangle (1211,95);
+      \ifnum#1>0
+        \node[anchor=base west, inner sep=0pt] at (74,366) {%
+          \d@pxfont{15}{18}\d@medium\addfontfeatures{LetterSpace=12}\color{d3-orange}%
+          \MakeUppercase{\d@partlabel{#1}{\d@numsections}}};
+        \node[anchor=base west, inner sep=0pt] at (68,493) {%
+          \d@pxfont{133}{133}\bfseries\color{d3-sky}\d@twodigits{#1}};
+      \fi
+      \node[anchor=base west, inner sep=0pt] at (74,561.2) {%
+        \parbox[t]{857\d@px}{\raggedright\d@pxfont{36}{43.2}\d@semibold\leavevmode\color{white}#2%
+          \ifx\relax#3\relax\else\par\vspace*{12\d@px}%
+            {\d@pxfont{22}{30.8}\mdseries\color{d3-paleblue}#3\par}\fi}};
     \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-% ============================================================================
-% AGENDA SLIDE - INTERNAL HELPERS
-% ============================================================================
-\newcounter{agendacounter}
-
-\newcommand{\d@drawsectionitemlinked}[6]{%
-  \pgfmathsetmacro{\startoffset}{0.5 - (#6-1)*0.045}
-  \node[circle, fill=#4, text=white, font=\bfseries\normalsize, minimum size=1.8em, inner sep=0pt]
-    at ([xshift=0.14\paperwidth, yshift={-\startoffset*\paperheight - #1*0.09\paperheight}]current page.north west)
-    {\hyperlink{d3sec-#2}{#2}};
-  \node[anchor=west, font=\bfseries\normalsize, text=#5]
-    at ([xshift=0.18\paperwidth, yshift={-\startoffset*\paperheight - #1*0.09\paperheight}]current page.north west)
-    {\hyperlink{d3sec-#2}{#3}};
-}
+  \end{frame}\d@uncount}
 
 % ============================================================================
-% AGENDA SLIDES - 2 to 7 items
+% AGENDA (content frame; two-digit numbers in sky, topics black, 60 px apart)
 % ============================================================================
-\newcommand{\agendatwo}[2]{%
-  \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.75\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {%
-          \color{d3-navy}\Large\bfseries Agenda};
-      \d@drawsectionitemlinked{0}{1}{#1}{d3-navy}{d3-navy}{2}
-      \d@drawsectionitemlinked{1}{2}{#2}{d3-navy}{d3-navy}{2}
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
+% #1 = highlighted part (0: none, all rows in full colour)
+\newcommand{\d@agendaframe}[1]{%
+  \begin{frame}[plain]\ifnum#1>0 \hypertarget{d3sec-#1}{}\fi%
+    \begin{tikzpicture}[remember picture, overlay, d3grid]
+      \d@contentchrome{\d@structnumber}
+      \d@title{\d@agendaword}
+      \foreach \d@k in {1,...,\d@numsections} {
+        \pgfmathsetmacro{\d@y}{231 + 60*(\d@k - 1)}
+        \ifnum#1=0 \def\d@ncol{d3-sky}\def\d@tcol{black}\def\d@tser{}%
+        \else\ifnum#1=\d@k \def\d@ncol{d3-sky}\def\d@tcol{d3-navy}\def\d@tser{\d@semibold}%
+        \else \def\d@ncol{black!25}\def\d@tcol{black!45}\def\d@tser{}\fi\fi
+        \node[anchor=base west, inner sep=0pt] at (73,\d@y) {%
+          \hyperlink{d3sec-\d@k}{\d@pxfont{32}{38}\bfseries\color{\d@ncol}\d@twodigits{\d@k}}};
+        \node[anchor=base west, inner sep=0pt] at (139,\d@y) {%
+          \hyperlink{d3sec-\d@k}{\d@pxfont{24}{29}\d@tser\color{\d@tcol}\d@secname{\d@k}}};
+      }
     \end{tikzpicture}
-  \end{frame}\d@uncount
-}
+  \end{frame}\d@uncount\d@endslide}
 
-\newcommand{\agendathree}[3]{%
-  \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.75\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {\color{d3-navy}\Large\bfseries Agenda};
-      \d@drawsectionitemlinked{0}{1}{#1}{d3-navy}{d3-navy}{3}
-      \d@drawsectionitemlinked{1}{2}{#2}{d3-navy}{d3-navy}{3}
-      \d@drawsectionitemlinked{2}{3}{#3}{d3-navy}{d3-navy}{3}
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\agendafour}[4]{%
-  \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.75\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {\color{d3-navy}\Large\bfseries Agenda};
-      \d@drawsectionitemlinked{0}{1}{#1}{d3-navy}{d3-navy}{4}
-      \d@drawsectionitemlinked{1}{2}{#2}{d3-navy}{d3-navy}{4}
-      \d@drawsectionitemlinked{2}{3}{#3}{d3-navy}{d3-navy}{4}
-      \d@drawsectionitemlinked{3}{4}{#4}{d3-navy}{d3-navy}{4}
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\agendafive}[5]{%
-  \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.75\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {\color{d3-navy}\Large\bfseries Agenda};
-      \d@drawsectionitemlinked{0}{1}{#1}{d3-navy}{d3-navy}{5}
-      \d@drawsectionitemlinked{1}{2}{#2}{d3-navy}{d3-navy}{5}
-      \d@drawsectionitemlinked{2}{3}{#3}{d3-navy}{d3-navy}{5}
-      \d@drawsectionitemlinked{3}{4}{#4}{d3-navy}{d3-navy}{5}
-      \d@drawsectionitemlinked{4}{5}{#5}{d3-navy}{d3-navy}{5}
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\agendasix}[6]{%
-  \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.75\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {\color{d3-navy}\Large\bfseries Agenda};
-      \d@drawsectionitemlinked{0}{1}{#1}{d3-navy}{d3-navy}{6}
-      \d@drawsectionitemlinked{1}{2}{#2}{d3-navy}{d3-navy}{6}
-      \d@drawsectionitemlinked{2}{3}{#3}{d3-navy}{d3-navy}{6}
-      \d@drawsectionitemlinked{3}{4}{#4}{d3-navy}{d3-navy}{6}
-      \d@drawsectionitemlinked{4}{5}{#5}{d3-navy}{d3-navy}{6}
-      \d@drawsectionitemlinked{5}{6}{#6}{d3-navy}{d3-navy}{6}
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\agendaseven}[7]{%
-  \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.75\paperwidth, align=left]
-        at ([xshift=0.19\paperwidth, yshift=-0.09\paperheight]current page.north west) {\color{d3-navy}\Large\bfseries Agenda};
-      \d@drawsectionitemlinked{0}{1}{#1}{d3-navy}{d3-navy}{7}
-      \d@drawsectionitemlinked{1}{2}{#2}{d3-navy}{d3-navy}{7}
-      \d@drawsectionitemlinked{2}{3}{#3}{d3-navy}{d3-navy}{7}
-      \d@drawsectionitemlinked{3}{4}{#4}{d3-navy}{d3-navy}{7}
-      \d@drawsectionitemlinked{4}{5}{#5}{d3-navy}{d3-navy}{7}
-      \d@drawsectionitemlinked{5}{6}{#6}{d3-navy}{d3-navy}{7}
-      \d@drawsectionitemlinked{6}{7}{#7}{d3-navy}{d3-navy}{7}
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-% ============================================================================
-% SECTION DIVIDERS - 2 to 7 items
-% ============================================================================
-\newcommand{\sectiondividertwo}[3]{%
-  \begin{frame}[plain]\hypertarget{d3sec-#1}{}%
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {\includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \ifnum#1=1 \d@drawsectionitemlinked{0}{1}{#2}{d3-navy}{d3-navy}{2}\else \d@drawsectionitemlinked{0}{1}{#2}{black!30}{black!50}{2}\fi
-      \ifnum#1=2 \d@drawsectionitemlinked{1}{2}{#3}{d3-navy}{d3-navy}{2}\else \d@drawsectionitemlinked{1}{2}{#3}{black!30}{black!50}{2}\fi
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\sectiondividerthree}[4]{%
-  \begin{frame}[plain]\hypertarget{d3sec-#1}{}%
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {\includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \ifnum#1=1 \d@drawsectionitemlinked{0}{1}{#2}{d3-navy}{d3-navy}{3}\else \d@drawsectionitemlinked{0}{1}{#2}{black!30}{black!50}{3}\fi
-      \ifnum#1=2 \d@drawsectionitemlinked{1}{2}{#3}{d3-navy}{d3-navy}{3}\else \d@drawsectionitemlinked{1}{2}{#3}{black!30}{black!50}{3}\fi
-      \ifnum#1=3 \d@drawsectionitemlinked{2}{3}{#4}{d3-navy}{d3-navy}{3}\else \d@drawsectionitemlinked{2}{3}{#4}{black!30}{black!50}{3}\fi
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\sectiondividerfour}[5]{%
-  \begin{frame}[plain]\hypertarget{d3sec-#1}{}%
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {\includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \ifnum#1=1 \d@drawsectionitemlinked{0}{1}{#2}{d3-navy}{d3-navy}{4}\else \d@drawsectionitemlinked{0}{1}{#2}{black!30}{black!50}{4}\fi
-      \ifnum#1=2 \d@drawsectionitemlinked{1}{2}{#3}{d3-navy}{d3-navy}{4}\else \d@drawsectionitemlinked{1}{2}{#3}{black!30}{black!50}{4}\fi
-      \ifnum#1=3 \d@drawsectionitemlinked{2}{3}{#4}{d3-navy}{d3-navy}{4}\else \d@drawsectionitemlinked{2}{3}{#4}{black!30}{black!50}{4}\fi
-      \ifnum#1=4 \d@drawsectionitemlinked{3}{4}{#5}{d3-navy}{d3-navy}{4}\else \d@drawsectionitemlinked{3}{4}{#5}{black!30}{black!50}{4}\fi
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\sectiondividerfive}[6]{%
-  \begin{frame}[plain]\hypertarget{d3sec-#1}{}%
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {\includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \ifnum#1=1 \d@drawsectionitemlinked{0}{1}{#2}{d3-navy}{d3-navy}{5}\else \d@drawsectionitemlinked{0}{1}{#2}{black!30}{black!50}{5}\fi
-      \ifnum#1=2 \d@drawsectionitemlinked{1}{2}{#3}{d3-navy}{d3-navy}{5}\else \d@drawsectionitemlinked{1}{2}{#3}{black!30}{black!50}{5}\fi
-      \ifnum#1=3 \d@drawsectionitemlinked{2}{3}{#4}{d3-navy}{d3-navy}{5}\else \d@drawsectionitemlinked{2}{3}{#4}{black!30}{black!50}{5}\fi
-      \ifnum#1=4 \d@drawsectionitemlinked{3}{4}{#5}{d3-navy}{d3-navy}{5}\else \d@drawsectionitemlinked{3}{4}{#5}{black!30}{black!50}{5}\fi
-      \ifnum#1=5 \d@drawsectionitemlinked{4}{5}{#6}{d3-navy}{d3-navy}{5}\else \d@drawsectionitemlinked{4}{5}{#6}{black!30}{black!50}{5}\fi
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\sectiondividersix}[7]{%
-  \begin{frame}[plain]\hypertarget{d3sec-#1}{}%
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {\includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \ifnum#1=1 \d@drawsectionitemlinked{0}{1}{#2}{d3-navy}{d3-navy}{6}\else \d@drawsectionitemlinked{0}{1}{#2}{black!30}{black!50}{6}\fi
-      \ifnum#1=2 \d@drawsectionitemlinked{1}{2}{#3}{d3-navy}{d3-navy}{6}\else \d@drawsectionitemlinked{1}{2}{#3}{black!30}{black!50}{6}\fi
-      \ifnum#1=3 \d@drawsectionitemlinked{2}{3}{#4}{d3-navy}{d3-navy}{6}\else \d@drawsectionitemlinked{2}{3}{#4}{black!30}{black!50}{6}\fi
-      \ifnum#1=4 \d@drawsectionitemlinked{3}{4}{#5}{d3-navy}{d3-navy}{6}\else \d@drawsectionitemlinked{3}{4}{#5}{black!30}{black!50}{6}\fi
-      \ifnum#1=5 \d@drawsectionitemlinked{4}{5}{#6}{d3-navy}{d3-navy}{6}\else \d@drawsectionitemlinked{4}{5}{#6}{black!30}{black!50}{6}\fi
-      \ifnum#1=6 \d@drawsectionitemlinked{5}{6}{#7}{d3-navy}{d3-navy}{6}\else \d@drawsectionitemlinked{5}{6}{#7}{black!30}{black!50}{6}\fi
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
-
-\newcommand{\sectiondividerseven}[8]{%
-  \begin{frame}[plain]\hypertarget{d3sec-#1}{}%
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {\includegraphics[width=\paperwidth, height=\paperheight]{assets/Slide_template.pdf}};
-      \ifnum#1=1 \d@drawsectionitemlinked{0}{1}{#2}{d3-navy}{d3-navy}{7}\else \d@drawsectionitemlinked{0}{1}{#2}{black!30}{black!50}{7}\fi
-      \ifnum#1=2 \d@drawsectionitemlinked{1}{2}{#3}{d3-navy}{d3-navy}{7}\else \d@drawsectionitemlinked{1}{2}{#3}{black!30}{black!50}{7}\fi
-      \ifnum#1=3 \d@drawsectionitemlinked{2}{3}{#4}{d3-navy}{d3-navy}{7}\else \d@drawsectionitemlinked{2}{3}{#4}{black!30}{black!50}{7}\fi
-      \ifnum#1=4 \d@drawsectionitemlinked{3}{4}{#5}{d3-navy}{d3-navy}{7}\else \d@drawsectionitemlinked{3}{4}{#5}{black!30}{black!50}{7}\fi
-      \ifnum#1=5 \d@drawsectionitemlinked{4}{5}{#6}{d3-navy}{d3-navy}{7}\else \d@drawsectionitemlinked{4}{5}{#6}{black!30}{black!50}{7}\fi
-      \ifnum#1=6 \d@drawsectionitemlinked{5}{6}{#7}{d3-navy}{d3-navy}{7}\else \d@drawsectionitemlinked{5}{6}{#7}{black!30}{black!50}{7}\fi
-      \ifnum#1=7 \d@drawsectionitemlinked{6}{7}{#8}{d3-navy}{d3-navy}{7}\else \d@drawsectionitemlinked{6}{7}{#8}{black!30}{black!50}{7}\fi
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.057\paperwidth, yshift=0.038\paperheight]current page.south west) {\color{white}\tiny\d@structnumber};
-      \node[anchor=south west, inner sep=0pt] at ([xshift=0.115\paperwidth, yshift=0.034\paperheight]current page.south west) {\color{black}\tiny \d@chair~|~\d@name};
-    \end{tikzpicture}
-  \end{frame}\d@uncount
-}
+% legacy entry points (2 to 7 items); they store the names like \defsections...
+\newcommand{\agendatwo}[2]{\defsectionstwo{#1}{#2}\d@agendaframe{0}}
+\newcommand{\agendathree}[3]{\defsectionsthree{#1}{#2}{#3}\d@agendaframe{0}}
+\newcommand{\agendafour}[4]{\defsectionsfour{#1}{#2}{#3}{#4}\d@agendaframe{0}}
+\newcommand{\agendafive}[5]{\defsectionsfive{#1}{#2}{#3}{#4}{#5}\d@agendaframe{0}}
+\newcommand{\agendasix}[6]{\defsectionssix{#1}{#2}{#3}{#4}{#5}{#6}\d@agendaframe{0}}
+\newcommand{\agendaseven}[7]{\defsectionsseven{#1}{#2}{#3}{#4}{#5}{#6}{#7}\d@agendaframe{0}}
+\newcommand{\sectiondividertwo}[3]{\defsectionstwo{#2}{#3}\showsection{#1}}
+\newcommand{\sectiondividerthree}[4]{\defsectionsthree{#2}{#3}{#4}\showsection{#1}}
+\newcommand{\sectiondividerfour}[5]{\defsectionsfour{#2}{#3}{#4}{#5}\showsection{#1}}
+\newcommand{\sectiondividerfive}[6]{\defsectionsfive{#2}{#3}{#4}{#5}{#6}\showsection{#1}}
+\newcommand{\sectiondividersix}[7]{\defsectionssix{#2}{#3}{#4}{#5}{#6}{#7}\showsection{#1}}
+\newcommand{\sectiondividerseven}[8]{\defsectionsseven{#2}{#3}{#4}{#5}{#6}{#7}{#8}\showsection{#1}}
 
 % ============================================================================
 % REUSABLE SECTION COMMANDS
 % ============================================================================
-\newcommand{\showagenda}{%
-  \ifnum\d@numsections=2 \agendatwo{\d@secI}{\d@secII}
-  \else\ifnum\d@numsections=3 \agendathree{\d@secI}{\d@secII}{\d@secIII}
-  \else\ifnum\d@numsections=4 \agendafour{\d@secI}{\d@secII}{\d@secIII}{\d@secIV}
-  \else\ifnum\d@numsections=5 \agendafive{\d@secI}{\d@secII}{\d@secIII}{\d@secIV}{\d@secV}
-  \else\ifnum\d@numsections=6 \agendasix{\d@secI}{\d@secII}{\d@secIII}{\d@secIV}{\d@secV}{\d@secVI}
-  \else\ifnum\d@numsections=7 \agendaseven{\d@secI}{\d@secII}{\d@secIII}{\d@secIV}{\d@secV}{\d@secVI}{\d@secVII}
-  \fi\fi\fi\fi\fi\fi}
-
-\newcommand{\showsection}[1]{%
-  \ifnum\d@numsections=2 \sectiondividertwo{#1}{\d@secI}{\d@secII}
-  \else\ifnum\d@numsections=3 \sectiondividerthree{#1}{\d@secI}{\d@secII}{\d@secIII}
-  \else\ifnum\d@numsections=4 \sectiondividerfour{#1}{\d@secI}{\d@secII}{\d@secIII}{\d@secIV}
-  \else\ifnum\d@numsections=5 \sectiondividerfive{#1}{\d@secI}{\d@secII}{\d@secIII}{\d@secIV}{\d@secV}
-  \else\ifnum\d@numsections=6 \sectiondividersix{#1}{\d@secI}{\d@secII}{\d@secIII}{\d@secIV}{\d@secV}{\d@secVI}
-  \else\ifnum\d@numsections=7 \sectiondividerseven{#1}{\d@secI}{\d@secII}{\d@secIII}{\d@secIV}{\d@secV}{\d@secVI}{\d@secVII}
-  \fi\fi\fi\fi\fi\fi}
+\newcommand{\showagenda}{\d@agendaframe{0}}
+% \showsection[optional question]{n}
+\newcommand{\showsection}[2][]{%
+  \ifd@agendadividers\d@agendaframe{#2}\else\d@divider{#2}{\d@secname{#2}}{#1}\fi}
+% \sectionslide[optional question]{title}: navy divider without a part number
+\newcommand{\sectionslide}[2][]{\d@divider{0}{#2}{#1}}
 
 % ============================================================================
-% THANK YOU SLIDE
+% THANK YOU SLIDE (closing slide)
 % ============================================================================
-\newcommand{\thankyouslide}{%
+% \thankyouslide[text]; the navy box lists presenter, chair and the \contact lines
+\newcommand{\thankyouslide}[1][\d@thanksword]{%
   \begin{frame}[plain]
-    \begin{tikzpicture}[remember picture, overlay]
-      \node[anchor=south west, inner sep=0pt] at (current page.south west) {%
-        \includegraphics[width=\paperwidth, height=\paperheight]{assets/Title_template.pdf}};
-      \node[anchor=north west, inner sep=0pt, text width=0.73\paperwidth, align=left]
-        at ([xshift=0.135\paperwidth, yshift=-0.40\paperheight]current page.north west) {%
-          \color{d3-navy}\LARGE\bfseries Thank You!};
-      \node[anchor=north west, inner sep=0pt, text width=0.73\paperwidth, align=left]
-        at ([xshift=0.135\paperwidth, yshift=-0.54\paperheight]current page.north west) {%
-          \color{d3-navy}\normalsize\d@name};
+    \begin{tikzpicture}[remember picture, overlay, d3grid]
+      \fill[d3-closing] (625,0) rectangle (1280,720);
+      \node[anchor=south east, inner sep=0pt] at (1280,720) {\d@seal{faint}{308}};
+      \node[anchor=north west, inner sep=0pt] at (72,22) {\d@unilogo{navy}};
+      \node[anchor=north west, inner sep=0pt] at (295,35) {\d@dlogo};
+      \node[anchor=base west, inner sep=0pt] at (74,350) {%
+        \parbox[b]{514\d@px}{\raggedright\d@pxfont{40}{46}\bfseries\leavevmode\color{d3-navy}#1}};
+      \fill[d3-navy] (39,426) rectangle (655,671);
+      \node[anchor=base west, inner sep=0pt] at (74,483) {%
+        \parbox[t]{546\d@px}{\raggedright\d@pxfont{21}{30.5}\leavevmode\color{white}%
+          \sbox{\d@tbox}{\d@name}\ifdim\wd\d@tbox>0pt {\d@semibold\d@name}\\\fi
+          \d@chair\ifx\d@contact\@empty\else\\[8\d@px]\d@contact\fi}};
     \end{tikzpicture}
   \end{frame}\d@uncount
 }
@@ -501,9 +467,9 @@
 % HELPER COMMANDS
 % ============================================================================
 \newcommand{\highlight}[1]{\textbf{\color{d3-orange}#1}}
-\newcommand{\navybox}[1]{\tikz[baseline=(text.base)]{\node[fill=d3-navy, text=white, rounded corners=3pt, inner sep=6pt, inner ysep=4pt] (text) {\small\bfseries #1};}}
+\newcommand{\navybox}[1]{\tikz[baseline=(text.base)]{\node[fill=d3-navy, text=white, inner sep=6pt, inner ysep=4pt] (text) {\small\d@semibold #1};}}
 % DEPRECATED: Use \textbf{\textcolor{d3-orange}{...}} instead for key messages
-\newcommand{\orangebox}[1]{\tikz[baseline=(text.base)]{\node[fill=d3-orange, text=white, rounded corners=3pt, inner sep=6pt, inner ysep=4pt] (text) {\small\bfseries #1};}}
-\newcommand{\columnheader}[1]{{\bfseries\normalsize\color{d3-navy}#1\par}\vspace{2mm}}
+\newcommand{\orangebox}[1]{\tikz[baseline=(text.base)]{\node[fill=d3-orange, text=white, inner sep=6pt, inner ysep=4pt] (text) {\small\d@semibold #1};}}
+\newcommand{\columnheader}[1]{{\d@semibold\normalsize\color{d3-navy}#1\par}\vspace{2mm}}
 
 \mode<all>
