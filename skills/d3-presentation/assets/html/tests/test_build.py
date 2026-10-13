@@ -219,7 +219,7 @@ class Output(unittest.TestCase):
         self.assertIn('Vielen Dank', doc)
         content = doc[doc.index('data-i="3"'):doc.index('data-i="4"')]
         self.assertIn('<div class="uw-num">1</div>', content)
-        self.assertIn('<div class="uw-foot">Ada | Chair of Information Systems and Business Analytics | Vorlesung</div>', content)
+        self.assertIn('<div class="uw-foot">Ada | Lehrstuhl für Wirtschaftsinformatik und Business Analytics | Vorlesung</div>', content)
         self.assertIn('class="take"', content)
         self.assertIn('class="refs"', doc)
         B.meta(title='T', look='uni')
@@ -230,6 +230,13 @@ class Output(unittest.TestCase):
         self.assertIn('Thank you', doc)
         with self.assertRaises(ValueError):
             B.titleslide(cover='pink')
+
+    def test_chair_default_follows_the_language(self):
+        self.assertEqual(B.meta(title='T')['chair'], 'Chair of Information Systems and Business Analytics')
+        self.assertEqual(B.meta(title='T', lang='de')['chair'], 'Lehrstuhl für Wirtschaftsinformatik und Business Analytics')
+        self.assertEqual(B.meta(title='T', lang='de-DE')['chair'], 'Lehrstuhl für Wirtschaftsinformatik und Business Analytics')
+        self.assertEqual(B.meta(title='T', lang='de', chair='Dekanat')['chair'], 'Dekanat')   # an explicit chair wins
+        self.assertEqual(B.meta(title='T', chair='')['chair'], '')                            # and so does an empty one
 
     def test_data_hide_suppresses_the_ghost_on_stage(self):
         from d3deck import engine

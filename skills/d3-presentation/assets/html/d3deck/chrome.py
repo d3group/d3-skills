@@ -251,6 +251,10 @@ def uni_thankyou(text, contact, lang='en'):
 
 
 CSS = r"""
+/* references(): small, two columns, no bullets, in every look (body .sl outweighs body.look-* ul>li) */
+body .sl ul.refs{font-size:14px;line-height:1.45;columns:2;column-gap:40px}
+body .sl ul.refs>li{break-inside:avoid;margin:0 0 8px;padding-left:0}
+body .sl ul.refs>li::before{display:none}
 /* ── Slide_template ── */
 .fr-uni{position:absolute;left:45px;top:54px;width:173px;height:76px}
 .fr-uni svg{width:100%;height:100%;display:block}
@@ -380,9 +384,6 @@ body.look-uni .fact.acc{border-top-color:var(--coral)}
 body.look-uni .fact .fv{font-size:64px;line-height:1;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums}
 body.look-uni .fact.acc .fv{color:var(--berry)}
 body.look-uni .fact .fk{font-size:19px;line-height:1.4;color:#3C4658;margin-top:12px;max-width:26ch}
-body.look-uni .refs{font-size:14px;line-height:1.45;columns:2;column-gap:40px}
-body.look-uni .refs li{break-inside:avoid;margin:0 0 8px;padding-left:0}
-body.look-uni .refs li::before{display:none}
 /* agenda */
 body.look-uni .uw-agl{position:absolute;left:73px;top:197px;width:1138px}
 body.look-uni .uw-ag{display:flex;align-items:baseline;height:60px}

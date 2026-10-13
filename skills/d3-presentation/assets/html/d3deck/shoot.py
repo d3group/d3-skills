@@ -115,7 +115,7 @@ LINT_JS = r"""(o) => {
   let words = 0;
   for (const [n, p] of texts) if (!p.closest(CHROME)) words += n.nodeValue.trim().split(/\s+/).filter(Boolean).length;
   words += [...s.querySelectorAll('mjx-container')].filter(m => !m.closest(CHROME) && vis(m)).length;
-  if (words > o.maxWords) add(s, 'warn', 'wordy', `wordy: ${words} words on the slide; keep about 40 and move sentences to notes=`);
+  if (words > o.maxWords && !s.querySelector('.refs')) add(s, 'warn', 'wordy', `wordy: ${words} words on the slide; keep about 40 and move sentences to notes=`);
   /* hole: content glued to the top of its region with empty space below */
   if (o.hole && !s.querySelector('.stmt, .refs')) {
     const boxes = [...s.querySelectorAll('.body,.col')].filter(b => { const r = b.getBoundingClientRect(); return r.width > 60 && r.height > 60; });

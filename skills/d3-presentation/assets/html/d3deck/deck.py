@@ -25,6 +25,7 @@ UNI_FACES = (('InclusiveSansUW-Regular.ttf', 400, 'normal'), ('InclusiveSansUW-I
              ('InclusiveSansUW-Bold.ttf', 700, 'normal'))
 LOOKS = ('klar', 'beamer', 'uni')
 DEFAULT_CHAIR = 'Chair of Information Systems and Business Analytics'
+DEFAULT_CHAIR_DE = 'Lehrstuhl für Wirtschaftsinformatik und Business Analytics'
 FEELS = ('calm', 'rich', 'interactive')
 
 
@@ -75,10 +76,11 @@ def _strip(s):
     return re.sub(r'<[^>]+>', '', s)
 
 
-def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, sections=(),
+def meta(title, subtitle='', date='', presenter='', chair=None, sections=(),
          tracker=False, numbering='all', lang='en', reveal='ghost', look='klar', math=None, macros=None, feel='calm'):
     """Deck metadata; call once before the first slide. Resets the deck. date is stored for the
     manifest only, like \\date in LaTeX; put it into the subtitle if it should appear.
+    chair=None: the chair line in the language of the deck (English, or German with lang='de'); pass a string to override.
     look='klar' (default): calm content slides: section tracker on top, kicker and one-claim title, mono foot with the
     D3 logo, takeaway on a fixed baseline. look='beamer': the frame of the LaTeX template (uni logo, bar, footer tab).
     look='uni': the University of Würzburg PowerPoint master without D3 branding (teaching): new logo, Inclusive Sans UW,
@@ -98,6 +100,8 @@ def meta(title, subtitle='', date='', presenter='', chair=DEFAULT_CHAIR, section
         raise ValueError("numbering must be 'all' or 'content'")
     if feel not in FEELS:
         raise ValueError(f"feel must be one of {FEELS}")
+    if chair is None:                     # the chair line follows the deck language unless it is given
+        chair = DEFAULT_CHAIR_DE if (lang or '').lower().startswith('de') else DEFAULT_CHAIR
     sections = list(sections)
     if len(sections) > 7:
         warnings.warn(f'{len(sections)} sections; agenda and tracker are designed for at most 7')
