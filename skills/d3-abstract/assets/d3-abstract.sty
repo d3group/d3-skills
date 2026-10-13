@@ -1,10 +1,11 @@
 % d3-abstract.sty
 % D3-branded abstract style (A4, two columns, one or more pages)
-% Adapted from the SKDE faktaark template with D3 visual identity
+% Adapted from the SKDE faktaark template with D3 visual identity,
+% framed by the 2025 corporate design of the University of Würzburg (letterhead)
 % Requires XeLaTeX or LuaLaTeX
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{d3-abstract}[2026/09/17 D3 Abstract Style]
+\ProvidesPackage{d3-abstract}[2026/10/13 D3 Abstract Style, University of Wuerzburg CD 2025]
 
 % ====================
 % Required Packages
@@ -15,52 +16,154 @@
 \RequirePackage{setspace}
 \RequirePackage{tikz}
 \usetikzlibrary{shapes,positioning,calc}
+\RequirePackage{amssymb}         % \checkmark for the text-mode ✓ mapping
+\RequirePackage{newunicodechar}  % Greek and symbols that the text font lacks
 \RequirePackage[colorlinks, citecolor=black, linkcolor=black, urlcolor=d3-navy]{hyperref}
 \RequirePackage{booktabs}    % Professional tables (\toprule, \midrule, \bottomrule)
 \RequirePackage{siunitx}     % Decimal-aligned numeric columns (S column type)
-% Numbers in the text font (Inter) with tabular figures, so S columns align exactly
-\sisetup{mode=text, text-font-command=\addfontfeatures{Numbers=Monospaced}}
+% Numbers in the text font (Inclusive Sans UW). The font has proportional figures
+% only (no tnum feature); S columns align on the decimal marker.
+\sisetup{mode=text}
+% siunitx reserves the width of an "8" per digit; a "0" or "4" in this font is up to
+% 0.024 em wider. Tolerate that sub-point overhang inside tables, so the log reports
+% only real overflows.
+\AddToHook{env/tabular/begin}{\hfuzz=1.5pt\relax}
+\AddToHook{env/tabular*/begin}{\hfuzz=1.5pt\relax}
 \RequirePackage{enumitem}    % List customization
-\setlist[itemize]{nosep, leftmargin=1.2em}
+
+% ====================
+% D3 Color Palette (University of Würzburg corporate design 2025)
+% d3-navy, d3-darkblue, d3-orange, d3-gray, d3-lightblue keep their names.
+% ====================
+\definecolor{d3-navy}{HTML}{02246C}       % titles, headings, links, accent rules
+\definecolor{d3-darkblue}{HTML}{011646}   % deepest surfaces
+\definecolor{d3-orange}{HTML}{F29100}     % D3 accent: highlights, alerts
+\definecolor{d3-orange-ink}{HTML}{B86E00} % orange as small text on white
+\definecolor{d3-gray}{HTML}{808080}       % footer text, comparison methods
+\definecolor{d3-lightblue}{HTML}{CBD9EE}  % card and infobox fills
+\definecolor{d3-blue}{HTML}{5E8AC7}       % cornflower: bullets, secondary series
+\definecolor{d3-sky}{HTML}{5AA1D8}        % large numerals
+\definecolor{d3-sand}{HTML}{F1EBDF}       % quiet boxes
+\definecolor{d3-teal}{HTML}{009485}       % chart series
+\definecolor{d3-teal-ink}{HTML}{007A6E}   % teal as text
+\definecolor{d3-yellow}{HTML}{F8C300}     % chart series
+\definecolor{d3-berry}{HTML}{821044}      % chart series
+\definecolor{d3-peach}{HTML}{FCE4BF}      % light orange fill
+\definecolor{d3-lavender}{HTML}{D9CCE6}   % light fill
+\definecolor{d3-hairline}{HTML}{D3D6DC}   % rule under the logo row and above the footer
+
+% Lists: tight, bullets in cornflower blue
+% (a drawn dot: the font's own bullet is small)
+\setlist[itemize]{nosep, leftmargin=1.2em, label={\tikz[baseline=-0.55ex]\fill[d3-blue] (0,0) circle (0.17em);}}
 \setlist[enumerate]{nosep, leftmargin=1.5em}
 
 % ====================
-% D3 Color Palette
-% ====================
-\definecolor{d3-navy}{RGB}{21,63,135}
-\definecolor{d3-orange}{HTML}{f29100}
-\definecolor{d3-gray}{RGB}{128,128,128}
-\definecolor{d3-lightblue}{RGB}{200,220,240}
-\definecolor{d3-darkblue}{RGB}{10,40,100}
-
-% ====================
-% Font Setup (Inter via fontspec)
+% Font Setup (Inclusive Sans UW via fontspec)
+% The family has no Bold Italic: bold italic is the Bold face, slanted.
 % ====================
 \RequirePackage{fontspec}
-\setmainfont{Inter}[
+\setmainfont{InclusiveSansUW}[
     Path = assets/fonts/,
     Extension = .ttf,
-    UprightFont = Inter_18pt-Regular,
-    BoldFont = Inter_18pt-Bold,
-    ItalicFont = Inter_18pt-Italic,
-    BoldItalicFont = Inter_18pt-BoldItalic
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+    BoldItalicFont = *-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2}
 ]
-\setsansfont{Inter}[
+\setsansfont{InclusiveSansUW}[
     Path = assets/fonts/,
     Extension = .ttf,
-    UprightFont = Inter_18pt-Regular,
-    BoldFont = Inter_18pt-Bold,
-    ItalicFont = Inter_18pt-Italic,
-    BoldItalicFont = Inter_18pt-BoldItalic
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+    BoldItalicFont = *-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2}
 ]
-\newfontfamily{\titlefont}{Inter}[
+% Title and headings: SemiBold
+\newfontfamily{\titlefont}{InclusiveSansUW}[
     Path = assets/fonts/,
     Extension = .ttf,
-    UprightFont = Inter_18pt-SemiBold,
-    BoldFont = Inter_18pt-Bold,
-    ItalicFont = Inter_18pt-Italic,
-    BoldItalicFont = Inter_18pt-BoldItalic
+    UprightFont = *-SemiBold,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+    BoldItalicFont = *-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2}
 ]
+% Medium: takeaway text in \keypoint
+\newfontfamily{\mediumfont}{InclusiveSansUW}[
+    Path = assets/fonts/,
+    Extension = .ttf,
+    UprightFont = *-Medium,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+    BoldItalicFont = *-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2}
+]
+
+% ====================
+% Characters the text font lacks
+% Inclusive Sans UW has no Greek, no primes and few math symbols. Without these
+% mappings, such characters typed in text vanish silently. Math fonts stay as they are.
+% ====================
+\newunicodechar{α}{\ensuremath{\alpha}}
+\newunicodechar{β}{\ensuremath{\beta}}
+\newunicodechar{γ}{\ensuremath{\gamma}}
+\newunicodechar{δ}{\ensuremath{\delta}}
+\newunicodechar{ε}{\ensuremath{\varepsilon}}
+\newunicodechar{ϵ}{\ensuremath{\epsilon}}
+\newunicodechar{ζ}{\ensuremath{\zeta}}
+\newunicodechar{η}{\ensuremath{\eta}}
+\newunicodechar{θ}{\ensuremath{\theta}}
+\newunicodechar{ϑ}{\ensuremath{\vartheta}}
+\newunicodechar{ι}{\ensuremath{\iota}}
+\newunicodechar{κ}{\ensuremath{\kappa}}
+\newunicodechar{λ}{\ensuremath{\lambda}}
+\newunicodechar{μ}{\ensuremath{\mu}}
+\newunicodechar{µ}{\ensuremath{\mu}}% micro sign
+\newunicodechar{ν}{\ensuremath{\nu}}
+\newunicodechar{ξ}{\ensuremath{\xi}}
+\newunicodechar{ο}{\ensuremath{o}}
+\newunicodechar{π}{\ensuremath{\pi}}
+\newunicodechar{ρ}{\ensuremath{\rho}}
+\newunicodechar{σ}{\ensuremath{\sigma}}
+\newunicodechar{ς}{\ensuremath{\varsigma}}
+\newunicodechar{τ}{\ensuremath{\tau}}
+\newunicodechar{υ}{\ensuremath{\upsilon}}
+\newunicodechar{φ}{\ensuremath{\varphi}}
+\newunicodechar{ϕ}{\ensuremath{\phi}}
+\newunicodechar{χ}{\ensuremath{\chi}}
+\newunicodechar{ψ}{\ensuremath{\psi}}
+\newunicodechar{ω}{\ensuremath{\omega}}
+\newunicodechar{Α}{\ensuremath{\mathrm{A}}}
+\newunicodechar{Γ}{\ensuremath{\Gamma}}
+\newunicodechar{Δ}{\ensuremath{\Delta}}
+\newunicodechar{Θ}{\ensuremath{\Theta}}
+\newunicodechar{Λ}{\ensuremath{\Lambda}}
+\newunicodechar{Ξ}{\ensuremath{\Xi}}
+\newunicodechar{Π}{\ensuremath{\Pi}}
+\newunicodechar{Σ}{\ensuremath{\Sigma}}
+\newunicodechar{Υ}{\ensuremath{\Upsilon}}
+\newunicodechar{Φ}{\ensuremath{\Phi}}
+\newunicodechar{Ψ}{\ensuremath{\Psi}}
+\newunicodechar{Ω}{\ensuremath{\Omega}}
+\newunicodechar{≤}{\ensuremath{\leq}}
+\newunicodechar{≥}{\ensuremath{\geq}}
+\newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{≠}{\ensuremath{\neq}}
+\newunicodechar{∞}{\ensuremath{\infty}}
+\newunicodechar{√}{\ensuremath{\surd}}
+\newunicodechar{∈}{\ensuremath{\in}}
+\newunicodechar{∑}{\ensuremath{\sum}}
+\newunicodechar{∫}{\ensuremath{\int}}
+\newunicodechar{∂}{\ensuremath{\partial}}
+\newunicodechar{⇒}{\ensuremath{\Rightarrow}}
+% → ← ↔ need no mapping: the font has them
+\newunicodechar{′}{\ensuremath{{}^{\prime}}}
+\newunicodechar{″}{\ensuremath{{}^{\prime\prime}}}
+\newunicodechar{✓}{\ensuremath{\checkmark}}
+\newunicodechar{²}{\textsuperscript{2}}
+\newunicodechar{³}{\textsuperscript{3}}
 
 % ====================
 % Layout
@@ -68,6 +171,10 @@
 \columnsep=20pt
 \graphicspath{{./figures/}{./assets/logos/}{./logos/}}
 \newcommand{\figbredde}{1.0\linewidth}
+
+% Header geometry, after the university letterhead
+\newlength{\dabs@unilogowidth}\setlength{\dabs@unilogowidth}{46mm}  % university logo, top left
+\newlength{\dabs@dlogowidth}\setlength{\dabs@dlogowidth}{38mm}      % D3 logo, top right
 
 % ====================
 % Slot Variables (defaults)
@@ -78,7 +185,7 @@
 \newcommand{\bildebredde}{1.0\linewidth}
 \newcommand{\venstre}{}
 \newcommand{\hoyre}{}
-\newcommand{\projektname}{}   % If set, replaces university info in footer
+\newcommand{\projektname}{}   % If set, replaces the group and chair line in the footer
 \newcommand{\abstractpages}{1} % Declared page count; values above 1 add "page / total" to the footer
 
 % ====================
@@ -97,27 +204,30 @@
 % ====================
 % Header Macro
 % \setheader{title}{subtitle}
+% Logo row (university logo left, D3 logo right, vertically centred),
+% hairline, title (navy SemiBold), subtitle.
 % With an empty subtitle only the title line renders.
 % ====================
 \newcommand{\setheader}[2]{%
-\begin{minipage}[c]{0.12\linewidth}
-\includegraphics[width=\linewidth]{logo-wue.pdf}
+\par\noindent
+\begin{minipage}{\linewidth}
+\parskip=0pt
+\noindent
+\begin{minipage}[c]{\dabs@unilogowidth}
+\includegraphics[width=\linewidth]{uw-logo-navy.pdf}
 \end{minipage}%
 \hfill
-\begin{minipage}[c]{0.72\linewidth}
-\raggedright\parskip=0pt
-{\color{d3-navy}\LARGE \titlefont #1\par}%
-\dabs@ifempty{#2}{}{\vspace{0.3em}{\color{black}\normalsize \titlefont \textit{#2}\par}}%
-\end{minipage}%
-\hfill
-\begin{minipage}[c]{0.12\linewidth}
+\begin{minipage}[c]{\dabs@dlogowidth}
 \raggedleft
 \includegraphics[width=\linewidth]{logo-d3.pdf}
-\end{minipage}
-
-\vspace{1ex}
-{\color{d3-navy}\rule{\textwidth}{2pt}}
-\vspace{1ex}}
+\end{minipage}\par
+\vspace{2.5mm}%
+{\color{d3-hairline}\rule{\linewidth}{0.5pt}}\par
+\vspace{3mm}%
+{\raggedright\color{d3-navy}\LARGE\titlefont #1\par}%
+\dabs@ifempty{#2}{}{\vspace{0.4em}{\raggedright\color{black}\normalsize\titlefont\itshape #2\par}}%
+\end{minipage}\par
+\vspace{1.5ex}}
 
 % ====================
 % Section Heading
@@ -125,7 +235,7 @@
 % ====================
 \newcommand{\sectionhead}[1]{%
 \vspace{2ex}\noindent
-{\sffamily \large \color{d3-navy} \textbf{#1}}%
+{\titlefont \large \color{d3-navy} #1}%
 \par\vspace{0.8ex}%
 }
 
@@ -201,11 +311,11 @@
 {\color{d3-orange}\textbf{#1}}%
 }
 
-% Callout box (d3-navy)
+% Callout box (d3-navy), takeaway text in Medium
 \newcommand{\keypoint}[1]{%
 \begin{tikzpicture}
 \node[fill=d3-navy!8, inner sep=10pt, text width=\linewidth-22pt] (kp) {%
-{\color{d3-navy}\sffamily #1}%
+{\color{d3-navy}\mediumfont #1}%
 };
 \draw[d3-navy, line width=3pt] (kp.north west) -- (kp.south west);
 \end{tikzpicture}%
@@ -250,20 +360,31 @@
 
 % ====================
 % Footer Macro
-% Shows \projektname if set, university info otherwise.
-% Appends "page / total" when \abstractpages is above 1.
+% Hairline, then the group and chair line in gray (left) and "page / total" (right).
+% \projektname, when set, replaces the group and chair line.
+% "page / total" appears when \abstractpages is above 1, as in the letterhead.
+% The chair line follows the document language (German for ngerman or german).
 % ====================
+\newcommand{\dabs@ifgerman}[2]{%
+\@ifundefined{languagename}{#2}{%
+\edef\dabs@lang{\detokenize\expandafter{\languagename}}%
+\edef\dabs@de{\detokenize{ngerman}}%
+\edef\dabs@deold{\detokenize{german}}%
+\ifx\dabs@lang\dabs@de #1\else\ifx\dabs@lang\dabs@deold #1\else #2\fi\fi}}
+
+\newcommand{\dabs@chairline}{%
+\dabs@ifgerman
+{Data Driven Decisions Group\enspace|\enspace Lehrstuhl f\"ur Wirtschaftsinformatik und Business Analytics\enspace|\enspace Universit\"at W\"urzburg}%
+{Data Driven Decisions Group\enspace|\enspace Chair of Information Systems and Business Analytics\enspace|\enspace University of W\"urzburg}}
+
 \newcommand{\bunntekst}{%
 \vfill
 \null
-\rule{\textwidth}{0.5pt}
-\begin{center}
-{\footnotesize \color{d3-gray}%
-\dabs@ifempty{\projektname}%
-{Data Driven Decisions Group\enspace|\enspace University of W\"urzburg\enspace|\enspace\href{https://www.uni-wuerzburg.de}{www.uni-wuerzburg.de}}%
-{\projektname}%
-\ifnum\abstractpages>1 \enspace|\enspace\thepage\,/\,\abstractpages\fi}
-\end{center}}
+\par\noindent{\color{d3-hairline}\rule{\textwidth}{0.5pt}}\par
+\vspace{-0.6ex}%
+\noindent{\footnotesize\color{d3-gray}%
+\dabs@ifempty{\projektname}{\dabs@chairline}{\projektname}%
+\ifnum\abstractpages>1 \hfill\thepage\,/\,\abstractpages\fi\par}}
 
 % ====================
 % Reset Slot Variables (per-page slots only)

@@ -14,7 +14,7 @@ description: |
 
 > **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-abstract`; copied by hand: `~/.claude/skills/d3-abstract`). Substitute the real path in every command. `<wording-dir>` means `<skill-dir>/../d3-scientific-wording`, the shared wording skill that every D3 plugin ships.
 
-Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg branding. The default is one page. The user can choose two pages or more, for example for an extended abstract submission. The layout is slot-based: a `.tex` file fills a handful of macros, and each call of the page template produces one page with header, lead paragraph, two columns, and footer. Font: Inter. **Requires XeLaTeX. All Python runs through `uv`.**
+Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg branding. The default is one page. The user can choose two pages or more, for example for an extended abstract submission. The layout is slot-based: a `.tex` file fills a handful of macros, and each call of the page template produces one page with header, lead paragraph, two columns, and footer. Design: the 2025 corporate design of the University of Würzburg (letterhead frame, palette, house font Inclusive Sans UW) with the D3 logo and the D3 orange accent. **Requires XeLaTeX. All Python runs through `uv`.**
 
 ## Files
 
@@ -26,8 +26,8 @@ Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg 
 ├── assets/                           # copied into every project
 │   ├── d3-abstract.sty               # colors, macros, slots, footer
 │   ├── d3-abstract-template.tex      # page layout, one \input per page
-│   ├── logos/                        # logo-wue.pdf, logo-d3.pdf (header), seal and extras
-│   └── fonts/                        # Inter .ttf files, OFL.txt
+│   ├── logos/                        # uw-logo-navy.pdf, logo-d3.pdf (header), DataDrivenDecisions.png
+│   └── fonts/                        # Inclusive Sans UW .ttf files, OFL-InclusiveSansUW.txt
 ├── scripts/
 │   └── check_abstract.py             # uv-run checker: pages, fill, wording, emphasis
 └── references/
@@ -125,7 +125,7 @@ Every abstract starts from this structure. The example shows a one-page Research
 
 \usepackage{assets/d3-abstract}
 
-% Global title = paper or project name. One header line holds about 40 characters,
+% Global title = paper or project name. One header line holds about 55 characters,
 % longer titles wrap to two lines. Set the break yourself with \\ to avoid a single-word last line.
 \newcommand{\tittel}{Your Paper Title Here}
 
@@ -194,7 +194,7 @@ For a Submission Abstract, start from `example-extended-abstract.tex`. For each 
 | Slot | Purpose | Scope |
 |------|---------|-------|
 | `\tittel` | Title in the header (define once with `\newcommand`) | Global |
-| `\projektname` | Footer text. When set, it replaces the university line | Global |
+| `\projektname` | Footer text. When set, it replaces the group and chair line | Global |
 | `\abstractpages` | Declared page count. Above 1, the footer adds `page / N` | Global |
 | `\undertittel` | Subtitle below the title. Empty gives a single-line header | Per page |
 | `\innledning` | Full-width lead paragraph. Empty removes the block | Per page |
@@ -205,7 +205,7 @@ For a Submission Abstract, start from `example-extended-abstract.tex`. For each 
 
 Per-page slots reset automatically after each template call.
 
-**Footer.** The default footer reads "Data Driven Decisions Group | University of Würzburg | www.uni-wuerzburg.de". Setting `\projektname` replaces that line completely:
+**Footer.** Below a gray hairline, the default footer reads "Data Driven Decisions Group | Chair of Information Systems and Business Analytics | University of Würzburg" in gray (in German documents: "Lehrstuhl für Wirtschaftsinformatik und Business Analytics | Universität Würzburg"), with `page / N` on the right for N above 1. Setting `\projektname` replaces that line completely:
 
 ```latex
 \renewcommand{\projektname}{\textbf{Target: ICML 2026}\enspace|\enspace\textbf{Deadline: January 31, 2026}}
@@ -213,7 +213,7 @@ Per-page slots reset automatically after each template call.
 \renewcommand{\projektname}{\textbf{Extended abstract for OR 2026}\enspace|\enspace\textbf{Page limit: 2}}
 ```
 
-**Lengths.** One title line holds about 40 characters and a title may use two lines. The footer holds about 100 characters on one line. An infobox label holds about 38 characters next to its number.
+**Lengths.** One title line holds about 55 characters and a title may use two lines. The footer holds about 100 characters on one line. An infobox label holds about 38 characters next to its number.
 
 **Subtitle.** Separate parts with `\enspace|\enspace`, the same separator as in the footer. Dates are exact: "Research Update | March 6, 2026". Submission abstracts put authors and affiliation in the page 1 subtitle.
 
@@ -409,7 +409,7 @@ Work page by page:
    | COLORS | Only named D3 colors, no `\definecolor`, no color values |
    | SUBMISSION ABSTRACT (with `--submission`) | No placeholders, no internal sections, reference list present |
    | TODO MARKERS | Leftover `% TODO:` placeholders and `% TODO verify` items |
-   | LOG | Every TeX error, overfull boxes |
+   | LOG | Every TeX error, overfull boxes, characters missing from the font |
 
    Fix every error (`E`). Read every warning (`W`) and either fix it or confirm that it is legitimate, for example an established technical term. Rerun until the result is `PASS`. The fill value measures the lowest element of each column. Gaps inside a column show only in the page image.
 
@@ -421,12 +421,12 @@ Work page by page:
 
 3. **Inspect every page image** in `review/` with the Read tool:
    - Page count equals N, and the footer shows `page / N` for N above 1
-   - Header: both logos, title, subtitle if set, navy rule
+   - Header: university logo top left, D3 logo top right, gray hairline below them, navy title, subtitle if set
    - Lead paragraph: full width, at most 3 lines
    - Body: two top-aligned columns with a 20pt gap, nothing below the footer rule
    - Tables and TikZ boxes stay inside their column
-   - Colors: d3-navy for headings and rules, d3-orange for highlights only
-   - Font: Inter for all text and for numbers in tables. Formulas use the default math font
+   - Colors: d3-navy for title, headings and accent rules, d3-orange for highlights only, gray hairlines under the logo row and above the footer
+   - Font: Inclusive Sans UW for all text and for numbers in tables, Greek letters and symbols visible. Formulas use the default math font
    - Title and subtitle break at sensible places, with no single-word last line
 
 4. **If the PDF has more than N pages**, find and fix the overflow:
@@ -476,7 +476,7 @@ Scoring: 10 means no findings. 9 means cosmetic findings only. Every violated ru
 - Page count equals the declared count, and the last page is at least 60% full
 - Columns balanced and top-aligned, no overflow below the footer rule
 - Header and footer complete and correct
-- Only D3 colors, Inter for all text and table numbers
+- Only D3 colors, Inclusive Sans UW for all text and table numbers
 - Infoboxes, cards, placeholders, and tables fit their column
 - Whitespace: no large gaps and no cramped sections
 

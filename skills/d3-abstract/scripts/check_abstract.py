@@ -4,6 +4,8 @@
 # ///
 """Check a D3 abstract: page contract, column fill, wording, emphasis, colors, TeX log.
 
+The log check reports TeX errors, overfull boxes and glyphs that the text font lacks.
+
 Run with uv (dependencies resolve from the inline metadata above):
 
     uv run <skill-dir>/scripts/check_abstract.py v1_abstract.tex
@@ -101,7 +103,10 @@ TECHNICAL_TERMS = re.compile(
     r"|na[i\u00ef]ve\s+bayes|(public|private|primary|foreign|secret|api)[\s-]+key|key[\s-]+value",
     re.IGNORECASE,
 )
-ALLOWED_COLOR = re.compile(r"^(d3-[a-z]+|black|white)(![\d.]+(!(d3-[a-z]+|black|white))?)*$")
+D3_COLOR = r"(d3-[a-z]+(?:-[a-z]+)*|black|white)"  # palette names such as d3-navy, d3-orange-ink
+ALLOWED_COLOR = re.compile(rf"^{D3_COLOR}(![\d.]+(!{D3_COLOR})?)*$")
+# XeLaTeX and LuaLaTeX log a glyph that the font lacks as "Missing character: There is no ½ (U+00BD) in font ..."
+MISSING_CHAR = re.compile(r"Missing character: There is no (.+?) (?:\(U\+([0-9A-Fa-f]+)\) )?in font")
 NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
 
 
@@ -310,6 +315,14 @@ def check_log(tex_path: Path, rep: Report) -> None:
     if overfull:
         clean = False
         rep.add("W", f"{overfull} x Overfull \\hbox (content wider than its column)")
+    missing: dict[str, int] = {}
+    for m in MISSING_CHAR.finditer(log):
+        key = m.group(1) + (f" (U+{m.group(2).upper()})" if m.group(2) else "")
+        missing[key] = missing.get(key, 0) + 1
+    for char, count in missing.items():
+        clean = False
+        rep.add("E", f"missing glyph {char}, {count} x: the text font lacks it, so the PDF shows nothing there; "
+                     "write it in math mode or as a LaTeX command")
     for message in dict.fromkeys(m.group(1).strip() for m in re.finditer(r"^! (.+)$", log, flags=re.MULTILINE)):
         clean = False
         rep.add("E", f"TeX error: {message}")
@@ -318,7 +331,7 @@ def check_log(tex_path: Path, rep: Report) -> None:
 
 
 def column_fill(page) -> tuple[float, float] | int:
-    """Fill ratio of the left and right column between header rule and footer rule."""
+    """Fill ratio of the left and right column between the header hairline and the footer rule."""
     width = page.rect.width
     rules = [d["rect"] for d in page.get_drawings() if d["rect"].width > 0.8 * width and d["rect"].height < 4]
     if len(rules) < 2:
@@ -363,11 +376,11 @@ def check_pages(tex_path: Path, text: str, render_dir: Path | None, dpi: int, re
     else:
         rep.lines.append(f"  ok  {summary} | PDF = {n}")
 
-    rep.section("COLUMN FILL (share of the space between header rule and footer rule)")
+    rep.section("COLUMN FILL (share of the space between header hairline and footer rule)")
     for i, page in enumerate(doc, start=1):
         fill = column_fill(page)
         if fill == 1:
-            rep.add("W", f"page {i}: header rule or footer rule missing, the content of this page or of the page "
+            rep.add("W", f"page {i}: header hairline or footer rule missing, the content of this page or of the page "
                          "before it overflows")
             continue
         if fill == 0:
