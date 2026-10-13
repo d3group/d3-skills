@@ -49,7 +49,7 @@ Common arguments: `s=` is the step (0-based, like `data-s`), `k=` a Q&A key (sec
 ```python
 tile('One model, one baseline', ['overrides logged with a reason', ('source, briefly', 'muted')],
      kick='After', ico='database', color='teal', s=1)      # kicker with icon, headline, keyword lines
-icon('check')          # inline stroke icon; icon('alert', size=28). Names: kit.ICONS (arrows, chart, users, target, ...; for course roadmaps: linear, dice, curve)
+icon('check')          # inline stroke icon; icon('alert', size=28). Names: kit.ICONS (arrows, chart, users, target, leaf, heartpulse, ...; for course roadmaps: linear, dice, curve)
 well('users', 'teal')  # round icon well
 middle(html)           # centres a short object vertically in its region
 callout('Adoption held where planners could <b>override with a reason</b>.')   # navy band, <b> in orange; quiet=True: pale
