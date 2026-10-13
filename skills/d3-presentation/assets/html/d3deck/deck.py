@@ -82,7 +82,7 @@ def meta(title, subtitle='', date='', presenter='', chair=None, sections=(),
     """Deck metadata; call once before the first slide. Resets the deck. date is stored for the
     manifest only, like \\date in LaTeX; put it into the subtitle if it should appear.
     chair=None: the chair line in the language of the deck (English, or German with lang='de'); pass a string to override.
-    Every look uses the frame of the University of Würzburg PowerPoint master (2025 corporate design): new logo top
+    Every look uses the frame of the University of Würzburg PowerPoint master (2026 corporate design): new logo top
     left over a hairline, footer line 'presenter | chair | title', page number in a navy tab, Inclusive Sans UW.
     look='klar' (default): the D3 look: D3 logo top right, section tracker in the header, orange kicker and one-claim
     title, navy question dividers that list the part's slides, sand takeaway bar with an orange rule.

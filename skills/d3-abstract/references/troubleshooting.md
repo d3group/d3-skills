@@ -18,7 +18,7 @@ ls assets/fonts/InclusiveSansUW-*.ttf
 ! LaTeX Error: File `uw-logo-navy.pdf' not found.
 ```
 
-The header uses `uw-logo-navy.pdf` (left) and `logo-d3.pdf` (right) from `assets/logos/`. An `assets/` copy from before the 2025 corporate design lacks the new university logo: copy the current `assets/` from the skill.
+The header uses `uw-logo-navy.pdf` (left) and `logo-d3.pdf` (right) from `assets/logos/`. An `assets/` copy from before the 2026 corporate design lacks the new university logo: copy the current `assets/` from the skill.
 
 ```bash
 ls assets/logos/uw-logo-navy.pdf assets/logos/logo-d3.pdf
@@ -88,7 +88,7 @@ Add `\usepackage{pgfplots}\pgfplotsset{compat=1.18}` to the preamble. The style 
 - "no layout rules" or "header hairline or footer rule missing": the page lacks the gray hairline under the logo row or the footer rule, which means the page was not produced by the template or holds overflow. Check the template call
 - A flagged word that is an established technical term ("doubly robust", "Naive Bayes") stays. Warnings need a decision, errors need a fix
 
-## 12. Documents From Before the 2025 Corporate Design
+## 12. Documents From Before the 2026 Corporate Design
 
 Abstracts made with the Inter and old-logo version of the style compile unchanged with their own `assets/` copy. To restyle one, replace its `assets/` with the current copy and compile: the slot macros, color names and TikZ styles are the same. Check the page count afterwards, because the new header with the logo row is taller.
 

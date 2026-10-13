@@ -142,13 +142,13 @@ Search for these comments in `example-presentation.tex`:
 | `% TIMELINES` | Gantt-style timeline with work packages |
 | `% TikZ box styles` | Process boxes, arrows, and flowcharts |
 
-## The Frame (University of Würzburg design, 2025)
+## The Frame (University of Würzburg design, 2026)
 
 `d3-beamer.sty` draws every frame with TikZ on the 1280 × 720 px grid of the university PowerPoint master (1 px = 0.125 mm on the 16:9 Beamer page). It needs `aspectratio=169`.
 
 - **Content slides**: the university logo top left, the D3 logo in the co-branding slot top right, a grey hairline below the logo row, the title in navy Inclusive Sans SemiBold below the hairline, body text in black, square bullets in cornflower blue (`d3-blue`). The footer line reads `presenter | chair | short title` (`\title[short]{long}` sets the short title); the page number sits in a navy tab at the bottom right.
 - **Title slide**: white, the university logo with the D3 logo next to it, the title in navy Bold, then a navy band with a short orange rule, the subtitle, the presenter and the date. The seal sits in the band's bottom-right corner.
-- **Section dividers** (`\showsection{n}`, `\showsection[question]{n}`): navy full bleed, white logo, orange "PART n OF N", the two-digit number in sky blue, the part name in white, an optional question below it, the seal in the bottom-right corner. `\sectionslide[question]{title}` makes the same slide without a number. The package option `agendadividers` replaces the navy divider with the agenda, the current part highlighted (the pre-2025 behaviour).
+- **Section dividers** (`\showsection{n}`, `\showsection[question]{n}`): navy full bleed, white logo, orange "PART n OF N", the two-digit number in sky blue, the part name in white, an optional question below it, the seal in the bottom-right corner. `\sectionslide[question]{title}` makes the same slide without a number. The package option `agendadividers` replaces the navy divider with the agenda, the current part highlighted (the pre-2026 behaviour).
 - **Agenda** (`\showagenda`): two-digit numbers in sky blue, topics in black; every row links to its divider.
 - **Thank-you slide** (`\thankyouslide`, `\thankyouslide[text]`): "Thank you" in navy, a navy box with the presenter, the chair and the optional `\contact{line\\line}` lines, light grey right half with a faint seal.
 - **Takeaway** (`\twocoltakeaway`): a sand bar above the footer with a 4 px orange rule on the left; the text is Medium black and bold words turn orange-ink. `\takeawaylabel{Key takeaway:}` in the preamble puts a bold label in front of every takeaway (none by default, as in the HTML deck). `\takeawayshift{<length>}` moves the bar on one slide (positive = lower).

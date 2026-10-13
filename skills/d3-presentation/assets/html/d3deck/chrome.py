@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""The slide frame: the University of Würzburg PowerPoint master (PPT-Master-Universitaet-Wuerzburg.potx, 2025
+"""The slide frame: the University of Würzburg PowerPoint master (PPT-Master-Universitaet-Wuerzburg.potx, 2026
 corporate design), with the D3 logo in the master's co-branding slot.
 
 All geometry is in px on the 1280x720 canvas. The master is 12192000 EMU wide, so 1 px = 9525 EMU, and the numbers

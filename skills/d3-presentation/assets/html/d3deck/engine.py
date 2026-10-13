@@ -13,7 +13,7 @@ CSS = r"""
 html,body{height:100%;background:#0B0D10;overflow:hidden;-webkit-font-smoothing:antialiased;
  font-family:'Inclusive Sans UW','D3 Symbols',system-ui,sans-serif}
 :root{
- --navy:#02246C;--orange:#F29100;--gray:#808080;--lightblue:#CBD9EE;--darkblue:#011646;   /* University of Würzburg 2025 + D3 orange */
+ --navy:#02246C;--orange:#F29100;--gray:#808080;--lightblue:#CBD9EE;--darkblue:#011646;   /* University of Würzburg 2026 + D3 orange */
  --blue:#5E8AC7;--sky:#5AA1D8;--sand:#F1EBDF;--berry:#821044;
  --teal:#009485;--yellow:#F8C300;--peach:#FCE4BF;--lavender:#D9CCE6;
  --bar:#02246C;--navy-5:#F2F4F8;--navy-15:#D9DEE9;--navy-50:#8092B6;--navy-90:#1B3A7B;--orange-5:#FEFAF2;

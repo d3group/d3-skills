@@ -5,7 +5,7 @@ from d3deck import components as C
 
 class Mix(unittest.TestCase):
     def test_token(self):
-        self.assertEqual(C.mix('navy'), '#02246C')   # University of Würzburg 2025
+        self.assertEqual(C.mix('navy'), '#02246C')   # University of Würzburg 2026
 
     def test_percentages_match_xcolor(self):
         self.assertEqual(C.mix('navy!15'), '#D9DEE9')

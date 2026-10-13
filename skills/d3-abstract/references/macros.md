@@ -261,7 +261,7 @@ Format: authors, year in parentheses, title, venue in italics, volume(issue), pa
 
 ## 9. Color Palette
 
-The palette follows the 2025 corporate design of the University of Würzburg. D3 orange stays the D3 accent.
+The palette follows the 2026 corporate design of the University of Würzburg. D3 orange stays the D3 accent.
 
 | Color | Value | Usage |
 |-------|-------|-------|

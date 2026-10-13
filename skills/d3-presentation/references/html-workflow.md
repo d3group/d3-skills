@@ -49,7 +49,7 @@ build('my_talk')          # writes dist/my_talk.html
 
 ## The look
 
-Every look is built on the University of Würzburg PowerPoint master (`PPT-Master-Universitaet-Wuerzburg.potx`, 2025 corporate design; the geometry is the master's layout boxes, 1 px = 9525 EMU) and set in the house font Inclusive Sans UW:
+Every look is built on the University of Würzburg PowerPoint master (`PPT-Master-Universitaet-Wuerzburg.potx`, 2026 corporate design; the geometry is the master's layout boxes, 1 px = 9525 EMU) and set in the house font Inclusive Sans UW:
 
 - **Content slides.** The new university logo sits top left over a hairline. The title is semibold navy at 32 px, the body box is 1137 by 420 px (two columns of 548 px). The foot reads `presenter | chair | deck title`, the provenance note (`provenance=`) sits right of it, and the page number stands in a navy tab at the bottom right.
 - **Covers.** `titleslide()` follows the master's Deckblatt: `cover='band'` (white with a navy band; the default of the D3 looks), `cover='navy'` (all navy; the default of the uni look) or `cover='photo'` (the Würzburg skyline, about 0.3 MB). Title, subtitle, presenter and date come from `meta()`.

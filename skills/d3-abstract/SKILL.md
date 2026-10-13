@@ -14,7 +14,7 @@ description: |
 
 > **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-abstract`; copied by hand: `~/.claude/skills/d3-abstract`). Substitute the real path in every command. `<wording-dir>` means `<skill-dir>/../d3-scientific-wording`, the shared wording skill that every D3 plugin ships.
 
-Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg branding. The default is one page. The user can choose two pages or more, for example for an extended abstract submission. The layout is slot-based: a `.tex` file fills a handful of macros, and each call of the page template produces one page with header, lead paragraph, two columns, and footer. Design: the 2025 corporate design of the University of Würzburg (letterhead frame, palette, house font Inclusive Sans UW) with the D3 logo and the D3 orange accent. **Requires XeLaTeX. All Python runs through `uv`.**
+Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg branding. The default is one page. The user can choose two pages or more, for example for an extended abstract submission. The layout is slot-based: a `.tex` file fills a handful of macros, and each call of the page template produces one page with header, lead paragraph, two columns, and footer. Design: the 2026 corporate design of the University of Würzburg (letterhead frame, palette, house font Inclusive Sans UW) with the D3 logo and the D3 orange accent. **Requires XeLaTeX. All Python runs through `uv`.**
 
 ## Files
 
