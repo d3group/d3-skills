@@ -109,7 +109,7 @@ The component kit adds the designed objects (tiles with icons, `model()` figures
 
 ## 5. Step builds
 
-A step reveals something that is already laid out. Elements of later steps stand as pale grey ghosts (15 percent opacity) in their final place, so nothing is ever removed, nothing moves between steps, and the audience sees how much is still to come. `meta(..., reveal='hide')` makes them fully invisible instead, for decks where a ghost would give away the point; `data-soft="1"` dims a single element to 42 percent in either mode.
+A step reveals something that is already laid out. Elements of later steps stand as pale grey ghosts (15 percent opacity) in their final place, so nothing is ever removed, nothing moves between steps, and the audience sees how much is still to come. `meta(..., reveal='hide')` makes them fully invisible instead, for decks where a ghost would give away the point; `data-soft="1"` dims a single element to 42 percent in either mode, and `data-hide="1"` keeps a single element fully invisible on stage until its step (a vote's answer, a quiz solution), while previews and print still show it.
 
 ```python
 onecol('Three mechanisms explain the effect', '''
@@ -120,7 +120,7 @@ onecol('Three mechanisms explain the effect', '''
 </div>''' + scrim(3, 0, '60%', 0, 0), steps=4)
 ```
 
-- `data-s="k"`: sharp from step k (0-based). `data-soft="1"`: ghost to 42 percent instead of 15. `data-until="k"`: ghosted again after step k.
+- `data-s="k"`: sharp from step k (0-based). `data-soft="1"`: ghost to 42 percent instead of 15. `data-hide="1"`: no ghost on stage, for a reveal the ghost would give away. `data-until="k"`: ghosted again after step k.
 - `scrim(off, l, t, r, b)`: covers a rectangle of the slide (px numbers or `%` strings) and lifts at step `off`. Use it to reveal a grid cell by cell.
 - `steps=` on the slide is the number of steps and draws the step dots under the top-right bar.
 - The kit helpers take `s=` for the same purpose (`tile(..., s=1)`, `edge(..., s=2)`, `bar(..., s=1)`).

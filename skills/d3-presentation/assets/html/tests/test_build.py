@@ -231,6 +231,10 @@ class Output(unittest.TestCase):
         with self.assertRaises(ValueError):
             B.titleslide(cover='pink')
 
+    def test_data_hide_suppresses_the_ghost_on_stage(self):
+        from d3deck import engine
+        self.assertIn('.sl.is-current [data-hide].gh{opacity:0', engine.CSS)
+
     def test_svg_lines_are_not_bullets(self):
         B.meta(title='T', look='uni')
         B.onecol('Graph', '<svg>' + '<line x1="0" y1="0" x2="1" y2="1"/>' * 9 + '</svg><ul><li>a</li></ul>')
