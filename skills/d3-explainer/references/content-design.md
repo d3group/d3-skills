@@ -145,14 +145,16 @@ If the inventory is empty, state what was compared ("objective terms and weights
 
 ## 11. Wording
 
-Text should read as written by a researcher of the group explaining the project to a colleague.
+Text should read as written by a researcher of the group explaining the project to a colleague. The wording rules are those of the `d3-scientific-wording` skill (`<wording-dir>/references/rules.md`, and `references/ste.md` in the default `ste` mode; `<wording-dir>` is `<skill-dir>/../d3-scientific-wording`). The ones that matter most here:
 
 - First person plural for the project's own work: "we model membership as a flow".
 - No em-dashes or en-dashes as punctuation: comma, colon, parentheses, or a new sentence. Ranges keep their dash (`2024–2026`).
 - No "not X, but Y" and no "it is not about X, it is about Y". State Y.
-- No marker vocabulary: leverage, delve, seamless, comprehensive, robust framework, transformative, holistic, synergies, cutting-edge.
 - Related work as facts: what it established, where it stops. No grading ("seminal", "fails to", "merely").
 - Concrete numbers and conditions instead of adjectives: "the success rate rises from 0.31 to 0.38 between 15 % and 37 % skipped", not "the success rate increases substantially".
+- In `ste` mode, one idea per sentence and at most 25 words. Split a sentence at its "so", "which" or semicolon, and connect the parts with "then", "because" or "therefore".
+
+What is specific to explainers:
 - Short paragraphs, two to five sentences. Definitions inline where first used; the notation table is for looking up, not for learning.
 - Captions of interactive figures: a bold title, then `Try` (an action) and `Notice` (the insight, stated as a fact that the figure makes checkable).
 - Questions to the reader (`<details class="predict">`) before a figure, where guessing first makes the figure land: "Before you drag: does skipping half of the candidates beat skipping a quarter?"

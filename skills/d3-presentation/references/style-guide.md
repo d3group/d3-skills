@@ -4,7 +4,7 @@
 
 ### Viewport Rules
 - **Header**: Title area at top (assume 2-line titles for consistent spacing)
-- **Footer**: Page number and chair/presenter info - reserved for footnotes only
+- **Footer**: `presenter | chair | title` bottom left, page number in a navy tab bottom right - reserved for footnotes only
 - **Viewport**: All content must fit between header and footer, never overlap
 - Content is **top-aligned** within the viewport (handled automatically by template). In HTML, a short object is centred in its region with `middle()` rather than leaving the lower half empty
 
@@ -14,11 +14,12 @@
 - Make box heights consistent based on largest character
 - Apply the **squint test**: key messages visible from distance
 
-### Font Sizes (from template)
-- Title: 14pt
-- Subtitle: 7pt
-- Body text: 8pt
-- Column header: 10pt bold
+### Font Sizes (Inclusive Sans UW)
+- Title: 32 px SemiBold navy (LaTeX 11.3 pt)
+- Body text: LaTeX `\small` (10 pt); HTML 22 px in the klar look
+- Column header: 11 pt SemiBold navy
+- Takeaway: Medium, about 8.5 pt in LaTeX, 20 px in HTML
+- Footer: 13.3 px
 - Use only these sizes - if text doesn't fit, shorten it
 
 ### TikZ and Graphics
@@ -86,9 +87,9 @@ Remove slides that don't strengthen the narrative.
 | Project phases over time | Timeline slide |
 | Code examples | Use `codebox`, `errorbox`, or `terminalbox` (same names in HTML) |
 
-**Chevron slides**: Use `\twochevron`, `\threechevron`, or `\fourchevron` depending on the number of phases. First argument (N) highlights that phase. Each phase has a label and title (e.g., `{Phase 1:}{Planning}`). The legacy `\fourcolchevron{N}{...}` uses single labels. Highlighted phases use `d3-navy`, others use `d3-navy!15`.
+**Chevron slides**: Use `\twochevron`, `\threechevron`, or `\fourchevron` depending on the number of phases. First argument (N) highlights that phase. Each phase has a label and title (e.g., `{Phase 1:}{Planning}`). The legacy `\fourcolchevron{N}{...}` uses single labels. Highlighted phases use `d3-navy`, others use `d3-lightblue`.
 
-**Agenda slides**: Use `\showagenda` once, then `\showsection{n}` throughout presentation to highlight the current section. All items are clickable.
+**Agenda slides**: Use `\showagenda` once, then `\showsection{n}` (optionally `\showsection[question]{n}`) to open each part with a navy divider: PART n OF N, the number in sky blue, the part name. All agenda items are clickable. The package option `agendadividers` repeats the agenda instead, with the current part highlighted.
 
 ---
 
@@ -150,15 +151,18 @@ Checked at full size, on every build step, not only on the contact sheet:
 
 ## 4. Wording (both formats)
 
-Prose must read as written by the presenter.
+Prose must read as written by the presenter. The wording rules of all D3 documents live in the `d3-scientific-wording` skill: `<wording-dir>/references/rules.md` (`<wording-dir>` is `<skill-dir>/../d3-scientific-wording`), and in STE mode also `references/ste.md`. Its lint reads `slides.py` and `.tex` decks. In short:
 
 - No "not X, but Y" and no "it's not about X, it's about Y" constructions. State Y.
 - No em-dashes. Use a comma, a colon, or a new sentence.
-- Related work: say what it contributed and state the gap as a fact. No "merely", "simply", "fail to", "only", "overlook".
-- No marker vocabulary: leverage, robust framework, comprehensive, transformative, synergies, delve, seamless.
-- Titles vary in length, from two words to a full sentence. No forced groups of three.
+- Related work: say what it contributed and state the gap as a fact. No "merely", "simply", "fail to", "overlook".
+- Claims within the evidence: numbers instead of "dramatically" or "large-scale", "significant" only with a test.
 - First person plural for own work: we analysed, we observe, our approach.
-- Concrete numbers instead of "large-scale"; one condition clause instead of an adjective stack.
+
+What is specific to slides:
+
+- Titles vary in length, from two words to a full sentence. No forced groups of three.
+- One condition clause instead of an adjective stack; labels on objects, full sentences in the notes.
 
 ### Voice and rigour
 - **Present, do not defend.** The slide states what the research does and finds. No pre-emptive defences ("the theory makes no claim that ...", "the weakest joint is ..."); objections belong on backup slides titled as the answer.

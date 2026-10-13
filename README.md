@@ -15,17 +15,34 @@ Claude Code skills of the Data Driven Decisions (D3) group for research communic
 4. Select **Install for you (user scope)**
 5. Restart Claude Code
 
-Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abstract`, `d3-poster`, `d3-presentation`). Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Update later with `/plugin marketplace update d3-skills`.
+Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abstract`, `d3-poster`, `d3-presentation`, `d3-scientific-wording`). Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Update later with `/plugin marketplace update d3-skills`.
 
 ## Available Skills
 
 | Skill | Version | Description | Resources |
 |-------|---------|-------------|-----------|
-| [d3-abstract](skills/d3-abstract/) | 1.1.0 | Abstracts, extended abstracts, one-pagers and research updates as A4 PDFs | LaTeX template, style checker |
-| [d3-poster](skills/d3-poster/) | 1.1.0 | A0 conference posters from a paper, an Overleaf submodule or a repo of results | baposter class, TikZ recipes, two-agent review |
-| [d3-presentation](skills/d3-presentation/) | 1.4.0 | Presentations as LaTeX Beamer PDFs or interactive HTML decks where every slide centres on a designed object: model figures that build, bars, gauges, replayed stimuli, live instruments; presenter window with pace, overview and Q&A interactions | Beamer theme, HTML deck engine and component kit, layout and signature lint |
-| [d3-explainer](skills/d3-explainer/) | 0.10.0 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
+| [d3-abstract](skills/d3-abstract/) | 1.3.0 | Abstracts, extended abstracts, one-pagers and research updates as A4 PDFs | LaTeX template, style checker |
+| [d3-poster](skills/d3-poster/) | 1.3.0 | A0 conference posters from a paper, an Overleaf submodule or a repo of results | baposter class, TikZ recipes, two-agent review |
+| [d3-presentation](skills/d3-presentation/) | 1.6.0 | Presentations as LaTeX Beamer PDFs or interactive HTML decks (also in the University of Würzburg design for teaching, `look='uni'`) where every slide centres on a designed object: model figures that build, bars, gauges, replayed stimuli, live instruments; presenter window with pace, overview and Q&A interactions | Beamer theme, HTML deck engine and component kit, layout and signature lint |
+| [d3-explainer](skills/d3-explainer/) | 0.12.0 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
+| [d3-scientific-wording](skills/d3-scientific-wording/) | 0.1.0 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet profiles, STE guide, wording lint, corpus profiler |
 | [d3-marimo](skills/d3-marimo/) | 0.1.0 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab/molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet, headless browser check, pitfalls |
+
+## Design
+
+All D3 outputs follow the 2026 corporate design of the University of Würzburg with D3 co-branding: the new round university logo top left, the D3 logo in the co-branding slot (top right, or next to the university logo on title pages), the university navy `#02246C`, D3 orange `#F29100` as the only accent, the house font Inclusive Sans UW (SIL OFL), and the seal on title and divider pages. Slides follow the university PowerPoint master, posters the university poster template, one-pagers the letterhead. The university's coral is not used next to D3 orange. Inclusive Sans UW has no Greek letters or math operators: the HTML skills embed a small fallback font (D3 Symbols, an Inter subset), the LaTeX skills set these characters in math mode. The CD will replace the seal by a faculty ornament in faculty communication; until that package is released the seal stands in. For teaching decks without D3 branding, d3-presentation offers `look='uni'`; d3-marimo uses the university look throughout.
+
+## Wording
+
+The wording rules live in one skill, `d3-scientific-wording`. The other four invoke it before they write text, ask its questions in their own question round, run its lint (`scripts/check_wording.py`, for `.tex`, `.html`, `.md` and `slides.py`) and use its rules as the reviewers' wording rubric. It adds no reviewer agent: its cold read (does every claim follow, is every term explained before use) is a task of each skill's existing content reviewer at review depth `standard` or `full`. Every D3 plugin ships the whole `skills/` folder, so the wording skill is always on disk next to the skill that calls it. Install it as a plugin of its own to use it for papers, rebuttals or any other text.
+
+| Skill | Simplified Technical English (ASD-STE100) |
+|---|---|
+| d3-explainer | default; say "normal wording" or "no STE" to switch it off |
+| d3-presentation, d3-poster | offered in the question round, off by default |
+| d3-abstract, papers and other texts | on request |
+
+The wording adapts to the outlet and the field (venue templates, the call for papers, the `.bib` are read first; open points are asked). Optionally it measures a wording profile from a literature folder, a vault or a NotebookLM notebook: the user's own papers (author), papers of the target venue (outlet) or the topic's literature (terms). `scripts/wording_profile.py` counts sentence length, stance, punctuation, terms, abbreviations and recurring phrases, and `compare` puts a draft next to the corpus bands; profiles hold counts and short excerpts, never full texts. The removal of invisible AI marks is offered once at delivery. It uses the third-party [watermarks-remover](https://github.com/guillaumemeyer/watermarks-remover) plugin, deterministic layer only, and needs a yes from the user each time. Several rules are adapted from the academic-voice skill of a group colleague.
 
 ## Review depth: how many tokens a run spends
 

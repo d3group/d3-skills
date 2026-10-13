@@ -1,5 +1,5 @@
 % D3 Template Library - Comprehensive Example
-% Compile with: xelatex template-library.tex (run twice)
+% Compile with: xelatex example-presentation.tex (run twice)
 
 \documentclass[aspectratio=169]{beamer}
 
@@ -13,9 +13,10 @@
 % PRESENTATION METADATA
 % ============================================
 \title{D3 Template Library}
-\subtitle{Complete showcase of all slide types and components}
+\subtitle{All slide types and components}
 \chair{Chair of Information Systems and Business Analytics}
 \presenter{Template Author}
+\contact{template.author@uni-wuerzburg.de}  % optional lines for the thank-you box
 \date{February 2026}
 
 % Define sections (2-7 sections supported)
@@ -39,7 +40,7 @@
 % ============================================
 % SECTION 1: BASIC SLIDES
 % ============================================
-\showsection{1}
+\showsection[What does each slide type look like?]{1}  % optional question under the title
 
 \onecol{One-column slides present content in a single flow}{
     This is a standard content slide with a single column layout.
@@ -48,6 +49,7 @@
         \item First bullet point with some explanation
         \item Second bullet point with more details
         \item Third point with \textbf{bold text} and \highlight{highlighted text}
+        \item Greek and symbols in running text: α = 0.05, β ≤ 0.2, n ≥ 30, x → y
     \end{itemize}
 
     \vspace{3mm}
@@ -56,6 +58,7 @@
     \textbf{\textcolor{d3-orange}{Orange text for emphasis}}
 }
 
+\kicker{Layout}  % optional orange kicker in front of the next title
 \twocol{Two-column slides enable side-by-side comparison}{
     \columnheader{Left Column}
 
@@ -92,7 +95,7 @@
         \item Action item
         \item Expected outcome
     \end{itemize}
-}{The takeaway message appears here in an orange box. Use this to emphasize the main point.}
+}{The takeaway message appears here in a sand bar with an orange rule. \textbf{Bold words} turn orange.}
 
 % ============================================
 % SECTION 2: CODE BOXES
@@ -247,10 +250,10 @@ Done: 100 records
     \vspace{4mm}
     \begin{center}
     \begin{projecttimeline}{2025}{2028}
-        \workpackage{WP1: Research \& Analysis}{d3-teal!60}{0}{0.5}{1}{M1}
-        \workpackage{WP2: Development}{d3-yellow!80}{0.17}{0.67}{2}{M2}
-        \workpackage{WP3: Testing}{d3-peach!80}{0.33}{0.83}{3}{M3}
-        \workpackage{WP4: Deployment}{d3-lavender!80}{0.67}{1.0}{4}{M4}
+        \workpackage{WP1: Research \& Analysis}{d3-lightblue}{0}{0.5}{1}{M1}
+        \workpackage{WP2: Development}{d3-peach}{0.17}{0.67}{2}{M2}
+        \workpackage{WP3: Testing}{d3-lavender}{0.33}{0.83}{3}{M3}
+        \workpackage{WP4: Deployment}{d3-teal!25}{0.67}{1.0}{4}{M4}
     \end{projecttimeline}
     \end{center}
 

@@ -19,14 +19,14 @@ Use the macros and styles listed here. The style file defines everything the lay
 
 All of these are called by the page template. Documents only fill the slots.
 
-- `\setheader{title}{subtitle}`: university logo (left), title and subtitle (center), D3 logo (right), 2pt d3-navy rule below. With an empty subtitle only the title line renders.
+- `\setheader{title}{subtitle}`: the letterhead frame of the University of Würzburg. Logo row with the university logo (navy, 46 mm, top left) and the D3 logo (38 mm, top right, vertically centred on it), a 0.5pt `d3-hairline` rule below, then the title in d3-navy SemiBold (`\LARGE`, full text width) and the subtitle (italic). With an empty subtitle only the title line renders.
 - `\ingressblock`: renders `\innledning` as the lead paragraph. Skipped when the slot is empty.
 - `\fullwidthblock`: renders `\helbredde` across the full text width, above the columns. Skipped when the slot is empty.
-- `\bunntekst`: thin rule plus centered footer. Shows the university line by default, `\projektname` when set, and `page / N` when `\abstractpages` is above 1.
+- `\bunntekst`: `d3-hairline` rule plus a gray footer line. Left: "Data Driven Decisions Group | Chair of Information Systems and Business Analytics | University of Würzburg" by default (German with `ngerman` babel: "Lehrstuhl für Wirtschaftsinformatik und Business Analytics | Universität Würzburg"), `\projektname` when set. Right: `page / N` when `\abstractpages` is above 1.
 
 ## 2. Section Headings and Lead Paragraph
 
-- `\sectionhead{text}`: bold heading in d3-navy with automatic space above. Use inside `\venstre`, `\hoyre`, or `\helbredde`. No manual `\vspace` before headings.
+- `\sectionhead{text}`: SemiBold heading in d3-navy with automatic space above. Use inside `\venstre`, `\hoyre`, or `\helbredde`. No manual `\vspace` before headings.
 - `\ingress{text}`: large lead text in d3-navy, used by `\ingressblock`.
 
 ## 3. Figures
@@ -47,7 +47,7 @@ Place image files in `drafts/figures/`. The folder is on the graphics path.
 | Macro | Purpose | Limit |
 |-------|---------|-------|
 | `\highlight{}` | Inline d3-orange bold for a term or number | 3 per page, tables included |
-| `\keypoint{}` | Navy-tinted callout box with left accent border, full column width | 1 per column |
+| `\keypoint{}` | Navy-tinted callout box with left accent border, text in Medium, full column width | 1 per column |
 | `infobox` | Headline metric with a large number | 3 per page |
 | `card alert` | Blocker, deadline, or risk | 2 per page |
 
@@ -98,7 +98,7 @@ Figure placeholder for planned figures (internal documents only):
 
 ## 6. Tables (booktabs + siunitx)
 
-Use `booktabs` rules and `siunitx` `S` columns for numeric data. The style file loads both and sets numbers in Inter with tabular figures, so decimals align exactly.
+Use `booktabs` rules and `siunitx` `S` columns for numeric data. The style file loads both and sets numbers in the text font (Inclusive Sans UW). The font has proportional figures only, so `S` columns align on the decimal marker, and digits in different rows can differ slightly in width.
 
 ```latex
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}} l S[table-format=3.0] @{}}
@@ -169,7 +169,7 @@ One color scheme separates our methods from the comparison methods in every char
 - Line plots: solid thick lines for ours, dashed thin lines for comparison methods
 - Scatter plots: filled markers for ours, open markers for comparison methods
 - Every chart has a legend or direct labels
-- Palette: `d3-navy`, `d3-orange`, `d3-gray` and their tints only
+- Palette: `d3-navy`, `d3-orange`, `d3-gray` and their tints. Charts with more categories take the series colors in this order: `d3-navy`, `d3-orange`, `d3-blue`, `d3-teal`, `d3-yellow`, `d3-berry`, `d3-gray`
 
 ### matplotlib (through uv)
 
@@ -178,9 +178,19 @@ One color scheme separates our methods from the comparison methods in every char
 # requires-python = ">=3.10"
 # dependencies = ["matplotlib"]
 # ///
-import matplotlib.pyplot as plt
+from pathlib import Path
 
-D3_NAVY, D3_ORANGE, D3_GRAY = "#153F87", "#F29100", "#808080"
+import matplotlib.pyplot as plt
+from matplotlib import font_manager
+
+D3_NAVY, D3_ORANGE, D3_GRAY = "#02246C", "#F29100", "#808080"
+D3_BLUE, D3_TEAL, D3_YELLOW, D3_BERRY = "#5E8AC7", "#009485", "#F8C300", "#821044"
+D3_SERIES = [D3_NAVY, D3_ORANGE, D3_BLUE, D3_TEAL, D3_YELLOW, D3_BERRY, D3_GRAY]
+
+# Figure text in the document font; DejaVu Sans supplies Greek and symbols
+for ttf in Path("assets/fonts").glob("InclusiveSansUW-*.ttf"):
+    font_manager.fontManager.addfont(ttf)
+plt.rcParams["font.family"] = ["Inclusive Sans UW", "DejaVu Sans"]
 
 methods = ["Method A", "Method B", "Ours"]
 regret = [3.10, 2.95, 1.80]
@@ -229,7 +239,7 @@ Add `\usepackage{pgfplots}\pgfplotsset{compat=1.18}` to the preamble.
 
 ## 8. Lists and References
 
-Lists are tight by default (`nosep`). Override per list if needed:
+Lists are tight by default (`nosep`), with bullets in `d3-blue`. Override per list if needed:
 
 ```latex
 \begin{itemize}[itemsep=2pt]
@@ -251,19 +261,34 @@ Format: authors, year in parentheses, title, venue in italics, volume(issue), pa
 
 ## 9. Color Palette
 
+The palette follows the 2026 corporate design of the University of Würzburg. D3 orange stays the D3 accent.
+
 | Color | Value | Usage |
 |-------|-------|-------|
-| `d3-navy` | RGB(21, 63, 135) | Primary: titles, rules, headings |
-| `d3-orange` | #f29100 | Accent: highlights, alerts |
-| `d3-gray` | RGB(128, 128, 128) | Footer text, comparison methods in charts |
-| `d3-lightblue` | RGB(200, 220, 240) | Card backgrounds |
-| `d3-darkblue` | RGB(10, 40, 100) | Darker variant |
+| `d3-navy` | #02246C | Primary: title, headings, infobox and keypoint rules, links |
+| `d3-darkblue` | #011646 | Deepest navy, dark surfaces |
+| `d3-orange` | #F29100 | D3 accent: `\highlight`, alerts |
+| `d3-orange-ink` | #B86E00 | Orange for small text on white, where `d3-orange` is too light |
+| `d3-gray` | #808080 | Footer text, comparison methods in charts |
+| `d3-lightblue` | #CBD9EE | Card and infobox fills, chart backgrounds |
+| `d3-blue` | #5E8AC7 | Cornflower: list bullets, secondary chart series |
+| `d3-sky` | #5AA1D8 | Large numerals |
+| `d3-sand` | #F1EBDF | Quiet boxes |
+| `d3-teal` | #009485 | Chart series |
+| `d3-teal-ink` | #007A6E | Teal as text |
+| `d3-yellow` | #F8C300 | Chart series |
+| `d3-berry` | #821044 | Chart series |
+| `d3-peach` | #FCE4BF | Light orange fill |
+| `d3-lavender` | #D9CCE6 | Light fill |
+| `d3-hairline` | #D3D6DC | Rule under the logo row and above the footer |
 
-Documents use these named colors only: no `\definecolor`, no `red`, `blue`, or `green`, no hex codes in LaTeX.
+Body text is black. Documents use these named colors only: no `\definecolor`, no `red`, `blue`, or `green`, no hex codes in LaTeX.
 
 ## 10. Font Sizes
 
-Inter for all text and for numbers in tables. Formulas use the default math font (Computer Modern), and numbers inside formulas follow the formula.
+Inclusive Sans UW, the house font of the University of Würzburg, for all text and for numbers in tables: Regular for body text, SemiBold (`\titlefont`) for the title and section headings, Medium (`\mediumfont`) for the `\keypoint` text. The family has no Bold Italic; the style slants the Bold face. Formulas use the default math font (Computer Modern), and numbers inside formulas follow the formula.
+
+The font has no Greek letters and few math symbols. The style maps Greek letters and ≤ ≥ ≈ ≠ ∞ √ ∈ ∑ ∫ ∂ ⇒ ′ ″ ✓ µ ² ³ typed in text to their math versions. Any other character that the font lacks vanishes from the PDF; the checker reports it as a missing glyph. Write such characters in math mode or as a LaTeX command.
 
 | Element | Size |
 |---------|------|

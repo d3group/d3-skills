@@ -28,7 +28,7 @@ Extract from the .tex source — this is the highest-fidelity path:
 | `\section{Results|Experiments|Evaluation}` | Empirical Results | Headline numbers + main comparison table |
 | `\begin{table}...\end{table}` | Results table | Convert to `booktabs` (NeurIPS style) |
 | `\includegraphics{...}` | Figure list | Inventory; resolve to actual PDF/PNG/SVG files on disk |
-| `references.bib` | Literature paragraph | Filter to citations actually `\cite{}`d; pick 3 key ones |
+| `references.bib` | Footer References slot (`\dthreereferences`) | Filter to citations actually `\cite{}`d; pick 3 key ones |
 
 ## 2. Tier C — PDF text extraction
 

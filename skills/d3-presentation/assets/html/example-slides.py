@@ -225,8 +225,8 @@ onecol(K('Adoption', '38 of 50 stores kept the model after the pilot'),
 # An instrument: the argument is a parameter the audience watches move. Presets are the rehearsed values.
 onecol(K('Instrument', 'The interval narrows with the square root of the sample'),
        lab('<svg id="curve" viewBox="0 0 700 300" style="width:100%;height:300px"><path id="curve-fill" fill="rgba(77,154,170,.18)"/>'
-           '<path id="curve-line" fill="none" stroke="#2F7A89" stroke-width="2.5"/><line x1="0" y1="270" x2="700" y2="270" stroke="#DCE2ED"/>'
-           '<line x1="350" y1="20" x2="350" y2="270" stroke="#153F87" stroke-dasharray="4 4"/></svg>',
+           '<path id="curve-line" fill="none" stroke="#007A6E" stroke-width="2.5"/><line x1="0" y1="270" x2="700" y2="270" stroke="#DCE2ED"/>'
+           '<line x1="350" y1="20" x2="350" y2="270" stroke="#02246C" stroke-dasharray="4 4"/></svg>',
            slider('n', 'Visitors per arm', 500, 20000, 2000, step=500, presets=(500, 2000, 8000),
                   note='Each preset quadruples the sample; watch the width halve.') +
            readout(('Half-width', 'hw', ''), ('Detectable lift', 'mde', '')),

@@ -42,32 +42,44 @@ build('my_talk')          # writes dist/my_talk.html
 
 `uv run slides.py` builds and prints `N slides · M steps · X MB → dist/my_talk.html`.
 
-- `meta()` must come first; it resets the deck. `sections` takes 1 to 7 names. `tracker=True` shows a section tracker in the footer band of content slides (it replaces the chair | presenter text there). `numbering='all'` counts every slide like Beamer; `'content'` matches the `contentnumbering` option: title, agenda, section, and thank-you slides carry no number and backup numbering restarts after `appendix()`.
+- `meta()` must come first; it resets the deck. Without `chair=`, the chair line follows `lang`: English by default, "Lehrstuhl für Wirtschaftsinformatik und Business Analytics" with `lang='de'`. `sections` takes 1 to 7 names. `tracker=True` shows a section tracker in the footer band of content slides (it replaces the chair | presenter text there). `numbering='all'` counts every slide like Beamer; `'content'` matches the `contentnumbering` option: title, agenda, section, and thank-you slides carry no number and backup numbering restarts after `appendix()`.
 - The title slide shows title and subtitle, like the LaTeX one. meta(date=...) is stored for the manifest only, like \date in LaTeX; put the date into the subtitle if it should appear.
 - Every slide function accepts `steps=1, notes='', src='', cls='', group=None, num=True, time=None, provenance=''`. `src` is a one-line summary that is never rendered; it feeds the `/` search palette. `cls` adds classes to the `<section>` for scoped CSS. `num=False` hides and skips the number. `time='0:45'` is the slide's speaking budget: the presenter window paces against the sum, and `shoot.py --slot` compares it with the slot (give every presented slide one, or none). `provenance='Table 3 · N = 38'` prints a small source line in the foot (klar) or above the footer (beamer), for numbers the audience may ask about; illustrative numbers say so there.
 - `feel` is the motion budget agreed in Step 1: `'calm'` (default) warns when more than about 40 percent of the content slides build; `'rich'` and `'interactive'` do not. The build warns about every content slide that is text only, whatever the feel.
 
 ## The look
 
-`meta(look='klar')` is the default and follows the talk design used for D3 defenses: every content slide has the section tracker on top, a title made of an orange kicker and one claim in a light weight, a body in dark ink at 22 px with generous whitespace, the takeaway on a fixed baseline with an orange tick, and a quiet mono foot with the section name, `page / total` and the D3 logo. The university logo and the seal appear on the title and thank-you slides only. There is no agenda slide: the tracker and the question dividers carry the structure (`agenda()` still works if an audience expects one). Each divider shows an outlined part numeral, `Part n of N`, the question the part answers and, beside it, the part's slides with their numbers (clickable, at most six listed).
+Every look is built on the University of Würzburg PowerPoint master (`PPT-Master-Universitaet-Wuerzburg.potx`, 2026 corporate design; the geometry is the master's layout boxes, 1 px = 9525 EMU) and set in the house font Inclusive Sans UW:
 
-`meta(look='beamer')` draws the frame of the LaTeX template instead (university logo, navy bar, footer tab, bold title; `tracker=True` moves the tracker into the footer band). Choose it when the HTML deck must match a PDF deck slide for slide.
+- **Content slides.** The new university logo sits top left over a hairline. The title is semibold navy at 32 px, the body box is 1137 by 420 px (two columns of 548 px). The foot reads `presenter | chair | deck title`, the provenance note (`provenance=`) sits right of it, and the page number stands in a navy tab at the bottom right.
+- **Covers.** `titleslide()` follows the master's Deckblatt: `cover='band'` (white with a navy band; the default of the D3 looks), `cover='navy'` (all navy; the default of the uni look) or `cover='photo'` (the Würzburg skyline, about 0.3 MB). Title, subtitle, presenter and date come from `meta()`.
+- **Structure slides.** `section(n, question=...)` is a navy divider (Trennseite) with `Part n of N`, a large sky-blue numeral, the part name and its question. `agenda()` lists two-digit numbers and topics. `thankyou(text=..., contact=[...])` is the closing slide (Abschlussseite) with its navy contact box.
+- **Seal.** Covers, dividers and the closing slide carry the rector's seal as a corner crop. The CD replaces it by a faculty ornament in faculty communication; until that package is released the seal stands in.
+- **Language.** `lang='de'` switches the labels (Teil n von N, Quellenangaben, Kontakt, Vielen Dank) and the default chair line.
+- **Fonts and logos.** Inclusive Sans UW (5 faces) and D3 Symbols (an Inter subset for the Greek letters, arrows and math operators Inclusive Sans UW lacks) are embedded, and the logos and seals as vector SVGs, once per file. The font has no tabular figures; numbers that must align go into a table or the mono labels.
+
+`meta(look='klar')` is the default, the D3 look: the D3 logo stands in the master's co-branding slot (top right; on title and closing slides next to the university logo), the section tracker sits in the header between the logos, titles are an orange kicker plus one claim (`K()`), the body is black at 22 px with generous whitespace, and `takeaway=` is the sand bar with an orange rule on a fixed baseline. There is no agenda slide: the tracker and the question dividers carry the structure (`agenda()` still works if an audience expects one). Each divider also lists the part's slides with their numbers (clickable, at most six listed). Navy is the university navy `#02246C`; D3 orange `#F29100` is the only accent, and the seal is blue on navy.
+
+`meta(look='beamer')` is the same D3 frame with the conventions of the LaTeX theme: no tracker unless `tracker=True` (then it takes the footer band), dividers without the slide list, body text at Beamer sizes. Choose it when the HTML deck must match a PDF deck slide for slide.
+
+`meta(look='uni')` drops the D3 branding, for teaching and other university decks (for example a dean's office talk). Coral `#ED6A5B` is the accent for graphic marks (accented numbers, the seal on navy). Berry `#821044` takes the role of D3 orange for text accents (kickers, `<b>` in takeaways and statements), because coral is too light for small text on white. Light blue `#5E8AC7` marks bullets and rules, and `takeaway=` is the sand bar with the master's arrow. The kit colours map onto the palette: `orange` becomes berry. The kit objects are toned down to the master's plain style (no cards, no icons, sans-serif labels).
 
 ## 3. Slide functions
 
 | HTML | LaTeX | Notes |
 |---|---|---|
-| `titleslide()` | `\titleslide` | title template with the seal watermark |
-| `agenda()` | `\showagenda` | numbered circles, clickable to the section dividers that exist |
-| `section(n, question='')` | `\showsection{n}` | 1-based; also sets the current section for tracker and jump tabs. In the klar look the divider shows `Part n of N` and the question this part answers |
-| `statement(html)` | none | one sentence at 50 px, alone on the slide; mark the one word that carries it with `<b>` (orange). A few per talk, at the turns of the argument |
+| `titleslide(cover=None)` | `\titleslide` | the master's cover: `'band'` (D3 default, both logos), `'navy'` (uni default) or `'photo'` |
+| `agenda()` | `\showagenda` | two-digit numbers in sky blue, clickable to the section dividers that exist |
+| `section(n, question='')` | `\showsection{n}` | 1-based; also sets the current section for tracker and jump tabs. The navy divider shows `Part n of N`, the part name and the question this part answers; in the klar look also the part's slides |
+| `statement(html)` | none | one sentence at 48 px in navy, alone on the slide; mark the one word that carries it with `<b>` (orange). A few per talk, at the turns of the argument |
 | `facts(title, items, takeaway='')` | none | one to four headline numbers side by side; `items` are `(value, label)` or `(value, label, True)` for the single accented number |
 | `K(kick, claim, sub='')` | none | builds a title: orange kicker (the category, one or two words) plus the claim; pass it wherever a title goes |
-| `onecol(title, html)` | `\onecol` | body box 1133 by 432 px |
-| `twocol(title, left, right)` | `\twocol` | two boxes of 547 px |
+| `onecol(title, html)` | `\onecol` | body box 1137 by 420 px |
+| `twocol(title, left, right)` | `\twocol` | two boxes of 548 px |
 | `twocoltakeaway(title, left, right, takeaway)` | `\twocoltakeaway` | shorter boxes, takeaway box below |
 | `slide(title, html)` | none | frame and title only; position elements yourself (for example a full-width figure) |
-| `thankyou()` | `\thankyouslide` | "Thank You!" and the presenter |
+| `thankyou(text='', contact=None)` | `\thankyouslide` | closing slide: "Thank you" (or `text`) and a navy contact box (`contact`: list of lines; default presenter and chair) |
+| `references(items, title='')` | none | reference list (Quellenangaben), small, two columns; exempt from the busy-slide warnings and the text-only lint |
 | `appendix()` | `\appendix` | everything after is backup |
 | `backuphome(title='Backup')` | none | hub listing the backup slides by `group`; H jumps here |
 | `build(name)` | | writes `dist/<name>.html` |
@@ -98,7 +110,7 @@ The component kit adds the designed objects (tiles with icons, `model()` figures
 
 ## 5. Step builds
 
-A step reveals something that is already laid out. Elements of later steps stand as pale grey ghosts (15 percent opacity) in their final place, so nothing is ever removed, nothing moves between steps, and the audience sees how much is still to come. `meta(..., reveal='hide')` makes them fully invisible instead, for decks where a ghost would give away the point; `data-soft="1"` dims a single element to 42 percent in either mode.
+A step reveals something that is already laid out. Elements of later steps stand as pale grey ghosts (15 percent opacity) in their final place, so nothing is ever removed, nothing moves between steps, and the audience sees how much is still to come. `meta(..., reveal='hide')` makes them fully invisible instead, for decks where a ghost would give away the point; `data-soft="1"` dims a single element to 42 percent in either mode, and `data-hide="1"` keeps a single element fully invisible on stage until its step (a vote's answer, a quiz solution), while previews and print still show it.
 
 ```python
 onecol('Three mechanisms explain the effect', '''
@@ -109,7 +121,7 @@ onecol('Three mechanisms explain the effect', '''
 </div>''' + scrim(3, 0, '60%', 0, 0), steps=4)
 ```
 
-- `data-s="k"`: sharp from step k (0-based). `data-soft="1"`: ghost to 42 percent instead of 15. `data-until="k"`: ghosted again after step k.
+- `data-s="k"`: sharp from step k (0-based). `data-soft="1"`: ghost to 42 percent instead of 15. `data-hide="1"`: no ghost on stage, for a reveal the ghost would give away. `data-until="k"`: ghosted again after step k.
 - `scrim(off, l, t, r, b)`: covers a rectangle of the slide (px numbers or `%` strings) and lifts at step `off`. Use it to reveal a grid cell by cell.
 - `steps=` on the slide is the number of steps and draws the step dots under the top-right bar.
 - The kit helpers take `s=` for the same purpose (`tile(..., s=1)`, `edge(..., s=2)`, `bar(..., s=1)`).
@@ -246,5 +258,5 @@ Contact sheets need Pillow (the --with pillow above); without it, read the per-s
 - [ ] One orange element per slide at most
 - [ ] Every step reveals something; nothing moves between steps
 - [ ] `shoot.py` audit clean, LINT and CONSOLE without errors, holes fixed; contact sheets inspected
-- [ ] Wording rules from the style guide applied
+- [ ] Wording rules applied (`d3-scientific-wording`); `check_wording.py slides.py` reports 0 errors
 - [ ] Review done at the chosen depth (light: audit clean; standard: one pass applied; full: 9 or better in every category)

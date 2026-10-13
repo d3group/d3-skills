@@ -1,5 +1,7 @@
 %! TEX program = xelatex
-% D3 Poster Example -- A0 portrait, 2-column baposter grid with D3 reskin.
+% D3 Poster Example -- A0 portrait, 2-column baposter grid with the D3 reskin
+% in the 2026 University of Wuerzburg design (navy header box, grey section
+% bars, footer with logo row and references).
 % Compile: xelatex poster.tex (no bibtex needed for this example)
 
 \documentclass[a0paper]{baposter}
@@ -22,44 +24,46 @@
 \begin{poster}{
   columns=2,
   grid=false,
-  borderColor=uniblue,
-  headerColorOne=uniblue,
-  headerColorTwo=uniblue,
-  headerFontColor=white,
-  headerheight=11em,
-  boxColorOne=white,
-  boxpadding=1em,
+  eyecatcher=false,
+  % University frame from d3-poster.sty: 25 mm margins, navy header box,
+  % footer with logo row and references. These two lengths fit the template.
+  headerheight=\dthreeheaderheight,
+  colspacing=\dthreecolspacing,
+  background=plain,
+  bgColorOne=white,
+  bgColorTwo=white,
+  % Section bars: #ECECEC with navy SemiBold text. Per box, the key
+  % `emphasis` gives the cornflower bar with white text.
+  borderColor=d3-headergray,
+  headerColorOne=d3-headergray,
+  headerColorTwo=d3-headergray,
+  headerFontColor=d3-navy,
+  headerfont=\dthreesectionfont,
   headershape=rectangle,
   headershade=plain,             % Required: baposter's default `shadeLR` is case-incorrect (lowercase
                                  % choice list expects `shadelr`) and silently falls through to an empty
                                  % handler, leaving headers unfilled. `plain` gives a solid headerColorOne fill.
-  headerfont=\Large\sffamily\bfseries,
-  textborder=none,
-  background=plain,
-  bgColorOne=white,
-  bgColorTwo=white,
-  headerborder=open,
+  headerborder=none,
+  boxColorOne=white,
   boxshade=plain,
-  eyecatcher=false
+  boxpadding=0.6em,
+  textborder=none
 }
-%%% Eye Catcher (empty) %%%
+%%% Eye Catcher (empty; the university logo takes this place) %%%
 {}
-%%% Title -- single line, large, ragged-right (avoids ugly justified spacing
-%%% when the title wraps).  No subtitle by default.
-{\sffamily\bfseries\Huge\raggedright Dynamic Inventory Control with Weighted SAA}
-%%% Authors -- one line.
-{\vspace{0.6em}
-  Author Name, Data Driven Decisions Group\enspace|\enspace author@uni-wuerzburg.de}
-%%% Logos (bottom-right, aligned with author line)
+%%% Title -- white Bold in the navy header box, ragged-right, no subtitle by default.
+{Dynamic Inventory Control with Weighted SAA}
+%%% Authors -- one line, white, below the title.
+{Author Name, Data Driven Decisions Group\enspace|\enspace author@uni-wuerzburg.de}
+%%% Footer logo row: D3 logo in the first cell
 {\dthreelogos}
 
 %%% Motivation %%%
 \headerbox{Motivation}{name=Motivation,column=0,row=0}{
   Periodic-review inventory control with fixed ordering cost is widely studied
   for the single-period case, but the \highlight{multi-period rolling-horizon}
-  variant has remained data-poor. We apply weighted SAA to 460 SKUs of an
-  East-African pharmaceutical distributor -- the first end-to-end deployment
-  at this scale.
+  variant has remained data-poor. We apply weighted SAA end to end to 460 SKUs
+  of an East-African pharmaceutical distributor.
 }
 
 %%% Problem -- formal setup, fills column 0 to the bottom
@@ -118,9 +122,10 @@
     \textbf{WSAA-RO (ours)} & 13.1 & 15.9 & 22.4 \\
     \bottomrule
   \end{tabular}
+}
 
-  \vspace{0.6ex}
-  \textbf{Literature.}\enspace
+%%% Literature -- footer references slot (right half, below the navy rule)
+\dthreereferences{
   Bertsimas \& Kallus (2020, \textit{Management Science});
   Ban \& Rudin (2019, \textit{Operations Research});
   Notz \& Pibernik (2024, \textit{Management Science}).

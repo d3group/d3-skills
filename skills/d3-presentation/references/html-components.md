@@ -1,6 +1,6 @@
 # HTML Components: designed objects
 
-Load this before designing the slides of an HTML deck, and again when reviewing the contact sheet. The frame (klar or beamer look, Inter, D3 tokens) is the same in every D3 deck; what makes a deck worth watching is what happens inside the body region: objects that are built rather than typed, motion that reports something, and details that answer a question when the presenter points at them. The kit and this guide were distilled from M. Möhle's D3 talk decks and ported to the `slides.py` API. Every helper returns an HTML string and is imported with `from d3deck import *`; `assets/html/example-slides.py` (section 5) uses each one.
+Load this before designing the slides of an HTML deck, and again when reviewing the contact sheet. The frame (the University of Würzburg master with the D3 logo, Inclusive Sans UW, D3 tokens) is the same in every D3 deck; what makes a deck worth watching is what happens inside the body region: objects that are built rather than typed, motion that reports something, and details that answer a question when the presenter points at them. The kit and this guide were distilled from M. Möhle's D3 talk decks and ported to the `slides.py` API. Every helper returns an HTML string and is imported with `from d3deck import *`; `assets/html/example-slides.py` (section 5) uses each one.
 
 ## 1. The bar
 
@@ -49,7 +49,7 @@ Common arguments: `s=` is the step (0-based, like `data-s`), `k=` a Q&A key (sec
 ```python
 tile('One model, one baseline', ['overrides logged with a reason', ('source, briefly', 'muted')],
      kick='After', ico='database', color='teal', s=1)      # kicker with icon, headline, keyword lines
-icon('check')          # inline stroke icon; icon('alert', size=28). Names: kit.ICONS (arrows, chart, users, target, ...)
+icon('check')          # inline stroke icon; icon('alert', size=28). Names: kit.ICONS (arrows, chart, users, target, ...; for course roadmaps: linear, dice, curve)
 well('users', 'teal')  # round icon well
 middle(html)           # centres a short object vertically in its region
 callout('Adoption held where planners could <b>override with a reason</b>.')   # navy band, <b> in orange; quiet=True: pale

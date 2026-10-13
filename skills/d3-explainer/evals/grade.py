@@ -176,7 +176,7 @@ def main() -> int:
     add(f"Main-line length fits the requested depth ({a.depth}: {lo:,} to {hi:,} words of prose; figures, formulas, code and collapsed detail are not counted)", lo <= r["words"] <= hi, f"{r['words']:,} words of prose")
     add("No horizontal overflow at phone width (390 px)", overflow <= 1, f"overflow: {overflow}px")
     add("House wording rule: no em-dashes or spaced en-dashes as punctuation (at most 2)", r["dashes"] <= 2, f"{r['dashes']} found")
-    add("D3 look: Inter, mono labels, a hero band", "inter" in r["fonts"].lower() and r["mono"] and r["hero"], f"body font: {r['fonts'][:40]}; mono labels: {r['mono']}; hero: {r['hero']}")
+    add("D3 look: Inclusive Sans UW (university house font), mono labels, a hero band", "inclusive sans" in r["fonts"].lower() and r["mono"] and r["hero"], f"body font: {r['fonts'][:40]}; mono labels: {r['mono']}; hero: {r['hero']}")
 
     if a.notes and Path(a.notes).exists():
         notes = Path(a.notes).read_text(errors="replace")

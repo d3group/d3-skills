@@ -1,0 +1,165 @@
+{
+  "skill_name": "d3-scientific-wording",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "This is the intro of our EJOR submission on battery scheduling (evals/files/ejor_intro.md). It reads like ChatGPT wrote it and my co-author hates it. Fix the wording for EJOR. Keep every citation and every number as it is, don't add anything new. Save the result as ejor_intro_revised.md.",
+      "expected_output": "A revised introduction in OR/EJOR register: no 'not X but Y', no dashes, related work reported neutrally (what SPO+ and Mandi et al. do and under which assumptions), no overclaiming ('dramatically', 'significantly' without test, 'novel', 'paradigm shift' removed or replaced by the numbers), all citations and numbers kept, no new claims; lint 0 errors.",
+      "files": [
+        "evals/files/ejor_intro.md"
+      ],
+      "assertions": [
+        "Lint (check_wording.py, genre paper) reports 0 errors",
+        "No em-dashes or spaced dashes",
+        "No 'not X but Y' family",
+        "Related work is reported without grades (seminal, merely, fails to, suffers from, overlooks)",
+        "No intensifiers or hype (dramatically, significantly, novel, comprehensive, paradigm shift, pave the way)",
+        "'State of the art' removed, or kept with a question to the author in notes.md (a revision drops no claim)",
+        "Both cited works kept with their years (Elmachtoub and Grigas 2022; Mandi et al. 2020)",
+        "All numbers kept (31%, 24 months, 2021 to 2023, 12 MW, 24 MWh, 4.2 times)",
+        "No numbers that are not in the source"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Rewrite this section of my explainer in Simplified Technical English (evals/files/section-ste.html). Leave the chips, the equation and the figure id alone. Save it as section-ste_revised.html.",
+      "expected_output": "The same section in STE: sentences at most 25 words (Try instructions at most 20, imperative, one instruction per sentence), no semicolons, active voice, no phrasal verbs (carried out, set up, turns out, look at), same facts and numbers (94 %, 0.8 %, tau = 10), chips, equation div, figure id and math unchanged; lint --ste 0 errors.",
+      "files": [
+        "evals/files/section-ste.html"
+      ],
+      "assertions": [
+        "Lint in STE mode (check_wording.py --ste, genre explainer) reports 0 errors",
+        "Source chips kept unchanged",
+        "Equation placeholder, figure id, derivation id and formula kept unchanged",
+        "Numbers kept (94 %, 0.8 %, tau = 10, slider 1 to 100)",
+        "No semicolons in the prose",
+        "No phrasal verbs of the source (carried out, set up, turns out, look at)",
+        "Try caption: imperative sentences of at most 20 words",
+        "Every sentence has at most 25 words"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write the abstract for our ICIS 2026 completed research paper from my notes (evals/files/icis_notes.md). The call says max 150 words. Save it as icis_abstract.md.",
+      "expected_output": "An abstract of 120 to 150 words in IS register: problem, theory (dual-process, fluency), the construct scrutiny cues introduced once, the experiment (N = 184, simple vs detailed) with the 64 % vs 41 % result, the contribution to theory and the design implication; 'significant' only tied to the test or replaced by the numbers; no numbers that are not in the notes; no 'not X but Y'; lint 0 errors.",
+      "files": [
+        "evals/files/icis_notes.md"
+      ],
+      "assertions": [
+        "Abstract has at most 150 words (the call's limit)",
+        "Abstract uses the space: at least 120 words",
+        "Lint (check_wording.py, genre abstract) reports 0 errors",
+        "Reports the sample and the main result (N = 184; 64% vs 41%)",
+        "No numbers that are not in the notes",
+        "'Significant' appears only together with its test, or not at all",
+        "Names the construct 'scrutiny cues'",
+        "States a contribution to theory (explains, theory)",
+        "No 'not X but Y' family and no em-dashes"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "This is the introduction of our NeurIPS 2026 submission (double-blind). Please polish the wording so reviewers take it seriously; keep the method name, the numbers and the citations. Save it as neurips_intro_revised.md.",
+      "expected_output": "ML register: contributions as concrete claims, no hype (cornerstone, pivotal, groundbreaking, seamlessly, undoubtedly, by a large margin), 'state-of-the-art' only with metric and compared methods, own earlier work in the third person (double-blind), the 'provably' claim kept only if a proof exists or raised as a question; numbers 9, 47%, 3 times and SNIPS kept; lint 0 errors.",
+      "files": [
+        "evals/files/neurips_intro.md"
+      ],
+      "assertions": [
+        "Lint (check_wording.py, genre paper) reports 0 errors",
+        "Own earlier work in the third person (no 'our previous work'), citation kept",
+        "No hype words (cornerstone, pivotal, groundbreaking, seamlessly, undoubtedly, comprehensive, novel, large margin)",
+        "'State-of-the-art' only in a sentence that names the metric",
+        "No 'not X but Y' family and no em-dashes",
+        "Numbers and names kept (9 datasets, 47%, 3 times, SNIPS, CLIP-DR)",
+        "No numbers that are not in the source",
+        "The 'provably' claim is raised with the author (notes.md mentions the proof)"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "These are two parts of our Energy Economics submission. The tariff was opt-in, households chose it themselves; we use household and month fixed effects. Fix the wording to Energy Economics standards. Keep the citations and the numbers. Save it as energy_econ_revised.md.",
+      "expected_output": "Economics register: related work as neutral strands (no seminal, laid the groundwork, merely, fail to, overlook, great progress), no causal claim from an opt-in design ('cause' replaced by association wording or flagged), no 'proves', 'key to', 'game-changer', 'highly significant'; all citations and numbers kept; lint 0 errors.",
+      "files": [
+        "evals/files/energy_econ.md"
+      ],
+      "assertions": [
+        "Lint (check_wording.py, genre paper) reports 0 errors",
+        "Related work is reported without grades",
+        "No causal claim from the opt-in design ('cause' absent)",
+        "No 'proves', 'clearly demonstrate', 'key to', 'game-changer', 'highly significant'",
+        "All four cited works kept with their years",
+        "All numbers kept (2,340; 2019 to 2023; 9.4%; 14.1%; p < 0.01)",
+        "No numbers that are not in the source"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Write the summary paragraph (abstract) for our Nature Energy submission from these notes. The guide says at most 150 words, no references, written for readers outside the field. Save it as nature_energy_abstract.md.",
+      "expected_output": "Nature register: field and importance, the problem, 'Here we show' with the main result and its magnitude, the broader consequence; plain words, abbreviations spelled out; the 2030 number framed as a scenario; no 'significant'; at most 150 words; numbers only from the notes; lint 0 errors.",
+      "files": [
+        "evals/files/nature_notes.md"
+      ],
+      "assertions": [
+        "At most 150 words",
+        "Lint (check_wording.py, genre abstract) reports 0 errors",
+        "Uses the Nature convention 'Here we ...' (show, report, combine, ...)",
+        "Abbreviations FCR and EV are spelled out where used",
+        "The 2030 number is framed as a scenario or projection",
+        "No 'significant' (no test in the notes)",
+        "No numbers that are not in the notes",
+        "Reports the main result with its magnitude (41% lower lifecycle cost)"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Revise the wording of this model section of our paper for Games and Economic Behavior. Don't change the math or the content of the propositions; if something is mathematically doubtful, tell me instead of fixing it. Save it as gt_revised.md.",
+      "expected_output": "Game-theory register: no 'prove' for a simulation, no 'dramatically', no 'not only ... but also', no 'deep insights', no em-dash; the false 'lower-cost firm always wins' claim (a Tullock contest is probabilistic) and the missing conditions of the propositions raised in notes.md instead of silently fixed; math and both propositions kept; lint 0 errors.",
+      "files": [
+        "evals/files/gt_draft.md"
+      ],
+      "assertions": [
+        "Lint (check_wording.py, genre paper) reports 0 errors",
+        "'Prove using simulations' is reworded, or flagged in notes.md (the prompt froze doubtful math)",
+        "No 'not only', 'deep insights', 'key insight' or em-dash",
+        "'Dramatically' in Proposition 2 is removed, or flagged in notes.md",
+        "Both propositions and the model's math kept",
+        "notes.md flags the 'always wins' claim (Tullock contests are probabilistic)"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Turn this results paragraph into the text for the 'Results' box of our poster for the ECSS congress. Please write it in Simplified Technical English, our audience is international. Keep all numbers. Save it as poster_results_box.md.",
+      "expected_output": "Poster box in STE: sentences at most 25 words, no semicolons, effect size with its confidence interval kept, all numbers kept, no generalization beyond the sample (no 'all athletes', 'all sports'), no 'essential', 'game-changer', 'clearly demonstrates', 'significant' only with its test; lint --ste --genre poster 0 errors.",
+      "files": [
+        "evals/files/sports_results.md"
+      ],
+      "assertions": [
+        "Lint in STE mode (check_wording.py --ste, genre poster) reports 0 errors",
+        "All numbers kept",
+        "No numbers that are not in the source",
+        "No generalization beyond the sample ('all athletes', 'all sports' absent; the sample is named)",
+        "No 'essential', 'game-changer', 'clearly demonstrates'",
+        "'Significant' only together with its test, or not at all",
+        "Effect size kept with its confidence interval",
+        "No semicolons"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Hier sind zwei Folien aus meinem Vortrag im Lehrstuhlseminar (Ausschnitt aus slides.py, folien.py). Bitte überarbeite die Formulierungen nach unseren Regeln, Inhalt und Zahlen bleiben gleich. Speichere das Ergebnis als folien_revised.py.",
+      "expected_output": "German slides: still valid Python with the same calls, no 'nicht nur ..., sondern auch', no Gedankenstrich as punctuation, no 'scheitern', 'innovativ', 'ganzheitlich', 'nahtlos', 'dramatisch', no 'signifikant' (no test), no 'Es ist wichtig zu beachten'; all numbers kept; still German; lint 0 errors.",
+      "files": [
+        "evals/files/folien.py"
+      ],
+      "assertions": [
+        "Lint (check_wording.py, genre slides) reports 0 errors",
+        "Still valid Python with both slide() calls",
+        "Still German",
+        "No 'nicht nur', Gedankenstrich, 'scheitern', 'innovativ', 'ganzheitlich', 'nahtlos', 'dramatisch'",
+        "No 'signifikant' (no test given)",
+        "All numbers kept (2019, 2023, 1,2, 3,1, 23, 4, 2030)",
+        "No numbers that are not in the source"
+      ]
+    }
+  ]
+}

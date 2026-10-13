@@ -39,7 +39,7 @@ Prefer 2 over 3 whenever the code runs in seconds and the numbers matter to the 
 **Say what the state means.** `ctx.readout` for the two or three numbers the reader should watch; `ctx.note` for a sentence that interprets the current state ("This is the exact optimum for n = 20: skip 7, then take the first record"). A reader who drags without guidance learns little; a sentence that changes with the state is guidance.
 
 **Chart discipline.**
-- Colour means what the project's colour code says it means: use the `[[role]]` keys, so that the curve of "what we choose" has the colour it has in the formulas. At most three coloured series per panel (navy, orange, teal); gray for baselines, references, and the past; a further series gets a dash pattern or its own panel.
+- Colour means what the project's colour code says it means: use the `[[role]]` keys, so that the curve of "what we choose" has the colour it has in the formulas. At most five coloured series per panel, in the colours of the role palette (blue, orange, teal, berry, ochre), which stays apart for colour-blind readers; gray for baselines, references, and the past; more series get their own panel.
 - Orange marks what the reader moves (the handle) and is light on white: label orange series directly or through the legend.
 - Never two y-axes. Two quantities with different units get two panels (`cell: [0, 2]`, `cell: [1, 2]`) that share the x-axis or the control.
 - Label axes with quantity and unit. Label series in the legend (automatic) and, for up to three lines, at the line end (`end: true`).

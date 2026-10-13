@@ -1,6 +1,6 @@
 % D3 Template Library - Reusable diagram components
 % Include with: \input{assets/d3-template-library}
-% Version 2.0 - Improved chevrons and timelines
+% Version 3.0 - University of Wuerzburg CD 2026 tokens (colours live in d3-beamer.sty)
 
 % ============================================================================
 % CODE BOXES (using tcolorbox)
@@ -119,20 +119,20 @@
 }
 
 % ============================================================================
-% ADDITIONAL COLORS FOR CHARTS
+% CHART COLORS
 % ============================================================================
-\definecolor{d3-teal}{RGB}{77,154,170}       % Teal - for timeline bars
-\definecolor{d3-yellow}{RGB}{216,222,111}    % Yellow - for timeline bars
-\definecolor{d3-peach}{RGB}{245,200,170}     % Peach/salmon - for timeline bars
-\definecolor{d3-lavender}{RGB}{197,202,233}  % Lavender - for timeline bars
+% d3-teal, d3-yellow, d3-berry, d3-peach, d3-lavender, d3-sand, d3-blue, d3-sky
+% are defined in d3-beamer.sty. Series order: d3-navy, d3-orange, d3-blue,
+% d3-teal, d3-yellow, d3-berry, d3-gray. Light fills for work packages:
+% d3-lightblue, d3-peach, d3-lavender, d3-sand, d3-teal!25, d3-yellow!40.
 
 % ============================================================================
 % PROJECT TIMELINE (Solistiq-style)
 % ============================================================================
 % Usage:
 %   \begin{projecttimeline}{2025}{2028}
-%     \workpackage{WP1: Research \& Analysis}{d3-teal!60}{0}{0.5}{1}{M1}
-%     \workpackage{WP2: Development}{d3-yellow!80}{0.17}{0.67}{2}{M2}
+%     \workpackage{WP1: Research \& Analysis}{d3-lightblue}{0}{0.5}{1}{M1}
+%     \workpackage{WP2: Development}{d3-peach}{0.17}{0.67}{2}{M2}
 %   \end{projecttimeline}
 
 % Work package bar command (row 1 = bottom, ascending)
@@ -143,7 +143,7 @@
   \node[anchor=west, font=\fontsize{7}{9}\selectfont\bfseries, text=d3-navy]
     at ({#3*\timelinewidth + 1mm}, {\ypos mm + 2.5mm}) {#1};
   % Milestone diamond at end of bar
-  \node[diamond, fill=d3-navy, minimum size=3mm, inner sep=0pt]
+  \node[diamond, fill=d3-orange, minimum size=3mm, inner sep=0pt]
     at ({#4*\timelinewidth - 2mm}, {\ypos mm + 2.5mm}) {};
   \node[anchor=west, font=\fontsize{6}{8}\selectfont, text=d3-navy]
     at ({#4*\timelinewidth}, {\ypos mm + 2.5mm}) {#6};
@@ -202,13 +202,13 @@
     \ifnum#1=1
       \drawchevron{0}                {d3-navy}{white}{#2}{#3}
     \else
-      \drawchevron{0}                {d3-navy!15}{d3-navy}{#2}{#3}
+      \drawchevron{0}                {d3-lightblue}{d3-navy}{#2}{#3}
     \fi
     % Phase 2
     \ifnum#1=2
       \drawchevron{\aw + \ag}        {d3-navy}{white}{#4}{#5}
     \else
-      \drawchevron{\aw + \ag}        {d3-navy!15}{d3-navy}{#4}{#5}
+      \drawchevron{\aw + \ag}        {d3-lightblue}{d3-navy}{#4}{#5}
     \fi
   \end{tikzpicture}%
 }
@@ -222,11 +222,11 @@
     \pgfmathsetlengthmacro{\ag}{\gap - \cp}
     \pgfmathsetlengthmacro{\aw}{(\textwidth - 2*\ag) / 3}
     \ifnum#1=1 \drawchevron{0}{d3-navy}{white}{#2}{#3}
-    \else \drawchevron{0}{d3-navy!15}{d3-navy}{#2}{#3} \fi
+    \else \drawchevron{0}{d3-lightblue}{d3-navy}{#2}{#3} \fi
     \ifnum#1=2 \drawchevron{\aw + \ag}{d3-navy}{white}{#4}{#5}
-    \else \drawchevron{\aw + \ag}{d3-navy!15}{d3-navy}{#4}{#5} \fi
+    \else \drawchevron{\aw + \ag}{d3-lightblue}{d3-navy}{#4}{#5} \fi
     \ifnum#1=3 \drawchevron{2*\aw + 2*\ag}{d3-navy}{white}{#6}{#7}
-    \else \drawchevron{2*\aw + 2*\ag}{d3-navy!15}{d3-navy}{#6}{#7} \fi
+    \else \drawchevron{2*\aw + 2*\ag}{d3-lightblue}{d3-navy}{#6}{#7} \fi
   \end{tikzpicture}%
 }
 
@@ -239,13 +239,13 @@
     \pgfmathsetlengthmacro{\ag}{\gap - \cp}
     \pgfmathsetlengthmacro{\aw}{(\textwidth - 3*\ag) / 4}
     \ifnum#1=1 \drawchevron{0}{d3-navy}{white}{#2}{#3}
-    \else \drawchevron{0}{d3-navy!15}{d3-navy}{#2}{#3} \fi
+    \else \drawchevron{0}{d3-lightblue}{d3-navy}{#2}{#3} \fi
     \ifnum#1=2 \drawchevron{\aw + \ag}{d3-navy}{white}{#4}{#5}
-    \else \drawchevron{\aw + \ag}{d3-navy!15}{d3-navy}{#4}{#5} \fi
+    \else \drawchevron{\aw + \ag}{d3-lightblue}{d3-navy}{#4}{#5} \fi
     \ifnum#1=3 \drawchevron{2*\aw + 2*\ag}{d3-navy}{white}{#6}{#7}
-    \else \drawchevron{2*\aw + 2*\ag}{d3-navy!15}{d3-navy}{#6}{#7} \fi
+    \else \drawchevron{2*\aw + 2*\ag}{d3-lightblue}{d3-navy}{#6}{#7} \fi
     \ifnum#1=4 \drawchevron{3*\aw + 3*\ag}{d3-navy}{white}{#8}{#9}
-    \else \drawchevron{3*\aw + 3*\ag}{d3-navy!15}{d3-navy}{#8}{#9} \fi
+    \else \drawchevron{3*\aw + 3*\ag}{d3-lightblue}{d3-navy}{#8}{#9} \fi
   \end{tikzpicture}%
 }
 
@@ -261,15 +261,15 @@
     \pgfmathsetlengthmacro{\ag}{\gap - \cp}
     \pgfmathsetlengthmacro{\aw}{(\textwidth - 4*\ag) / 5}
     \ifnum#1=1 \drawchevron{0}{d3-navy}{white}{Phase 1:}{#2}
-    \else \drawchevron{0}{d3-navy!15}{d3-navy}{Phase 1:}{#2} \fi
+    \else \drawchevron{0}{d3-lightblue}{d3-navy}{Phase 1:}{#2} \fi
     \ifnum#1=2 \drawchevron{\aw + \ag}{d3-navy}{white}{Phase 2:}{#3}
-    \else \drawchevron{\aw + \ag}{d3-navy!15}{d3-navy}{Phase 2:}{#3} \fi
+    \else \drawchevron{\aw + \ag}{d3-lightblue}{d3-navy}{Phase 2:}{#3} \fi
     \ifnum#1=3 \drawchevron{2*\aw + 2*\ag}{d3-navy}{white}{Phase 3:}{#4}
-    \else \drawchevron{2*\aw + 2*\ag}{d3-navy!15}{d3-navy}{Phase 3:}{#4} \fi
+    \else \drawchevron{2*\aw + 2*\ag}{d3-lightblue}{d3-navy}{Phase 3:}{#4} \fi
     \ifnum#1=4 \drawchevron{3*\aw + 3*\ag}{d3-navy}{white}{Phase 4:}{#5}
-    \else \drawchevron{3*\aw + 3*\ag}{d3-navy!15}{d3-navy}{Phase 4:}{#5} \fi
+    \else \drawchevron{3*\aw + 3*\ag}{d3-lightblue}{d3-navy}{Phase 4:}{#5} \fi
     \ifnum#1=5 \drawchevron{4*\aw + 4*\ag}{d3-navy}{white}{Phase 5:}{#6}
-    \else \drawchevron{4*\aw + 4*\ag}{d3-navy!15}{d3-navy}{Phase 5:}{#6} \fi
+    \else \drawchevron{4*\aw + 4*\ag}{d3-lightblue}{d3-navy}{Phase 5:}{#6} \fi
   \end{tikzpicture}%
 }
 

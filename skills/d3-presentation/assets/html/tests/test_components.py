@@ -5,13 +5,15 @@ from d3deck import components as C
 
 class Mix(unittest.TestCase):
     def test_token(self):
-        self.assertEqual(C.mix('navy'), '#153F87')
+        self.assertEqual(C.mix('navy'), '#02246C')   # University of Würzburg 2026
 
     def test_percentages_match_xcolor(self):
-        self.assertEqual(C.mix('navy!15'), '#DCE2ED')
-        self.assertEqual(C.mix('navy!5'), '#F3F5F9')
-        self.assertEqual(C.mix('navy!50'), '#8A9FC3')
-        self.assertEqual(C.mix('navy!90'), '#2C5293')
+        self.assertEqual(C.mix('navy!15'), '#D9DEE9')
+        self.assertEqual(C.mix('navy!5'), '#F2F4F8')
+        self.assertEqual(C.mix('navy!50'), '#8092B6')
+        self.assertEqual(C.mix('navy!90'), '#1B3A7B')
+        self.assertEqual(C.mix('blue'), '#5E8AC7')
+        self.assertEqual(C.mix('sand'), '#F1EBDF')
 
     def test_hex_passthrough(self):
         self.assertEqual(C.mix('#ABCDEF'), '#ABCDEF')
@@ -48,7 +50,7 @@ class Fragments(unittest.TestCase):
     def test_timeline(self):
         h = C.timeline(2025, 2028, [('WP1', 'teal!60', 0, 0.5, 1, 'M1'), ('WP2', 'yellow!80', 0.25, 1.0, 2, 'M2')])
         self.assertIn('class="tl-year" style="left:33.33%">2026<', h)
-        self.assertIn('left:0.00%;width:50.00%;bottom:38px;background:#94C2CC', h)
+        self.assertIn('left:0.00%;width:50.00%;bottom:38px;background:#66BFB6', h)
         self.assertIn('left:25.00%;width:75.00%;bottom:90px', h)
         self.assertIn('<div class="tl-msl"', h)
 

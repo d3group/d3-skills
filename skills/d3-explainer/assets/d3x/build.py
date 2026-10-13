@@ -36,7 +36,7 @@ PAPER_NAMES = {"eq": "Eq.", "eqn": "Eq.", "sec": "§", "subsec": "§", "fig": "F
                "lem": "Lemma", "prop": "Prop.", "cor": "Cor.", "def": "Def.", "alg": "Alg.", "app": "App.", "ass": "Ass.", "asm": "Ass.",
                "rem": "Remark", "ex": "Ex."}
 MATH_ENVS = "equation|align|gather|multline|eqnarray|alignat|flalign|dmath"
-WORDING = [  # (pattern, advice) -- same house rules as d3-abstract / d3-presentation, warnings only
+WORDING = [  # (pattern, advice) -- mechanical subset of d3-scientific-wording (scripts/check_wording.py has all rules), warnings only
     (r"(?<!\d)\s[\u2013\u2014]\s|\u2014", "dash as punctuation: use a comma, a colon, or a new sentence"),
     (r"\bnot\s+(only|just|merely|simply)\b", "contrast framing: state the positive claim"),
     (r"\b(leverag\w+|delv\w+|seamless\w*|transformative|synerg\w+|robust framework|comprehensive\w*|holistic\w*|paradigm shift|game.chang\w+|cutting.edge|state.of.the.art)\b",
@@ -198,6 +198,61 @@ def read_macros(repo: Path, files: list[str], rep: Report) -> dict[str, str | li
         else:
             out[k] = body
     return out
+
+
+# ── colour: the role palette and the checks behind it ──────────────────────────────────────────────────────────
+# The role palette is colour-blind safe as a set (validated with the dataviz method: OKLab ΔE×100 under the Machado,
+# Oliveira & Fernandes 2009 simulation at severity 1.0, every pair >= 8 for protanopia and deuteranopia, >= 15 with
+# full colour vision). Order: blue (a step of the university navy), D3 orange, teal, berry, ochre (a step of the yellow).
+ROLE_PALETTE = ("#2A519D", "#F29100", "#27A495", "#922351", "#8C6D02")
+_MACHADO = {"protan": ((0.152286, 1.052583, -0.204868), (0.114503, 0.786281, 0.099216), (-0.003882, -0.048116, 1.051998)),
+            "deutan": ((0.367322, 0.860646, -0.227968), (0.280085, 0.672501, 0.047413), (-0.011820, 0.042940, 0.968881))}
+
+
+def _lin(h: str) -> list[float]:
+    return [(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4) for c in (int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))]
+
+
+def _oklab(rgb) -> tuple[float, float, float]:
+    r, g, b = rgb
+    l, m, s = ((0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b) ** (1 / 3),
+               (0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b) ** (1 / 3),
+               (0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b) ** (1 / 3))
+    return (0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s, 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s)
+
+
+def delta_e(h1: str, h2: str, kind: str | None = None) -> float:
+    """OKLab distance ×100 between two colours, optionally as a protanope or deuteranope sees them."""
+    def sim(h):
+        c = _lin(h)
+        return [min(1, max(0, sum(m * v for m, v in zip(row, c)))) for row in _MACHADO[kind]] if kind else c
+    a, b = _oklab(sim(h1)), _oklab(sim(h2))
+    return 100 * sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
+
+
+def contrast(h1: str, h2: str) -> float:
+    lum = lambda h: sum(w * c for w, c in zip((0.2126, 0.7152, 0.0722), _lin(h)))
+    hi, lo = sorted((lum(h1), lum(h2)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def text_ink(h: str, paper: str = "#F7F5F0", target: float = 4.5) -> str:
+    """The colour itself if it reads as text on the paper (4.5:1), else the same hue darkened in OKLab until it does."""
+    if contrast(h, paper) >= target:
+        return h.upper()
+    L, A, B = _oklab(_lin(h))
+    while L > 0.05:
+        L -= 0.01
+        l, m, s = ((L + 0.3963377774 * A + 0.2158037573 * B) ** 3, (L - 0.1055613458 * A - 0.0638541728 * B) ** 3,
+                   (L - 0.0894841775 * A - 1.2914855480 * B) ** 3)
+        rgb = (4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+               -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)
+        out = "#" + "".join(f"{round(255 * min(1, max(0, (12.92 * c if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055)))):02X}"
+                            for c in (max(0.0, v) for v in rgb))
+        if contrast(out, paper) >= target:
+            return out
+    return "#000000"
 
 
 def mathjax_macros(macros: dict) -> dict:
@@ -647,22 +702,40 @@ class Builder:
 
     # ---- assets
     def fonts_css(self) -> str:
+        """Inclusive Sans UW (the university's house font) for text, D3 Symbols (an Inter subset) for the Greek letters, primes,
+        arrows, operators and check mark that Inclusive Sans UW lacks, IBM Plex Mono for labels and controls. See fonts/LICENSES.md."""
+        sym = "U+0370-03FF,U+2032-2033,U+2190-21FF,U+2200-22FF,U+2713"
         css = []
-        for family, weight, style, name in (("Inter", 400, "normal", "Inter-Regular"), ("Inter", 400, "italic", "Inter-Italic"), ("Inter", 600, "normal", "Inter-SemiBold"), ("Inter", 700, "normal", "Inter-Bold"),
-                                            ("IBM Plex Mono", 400, "normal", "IBMPlexMono-400-latin"), ("IBM Plex Mono", 500, "normal", "IBMPlexMono-500-latin"), ("IBM Plex Mono", 600, "normal", "IBMPlexMono-600-latin")):
+        for family, weight, style, name, urange in (
+                ("Inclusive Sans UW", 400, "normal", "InclusiveSansUW-Regular", None), ("Inclusive Sans UW", 400, "italic", "InclusiveSansUW-Italic", None),
+                ("Inclusive Sans UW", 500, "normal", "InclusiveSansUW-Medium", None), ("Inclusive Sans UW", 600, "normal", "InclusiveSansUW-SemiBold", None),
+                ("Inclusive Sans UW", 700, "normal", "InclusiveSansUW-Bold", None),
+                ("D3 Symbols", 400, "normal", "D3Symbols-Regular", sym), ("D3 Symbols", 700, "normal", "D3Symbols-Bold", sym),
+                ("IBM Plex Mono", 400, "normal", "IBMPlexMono-400-latin", None), ("IBM Plex Mono", 500, "normal", "IBMPlexMono-500-latin", None),
+                ("IBM Plex Mono", 600, "normal", "IBMPlexMono-600-latin", None)):
             b64 = base64.b64encode((ENGINE / "fonts" / f"{name}.woff2").read_bytes()).decode()
-            css.append(f"@font-face{{font-family:'{family}';font-style:{style};font-weight:{weight};font-display:swap;src:url(data:font/woff2;base64,{b64}) format('woff2')}}")
+            css.append(f"@font-face{{font-family:'{family}';font-style:{style};font-weight:{weight};font-display:swap;"
+                       + (f"unicode-range:{urange};" if urange else "") + f"src:url(data:font/woff2;base64,{b64}) format('woff2')}}")
         return "\n".join(css)
 
     def roles(self) -> list[dict]:
-        """[[role]] entries: the project's colour code, kept in every equation and figure."""
+        """[[role]] entries: the project's colour code, kept in every equation and figure. Each role also gets an ink
+        (same hue, dark enough for text on the paper) for formulas and role words; marks keep the role colour."""
         out = []
         for r in self.cfg.get("role", []):
             key, col = str(r.get("key", "")), str(r.get("color", ""))
             if not re.fullmatch(r"[A-Za-z]{2,20}", key) or not re.fullmatch(r"#[0-9A-Fa-f]{6}", col):
                 self.rep.error(f"explainer.toml [[role]]: key must be 2 to 20 letters and color a #RRGGBB value (got key={key!r}, color={col!r})")
                 continue
-            out.append({"key": key, "color": col, "label": str(r.get("label", key))})
+            out.append({"key": key, "color": col, "ink": text_ink(col), "label": str(r.get("label", key))})
+        for i, a in enumerate(out):                   # any two roles may meet in a figure: check every pair
+            for b in out[i + 1:]:
+                normal = delta_e(a["color"], b["color"])
+                cvd = min(delta_e(a["color"], b["color"], k) for k in ("protan", "deutan"))
+                if normal < 15 or cvd < 8:
+                    self.rep.warn(f"[[role]] '{a['key']}' {a['color']} and '{b['key']}' {b['color']} are hard to tell apart: OKLab ΔE {normal:.1f} "
+                                  f"with full colour vision (needs 15), {cvd:.1f} for red-green colour-blind readers (needs 8); "
+                                  f"take the colours from the role palette {', '.join(ROLE_PALETTE)}")
         return out
 
     def page(self, sections: list[dict]) -> str:
@@ -673,7 +746,7 @@ class Builder:
         for r in roles:                                # \choice{b} colours b in the role's colour, in any formula
             if "\\" + r["key"] in macros:
                 self.rep.warn(f"[[role]] key '{r['key']}' hides the paper macro \\{r['key']}; pick another key")
-            macros["\\" + r["key"]] = "\\textcolor{#%s}{#1}" % r["color"]      # "##": a literal '#'; a bare "#2A..." would read as argument 2
+            macros["\\" + r["key"]] = "\\textcolor{#%s}{#1}" % r["ink"]        # "##": a literal '#'; a bare "#2A..." would read as argument 2
         macros.update(cfg.get("macros", {}))
         js = lambda p: (ENGINE / p).read_text(encoding="utf-8").replace("</script", "<\\/script")
         words = sum(s["words"] for s in sections)
@@ -707,7 +780,7 @@ class Builder:
                 self.rep.warn(f"a section has data-hud=\"{max(levels)}\" but [hud] has only {len(hud['lines'])} lines")
         toc = "".join(f'<li><span class="n">{s["n"]:02d}</span><a href="#{s["id"]}">{html.escape(s["nav"])}</a></li>' for s in sections)
         meta = " · ".join(x for x in [html.escape(authors), built, f"about {minutes} min", html.escape(cfg.get("status", ""))] if x)
-        role_css = ":root{" + "".join(f"--r-{r['key']}:{r['color']};" for r in roles) + "}" + "".join(f".r-{r['key']}{{color:{r['color']}}}" for r in roles)
+        role_css = ":root{" + "".join(f"--r-{r['key']}:{r['color']};" for r in roles) + "}" + "".join(f".r-{r['key']}{{color:{r['ink']}}}" for r in roles)
         mathjax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "displayMath": [["$$", "$$"], ["\\[", "\\]"]], "macros": mathjax_macros(macros),
                            "packages": {"[-]": ["noundefined"]}},      # an unknown command fails its formula, so check.py can name it
                    "svg": {"fontCache": "local"}, "options": {"ignoreHtmlClass": "nomath|chip|usd"}, "startup": {"typeset": False}}

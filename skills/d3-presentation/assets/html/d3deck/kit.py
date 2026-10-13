@@ -26,8 +26,7 @@ SIGNS = ('pos', 'neg', 'ind', 'plain', 'mod')
 SIGN_LABEL = {'pos': 'positive', 'neg': 'negative', 'ind': 'indeterminate', 'mod': 'moderates'}
 
 # Region sizes per look, in px: the body box and the column boxes of onecol/twocol/twocoltakeaway (chrome.py).
-BOX = {'klar': {'body': (1108, 400), 'col': (530, 400), 'short': (530, 318)},
-       'beamer': {'body': (1133, 432), 'col': (547, 432), 'short': (547, 274)}}
+BOX = {look: {'body': (1137, 420), 'col': (548, 420), 'short': (548, 335)} for look in ('klar', 'beamer', 'uni')}   # one frame
 
 
 def _attr(s=None, k=None, soft=False):
@@ -118,6 +117,10 @@ ICONS = {
     'x': '<path d="M18 6 6 18M6 6l12 12"/>',
     'xcircle': '<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
     'zap': '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+    # method icons for course roadmaps: a linear function, chance (three dice in a throw), a nonlinear curve
+    'linear': '<path d="M4 3v17h17"/><path d="M6.5 17 19 6"/>',
+    'dice': '<g transform="rotate(-16 6.6 16.2)" stroke-width="1.6"><rect x="2.50" y="12.10" width="8.2" height="8.2" rx="1.9"/><circle cx="4.50" cy="14.10" r="0.95" fill="currentColor" stroke="none"/><circle cx="6.60" cy="16.20" r="0.95" fill="currentColor" stroke="none"/><circle cx="8.70" cy="18.30" r="0.95" fill="currentColor" stroke="none"/></g><g transform="rotate(12 17.2 16.8)" stroke-width="1.6"><rect x="13.10" y="12.70" width="8.2" height="8.2" rx="1.9"/><circle cx="15.30" cy="14.90" r="0.95" fill="currentColor" stroke="none"/><circle cx="19.10" cy="18.70" r="0.95" fill="currentColor" stroke="none"/></g><g transform="rotate(28 12.3 6.2)" stroke-width="1.6"><rect x="8.20" y="2.10" width="8.2" height="8.2" rx="1.9"/><circle cx="12.30" cy="6.20" r="0.95" fill="currentColor" stroke="none"/></g>',   # three dice in a throw
+    'curve': '<path d="M4 3v17h17"/><path d="M6 17c2.5-9 5-10 7.5-4.5S17.5 15 19.5 5"/>',
 }
 
 
@@ -631,7 +634,7 @@ def lab(figure, rack, cap='', rack_w=340):
 # ── CSS ──────────────────────────────────────────────────────────────────
 
 CSS = r"""
-:root{--teal-ink:#2F7A89;--orange-ink:#B86E00;--red:#C0392B;--navy-10:#E8ECF3;--teal-10:#EDF5F7;--teal-25:#D3E6EA;
+:root{--teal-ink:#007A6E;--orange-ink:#B86E00;--red:#C0392B;--navy-10:#E6E9F0;--teal-10:#E6F4F3;--teal-25:#BFE4E0;
  --orange-10:#FEF4E6;--red-10:#F9EBEA;--red-25:#EBC3BF;--gray-10:#F2F3F5;--ease:cubic-bezier(.22,.61,.36,1);
  --k-lg:26px;--k-md:21px;--k-sm:19px;--k-xs:16px;--k-mi:11.5px}
 @property --v{syntax:'<integer>';inherits:false;initial-value:0}
@@ -640,7 +643,7 @@ CSS = r"""
 @keyframes k-grow-x{from{transform:scaleX(var(--s0,0))}}
 @keyframes k-draw{from{stroke-dashoffset:1}}
 @keyframes k-count{from{--v:var(--from)}}
-@keyframes k-ring{0%{box-shadow:0 0 0 0 rgba(21,63,135,.35)}70%{box-shadow:0 0 0 14px rgba(21,63,135,0)}100%{box-shadow:0 0 0 0 rgba(21,63,135,0)}}
+@keyframes k-ring{0%{box-shadow:0 0 0 0 rgba(2,36,108,.35)}70%{box-shadow:0 0 0 14px rgba(2,36,108,0)}100%{box-shadow:0 0 0 0 rgba(2,36,108,0)}}
 @keyframes k-stream{from{clip-path:inset(0 0 100% 0 round 12px)}to{clip-path:inset(0 0 0 0 round 12px)}}
 @keyframes k-typing{0%,100%{opacity:0}10%,86%{opacity:1}}
 @keyframes k-blink{0%,70%,100%{transform:none;opacity:.4}35%{transform:translateY(-3px);opacity:1}}
@@ -760,7 +763,7 @@ body.reveal-hide .k-brow.gh .k-blab,body.reveal-hide .k-brow.gh .k-btrack{opacit
  background:repeating-linear-gradient(135deg,rgba(192,57,43,.30) 0 5px,rgba(192,57,43,.12) 5px 10px)}
 .k-gzone.orange{background:repeating-linear-gradient(135deg,rgba(242,145,0,.36) 0 5px,rgba(242,145,0,.14) 5px 10px)}
 .k-gzone.teal{background:repeating-linear-gradient(135deg,rgba(77,154,170,.40) 0 5px,rgba(77,154,170,.15) 5px 10px)}
-.k-gzone.navy,.k-gzone.gray{background:repeating-linear-gradient(135deg,rgba(21,63,135,.25) 0 5px,rgba(21,63,135,.10) 5px 10px)}
+.k-gzone.navy,.k-gzone.gray{background:repeating-linear-gradient(135deg,rgba(2,36,108,.25) 0 5px,rgba(2,36,108,.10) 5px 10px)}
 .k-gmark{position:absolute;top:-7px;width:3px;height:24px;margin-left:-1.5px;border-radius:2px;background:var(--navy)}
 .k-gmark.teal{background:var(--teal-ink)}.k-gmark.orange{background:var(--orange)}.k-gmark.red{background:var(--red)}
 .k-gmark b{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);font-size:var(--k-md);font-weight:700;white-space:nowrap;color:var(--navy)}
@@ -869,7 +872,7 @@ body.reveal-hide .k-brow.gh .k-blab,body.reveal-hide .k-brow.gh .k-btrack{opacit
 /* ── model figure ── */
 .k-model{position:relative}
 .k-lane{position:absolute;top:0;text-align:center;color:var(--navy);font-weight:600}
-.k-lane span{display:block;font-family:'Inter',system-ui,sans-serif;letter-spacing:0;text-transform:none;font-size:12.5px;color:#6B7688;font-weight:400;margin-top:2px}
+.k-lane span{display:block;font-family:inherit;letter-spacing:0;text-transform:none;font-size:12.5px;color:#6B7688;font-weight:400;margin-top:2px}
 .k-edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .k-e .k-ep{fill:none;stroke:var(--navy-50);stroke-width:2}
 .k-e .k-eh{fill:var(--navy-50);stroke:none}
@@ -899,6 +902,7 @@ body.reveal-hide .k-brow.gh .k-blab,body.reveal-hide .k-brow.gh .k-btrack{opacit
 .k-lfig{position:relative;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;align-content:start}
 .k-lfig canvas{display:block;border-radius:6px;background:var(--navy-5)}
 .k-rack{display:grid;gap:16px;align-content:start}
+body.look-uni .k-rack{gap:10px}   /* the uni body box is shorter; keep the last row of controls clear of its edge */
 .k-ctl{display:grid;gap:6px}
 .k-ctop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .k-cval{font-size:var(--k-md);font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
@@ -909,7 +913,7 @@ body.reveal-hide .k-brow.gh .k-blab,body.reveal-hide .k-brow.gh .k-btrack{opacit
 .k-ctl input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:22px;background:transparent;cursor:grab;margin:0}
 .k-ctl input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:var(--navy-15)}
 .k-ctl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:19px;height:19px;margin-top:-7px;border-radius:50%;
- background:var(--navy);border:3px solid #fff;box-shadow:0 1px 5px rgba(21,63,135,.4)}
+ background:var(--navy);border:3px solid #fff;box-shadow:0 1px 5px rgba(2,36,108,.4)}
 .k-ctl input[type=range]::-moz-range-track{height:5px;border-radius:3px;background:var(--navy-15)}
 .k-ctl input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--navy);border:3px solid #fff}
 .k-readout{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:12px;padding:12px 14px;background:var(--navy-5);border:1px solid var(--navy-15);border-radius:8px}
@@ -929,9 +933,7 @@ table.k-table tr:last-child td{border-bottom:0}
 
 /* ── provenance line ── */
 .prov{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body.look-klar .kf-foot .prov{margin-left:auto;margin-right:0;max-width:640px;font-size:10.5px}
-body.look-klar .kf-foot .prov+.kf-num{margin-left:22px}
-body.look-beamer .prov{position:absolute;right:75px;top:614px;max-width:900px;text-align:right}
+.sl>.prov{position:absolute;left:850px;top:680px;width:300px;height:23px;line-height:23px;text-align:right;color:#6B7688}   /* in the footer line, left of the page tab */
 """
 
 # ── JS ───────────────────────────────────────────────────────────────────

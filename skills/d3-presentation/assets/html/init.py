@@ -5,8 +5,8 @@
     uv run <skill-dir>/assets/html/init.py my_talk              # creates ./my_talk
     uv run <skill-dir>/assets/html/init.py my_talk --dest ~/x   # creates ~/x/my_talk
 
-The folder gets slides.py (a starter deck), figures/ and d3deck/ with the Inter
-fonts and the logos inside, so `uv run slides.py` builds anywhere and the talk
+The folder gets slides.py (a starter deck), figures/ and d3deck/ with the fonts
+(Inclusive Sans UW, D3 Symbols) and the logos inside, so `uv run slides.py` builds anywhere and the talk
 needs nothing from the skill afterwards.
 """
 import argparse
@@ -16,7 +16,8 @@ import shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))        # assets/html
 ASSETS = os.path.dirname(HERE)                           # assets
-LOGOS = ('Universitaet_Wuerzburg_Logo.svg', 'DataDrivenDecisions_2c.svg')
+LOGOS = ('DataDrivenDecisions_2c.svg', 'uw-logo-navy.svg', 'uw-logo-white.svg',
+         'uw-seal-blue.svg', 'uw-seal-coral.svg', 'uw-seal-faint.svg', 'uw-cover.jpg')   # coral seal: look='uni'
 
 STARTER = '''# -*- coding: utf-8 -*-
 """__NAME__: D3 HTML deck.  Build: uv run slides.py  ->  dist/__NAME__.html
@@ -30,7 +31,8 @@ meta(title='Action title that states the main message',
      chair='Chair of Information Systems and Business Analytics',
      sections=['Introduction', 'Methodology', 'Results', 'Conclusion'],
      numbering='content',    # structural slides carry no number, backup restarts ('all': count every slide)
-     look='klar',            # calm look: tracker on top, kicker titles, D3 logo in the foot ('beamer': LaTeX frame)
+     look='klar',            # D3 look on the university master: D3 logo top right, tracker, kicker titles
+                             # ('beamer': the LaTeX theme's conventions; 'uni': no D3 branding, for teaching)
      feel='calm')            # motion budget agreed with the presenter: 'calm', 'rich' or 'interactive'
 
 titleslide(time='0:15')

@@ -40,6 +40,10 @@ derivation step with its stated reason, the text of flow-diagram boxes, and unde
 the code lines each pointer cites. Lines marked PULLED were copied from the source by the build; do not re-verify them.
 
 The build already verified that every pointer exists. You verify MEANING. Work in this order:
+0. Cold read (the cold read of d3-scientific-wording, Step 4; no other agent runs it): before you use brief.md or the
+   evidence, read the explainer text of the packet as a co-author who knows the field but not this derivation. Note every
+   sentence whose claim does not follow from what comes before it and every term used before it is explained. Mark these
+   findings [cold read].
 1. Derivations: check every hand-written STEP. Is it valid, is the stated reason the actual reason, do start and end
    match the PULLED equations? Redo the algebra of a step only when it looks wrong or the reason does not explain it.
 2. Numbers: every number in text, KPI tiles and figure defaults against the paper or the result file it cites.
@@ -49,6 +53,9 @@ The build already verified that every pointer exists. You verify MEANING. Work i
 5. Honest inventory: is a paper-versus-code difference or an assumption missing that you noticed during 1 to 4?
 6. Scope: name sections or paragraphs an author would not miss (background they know, paper restated, plumbing),
    and the one important idea of the project that is missing, if any.
+7. Wording: is any rule of d3-scientific-wording broken in the text (<abs path to d3-scientific-wording/references/rules.md>,
+   and references/ste.md in ste mode)? Dashes as punctuation, "not X but Y", related work graded, claims beyond the
+   evidence, sentences over the cap, one concept under two terms. The lint has run already: report what it cannot see.
 
 Output exactly this, nothing else:
 
@@ -60,6 +67,7 @@ Output exactly this, nothing else:
 | Gap stated fairly and sourced | N |
 | Honest inventory complete | N |
 | Scope: nothing missing, nothing superfluous | N |
+| Cold read and wording rules | N |
 
 ### Findings (max 12, most severe first)
 - [blocker|major|minor] sections/NN-file.html:LINE : what is wrong, the source that shows it (path:line or \label) -> the fix
@@ -96,14 +104,13 @@ For each interactive figure (each <figure class="widget">):
    Would moving the named control make it checkable, and is it falsifiable from the picture?
 3. Controls: two to four, ranges include the degenerate cases, defaults at the paper's setting, a preset where useful.
 4. Chart discipline: axis labels with units, colours used with the meaning the project's colour code gives them (the
-   [[role]] entries, listed in the hero), at most three coloured series (navy, orange, teal) plus gray, no dual axes, legend or end labels
+   [[role]] entries, listed in the hero), at most five coloured series from the role palette (blue, orange, teal, berry, ochre) plus gray for references, no dual axes, legend or end labels
    present, nothing cut off or overlapping in the screenshot.
    Is the effect visible at the default setting, or do the curves sit in a sliver of the panel?
    Do the toy's constants match the code's or the paper's, and where they differ, does the caption name both?
 5. toy: true present on everything that is not the repository's own result; evidence figures read embedded files.
 Then for the page: does each section lead with a plain sentence before notation; are there walls of text without a
-figure, table or callout; do captions have Try and Notice; is any house wording rule broken (dashes as punctuation,
-"not X but Y", leverage/delve/comprehensive/seamless)?
+figure, table or callout; do captions have Try and Notice? (The wording itself is the fidelity reviewer's remit.)
 
 Output exactly this, nothing else:
 
@@ -114,7 +121,7 @@ Output exactly this, nothing else:
 | Each figure delivers its insight | N |
 | Controls, defaults, readouts | N |
 | Chart discipline and legibility | N |
-| Page flow and wording | N |
+| Page flow and captions | N |
 
 ### Findings (max 12, most severe first)
 - [blocker|major|minor] sections/NN-file.html:LINE (figure id) : what is wrong -> the fix
@@ -126,7 +133,7 @@ Score 9 = ship as is. Be strict.
 
 ## The merged reviewer (review depth `single`)
 
-For `focus` and `overview` explainers one reviewer covers both remits at about half the cost. Use the fidelity prompt with these changes: round 1 reads `brief.md`, `fidelity-packet.md`, `figures-packet.md`, `check.md` and every screenshot, all in one message; the work list is the fidelity list 1 to 5 followed by the figure checks 1 to 5 of the experience prompt; the output has one score table with six rows (derivations; numbers and code claims; gap and inventory; figures implement the real mechanism; each figure delivers its insight; page flow and wording) and at most 14 findings. Scope item 6 of the fidelity list is dropped: a small explainer has little to cut.
+For `focus` and `overview` explainers one reviewer covers both remits at about half the cost. Use the fidelity prompt with these changes: round 1 reads `brief.md`, `fidelity-packet.md`, `figures-packet.md`, `check.md` and every screenshot, all in one message; the work list is the fidelity list 0 to 5 and 7 followed by the figure checks 1 to 5 of the experience prompt; the output has one score table with seven rows (cold read and wording rules; derivations; numbers and code claims; gap and inventory; figures implement the real mechanism; each figure delivers its insight; page flow and captions) and at most 14 findings. Scope item 6 of the fidelity list is dropped: a small explainer has little to cut.
 
 ## After the reviewers return
 

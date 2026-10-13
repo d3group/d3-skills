@@ -9,8 +9,9 @@ class Scaffold(unittest.TestCase):
         dest = tempfile.mkdtemp()
         target = init.scaffold('my_talk', dest)
         for rel in ('slides.py', 'figures', 'd3deck/__init__.py', 'd3deck/deck.py', 'd3deck/engine.py',
-                    'd3deck/seal.png', 'd3deck/fonts/Inter_18pt-Regular.ttf', 'd3deck/fonts/Inter_18pt-BoldItalic.ttf',
-                    'd3deck/logos/Universitaet_Wuerzburg_Logo.svg', 'd3deck/logos/DataDrivenDecisions_2c.svg'):
+                    'd3deck/fonts/InclusiveSansUW-Regular.ttf', 'd3deck/fonts/InclusiveSansUW-Bold.ttf',
+                    'd3deck/fonts/D3Symbols-Regular.ttf', 'd3deck/logos/uw-logo-navy.svg', 'd3deck/logos/uw-seal-blue.svg',
+                    'd3deck/logos/DataDrivenDecisions_2c.svg'):
             self.assertTrue(os.path.exists(os.path.join(target, rel)), rel)
         self.assertFalse(os.path.exists(os.path.join(target, 'd3deck', 'tests')))
         r = subprocess.run([sys.executable, 'slides.py'], cwd=target, capture_output=True, text=True)
@@ -19,10 +20,10 @@ class Scaffold(unittest.TestCase):
         self.assertTrue(os.path.exists(out))
         with open(out, encoding='utf-8') as fh:
             doc = fh.read()
-        self.assertEqual(doc.count('@font-face'), 5)
-        self.assertIn('data:image/png;base64', doc)
+        self.assertEqual(doc.count('@font-face'), 7)                       # Inclusive Sans UW (5) and D3 Symbols (2)
+        self.assertIn('data:image/svg+xml;base64', doc)                      # the logos, once per file
         self.assertIn('<title>', doc)
-        self.assertGreater(len(doc), 2_000_000)
+        self.assertGreater(len(doc), 400_000)                                # fonts embedded: the file stands alone
 
     def test_refuses_existing(self):
         dest = tempfile.mkdtemp()

@@ -5,3 +5,7 @@ __pycache__/
 .claude/
 # build products of the explainer fixture
 skills/d3-explainer/assets/example/explainer/review/
+# skill-creator eval runs (would ship with every plugin)
+skills/*-workspace/
+# university corporate-design source material (staff-only downloads; the repo is public)
+corporate design/

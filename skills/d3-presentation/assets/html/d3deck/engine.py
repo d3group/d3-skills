@@ -11,11 +11,12 @@ links, present mode, viewport fit. Ported from d3group/DisputationNicoElbert
 CSS = r"""
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#0B0D10;overflow:hidden;-webkit-font-smoothing:antialiased;
- font-family:'Inter',system-ui,sans-serif}
+ font-family:'Inclusive Sans UW','D3 Symbols',system-ui,sans-serif}
 :root{
- --navy:#153F87;--orange:#F29100;--gray:#808080;--lightblue:#C8DCF0;--darkblue:#0A2864;
- --teal:#4D9AAA;--yellow:#D8DE6F;--peach:#F5C8AA;--lavender:#C5CAE9;
- --bar:#004389;--navy-5:#F3F5F9;--navy-15:#DCE2ED;--navy-50:#8A9FC3;--navy-90:#2C5293;--orange-5:#FEFAF2;
+ --navy:#02246C;--orange:#F29100;--gray:#808080;--lightblue:#CBD9EE;--darkblue:#011646;   /* University of Würzburg 2026 + D3 orange */
+ --blue:#5E8AC7;--sky:#5AA1D8;--sand:#F1EBDF;--berry:#821044;
+ --teal:#009485;--yellow:#F8C300;--peach:#FCE4BF;--lavender:#D9CCE6;
+ --bar:#02246C;--navy-5:#F2F4F8;--navy-15:#D9DEE9;--navy-50:#8092B6;--navy-90:#1B3A7B;--orange-5:#FEFAF2;
  --line:#E4E8ED;
  --fs-LARGE:49px;--fs-Large:41px;--fs-large:34px;--fs-normal:31px;--fs-small:28px;
  --fs-footnote:25px;--fs-script:23px;--fs-tiny:17px;--fs-chrome:13px;--fs-display:150px;
@@ -34,6 +35,7 @@ html,body{height:100%;background:#0B0D10;overflow:hidden;-webkit-font-smoothing:
 .gh{opacity:0}                                   /* later steps are invisible and keep their place */
 body.reveal-ghost .gh{opacity:.15;filter:grayscale(1)}   /* opt-in: meta(reveal='ghost') */
 .gh-soft{opacity:.42;filter:grayscale(.8)}
+.sl.is-current [data-hide].gh{opacity:0;filter:none}   /* data-hide: no ghost on stage, for reveals the ghost would give away */
 .scrim{position:absolute;background:rgba(255,255,255,.6997);pointer-events:none;z-index:4;
  transition:opacity .4s cubic-bezier(.4,0,.2,1)}
 .scrim.off{opacity:0}
@@ -71,7 +73,7 @@ th{border-bottom:2px solid var(--navy)}
 kbd{background:#171A1F;border:1px solid #262B32;border-radius:4px;padding:1px 6px;font-family:monospace;color:#8A929B;font-size:10px}
 #play{position:fixed;right:12px;top:9px;z-index:65;display:flex;align-items:center;gap:8px;padding:6px 13px;border-radius:8px;
  border:1px solid rgba(242,145,0,.55);background:rgba(242,145,0,.14);color:#F7B24D;font-size:11px;font-weight:600;
- letter-spacing:.02em;cursor:pointer;white-space:nowrap;transition:.14s;font-family:'Inter',system-ui,sans-serif}
+ letter-spacing:.02em;cursor:pointer;white-space:nowrap;transition:.14s;font-family:'Inclusive Sans UW','D3 Symbols',system-ui,sans-serif}
 #play::before{content:'';position:fixed;right:0;top:0;width:156px;height:54px;
  background:linear-gradient(90deg,rgba(11,13,16,0) 0,#0B0D10 32px);z-index:-1;pointer-events:none}
 #play:hover{background:var(--orange);border-color:var(--orange);color:#0B0D10}
@@ -95,7 +97,7 @@ body.shot .sl{box-shadow:none}
 /* ══ operator surface: overview (O), help (?), jump toast, black/white screen (B/W), laser (L).
    Injected by the JS at boot; dark shell styling like the search palette; never printed. ══ */
 .opov{position:fixed;inset:0;z-index:92;display:none;flex-direction:column;background:rgba(6,8,12,.97);
- font-family:'Inter',system-ui,sans-serif;color:#E6E8EB}
+ font-family:'Inclusive Sans UW','D3 Symbols',system-ui,sans-serif;color:#E6E8EB}
 .opov.on{display:flex}
 .opov header{flex:none;display:flex;align-items:baseline;gap:16px;padding:16px 24px 10px}
 .opov header h2{font-size:15px;font-weight:600;letter-spacing:.01em}

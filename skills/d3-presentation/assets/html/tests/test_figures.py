@@ -80,13 +80,13 @@ class Loading(unittest.TestCase):
     @unittest.skipUnless(figures.shutil.which('pdftoppm'), 'pdftoppm not installed')
     def test_pdf_is_rasterized(self):
         src = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                           'latex', 'Slide_template.pdf')
+                           'logos', 'logo-d3.pdf')                       # any vector PDF; this one is 180.96 x 36 pt
         import shutil
         shutil.copy(src, os.path.join(self.d, 'tpl.pdf'))
         uri, w, h = figures.load('tpl', self.d)
         self.assertTrue(uri.startswith('data:image/png;base64,'))
         self.assertTrue(os.path.exists(os.path.join(self.d, '.cache', 'tpl.png')))
-        self.assertAlmostEqual(w / h, 1280 / 720, places=2)
+        self.assertAlmostEqual(w / h, 180.96 / 36, places=1)
 
 
 class Paths(unittest.TestCase):

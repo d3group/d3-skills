@@ -5,7 +5,7 @@
     meta(title=..., sections=[...]); titleslide(); section(1, question='...')
     onecol(K('Kicker', 'Action title'), model([...], [...])); thankyou(); build('my_talk')
 """
-from .deck import (K, statement, facts, meta, titleslide, agenda, section, onecol, twocol, twocoltakeaway, slide, thankyou,
+from .deck import (K, statement, facts, meta, titleslide, agenda, section, onecol, twocol, twocoltakeaway, slide, thankyou, references,
                     appendix, backuphome, mark, jump, link, css, js, build, D)
 from .components import (columnheader, highlight, codebox, errorbox, terminalbox, chevrons, timeline,
                          takeaway, stat, bignum, step, scrim, crumb, mix)
@@ -14,7 +14,7 @@ from .kit import (icon, tile, well, middle, callout, chip, sign_badge, badge, st
                   effect, gauge, units, bub, line, proof, brace, versus, selector, flag, chat, milestones, countdown,
                   node, edge, model, slider, readout, lab)
 
-__all__ = ['K', 'statement', 'facts', 'meta', 'titleslide', 'agenda', 'section', 'onecol', 'twocol', 'twocoltakeaway', 'slide', 'thankyou',
+__all__ = ['K', 'statement', 'facts', 'meta', 'titleslide', 'agenda', 'section', 'onecol', 'twocol', 'twocoltakeaway', 'slide', 'thankyou', 'references',
            'appendix', 'backuphome', 'mark', 'jump', 'link', 'css', 'js', 'build', 'D',
            'columnheader', 'highlight', 'codebox', 'errorbox', 'terminalbox', 'chevrons', 'timeline',
            'takeaway', 'stat', 'bignum', 'step', 'scrim', 'crumb', 'mix', 'fig',
