@@ -20,11 +20,11 @@ color = "#F29100"
 label = "what we choose: the cutoff"
 [[role]]
 key = "win"
-color = "#153F87"
+color = "#02246C"
 label = "the rule picks the best"
 [[role]]
 key = "gone"
-color = "#4D9AAA"
+color = "#009485"
 label = "the best was skipped"
 [[role]]
 key = "early"

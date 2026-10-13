@@ -48,7 +48,7 @@ key   = "skip"                            # letters only: colour name in plots, 
 color = "#F29100"
 label = "what we choose: the cutoff"      # shown in the hero's legend
 [[role]]
-key = "win"; color = "#153F87"; label = "the rule picks the best"      # (one table per role; shown compactly here)
+key = "win"; color = "#02246C"; label = "the rule picks the best"      # (one table per role; shown compactly here)
 
 [hero]
 equation = "eq:limit"                     # pull the central equation from the paper, or write it with the role macros:
@@ -65,7 +65,7 @@ lines = ["skip r − 1, then take the first record", "Pₙ(r) = (r−1)/n · Σ 
 extra = ""                                # rarely needed
 ```
 
-Role colours come from the D3 palette: navy `#153F87`, orange `#F29100`, teal `#4D9AAA`, and gray `#808080` for a fourth role. These three hues stay apart under colour-blindness simulation; a fourth hue from the palette does not, so keep to three plus gray. Orange is light on white: an orange series needs a label. Orange is also the colour of the draggable handle, so it suits the role "what we choose".
+Role colours come from the D3 palette in the 2025 university design: navy `#02246C`, orange `#F29100`, teal `#009485`, and gray `#808080` for a fourth role. These three hues stay apart under colour-blindness simulation; a fourth hue from the palette does not, so keep to three plus gray. Teal and gray have the same lightness, so red-green colour-blind readers cannot tell them apart: when both are roles, label both series directly or draw the gray one dashed. Orange is light on white: an orange series needs a label. Orange is also the colour of the draggable handle, so it suits the role "what we choose".
 
 ## 2. Section files
 
@@ -167,7 +167,7 @@ When the numbers have to be computed (a sweep the repo never stored), copy `<ski
 
 MathJax (3.2.2, SVG output, inlined into the page, so it works offline; it adds about 2.2 MB to the file). Inline `$…$` or `\(…\)`, display `$$…$$` or `\[…\]`. Paste LaTeX from the paper as it is: the paper's macros come in through `macros_from`, and the build escapes `<`, `>`, `&` inside math, so `$a<b$` and `aligned` with `&` are safe. Math also works in captions, `data-why`, control labels, readout labels, legend labels, `ctx.note`, and flow `detail` strings. Text drawn *inside* the SVG (axis labels, panel titles, `hline` / `vline` / `point` / `text` / `region` / end labels, flow node labels) cannot hold typeset math: simple TeX there is converted to Unicode (`$c_{\max}$` becomes cₘₐₓ, `$x^\star$` becomes x*), so keep those labels to symbols, sub- and superscripts; fractions and operators belong in the caption or a readout. In JavaScript strings, double the backslashes: `'optimum $x^\\star$'`. Literal dollar: `<span class="usd">$</span>`.
 
-MathJax covers the AMS environments (`align`, `gather`, `cases`, `\tag`, `\operatorname*`), `\mbox{… $x$ …}`, `\boldsymbol`, `\textcolor{#1B3A8C}{…}`, `\cancel`, `\bbox`, and paper macros with an optional first argument (`\newcommand{\E}[2][]{…}`; in `[macros]` write `"\\E" = ["body", 2, "default"]`). Not supported: `\ensuremath` (stripped from macros), TikZ, `\textcolor` with xcolor mixes (`red!50`), `\usepackage`-defined or custom environments. An unknown command fails its whole formula (shown on a yellow ground); `check.py` lists every such formula with MathJax's message. Right-click on a formula offers "Show Math As → TeX Commands", handy for co-authors.
+MathJax covers the AMS environments (`align`, `gather`, `cases`, `\tag`, `\operatorname*`), `\mbox{… $x$ …}`, `\boldsymbol`, `\textcolor{#02246C}{…}`, `\cancel`, `\bbox`, and paper macros with an optional first argument (`\newcommand{\E}[2][]{…}`; in `[macros]` write `"\\E" = ["body", 2, "default"]`). Not supported: `\ensuremath` (stripped from macros), TikZ, `\textcolor` with xcolor mixes (`red!50`), `\usepackage`-defined or custom environments. An unknown command fails its whole formula (shown on a yellow ground); `check.py` lists every such formula with MathJax's message. Right-click on a formula offers "Show Math As → TeX Commands", handy for co-authors.
 
 ## 7. Derivations
 
@@ -268,7 +268,7 @@ var plot = ctx.plot({
 | `plot.handle(x, y, {setX: 'x', setY: null, label: 'drag'})` | draggable point; dragging writes the named params (clamped to their min, max, step). Give the param a slider too, so it stays keyboard-accessible |
 | `plot.sx(x)`, `plot.sy(y)`, `plot.ix(px)`, `plot.iy(py)`, `plot.bx(i)`, `plot.bw()` | scales, inverses, band centre and width, for custom marks via `ctx.el` |
 
-Colours: the project's role keys first (`'skip'`, `'win'`), then the D3 names `'navy'`, `'orange'`, `'teal'`, `'gray'`, `'lightblue'`, `'darkblue'`, plus `'ink'`, `'ink2'`, `'ink3'`; tints as `'navy!30'`. Unspecified line colours cycle navy, orange, teal.
+Colours: the project's role keys first (`'skip'`, `'win'`), then the D3 names `'navy'`, `'orange'`, `'teal'`, `'gray'`, `'lightblue'`, `'darkblue'`, plus `'ink'`, `'ink2'`, `'ink3'`; tints as `'navy!30'`. The further university colours `'blue'` (cornflower), `'yellow'`, `'berry'`, `'sand'`, `'peach'` and `'lavender'` exist for fills and schematics, not as extra series. Unspecified line colours cycle navy, orange, teal.
 
 ## 10. Flow diagrams: `D3X.flow`
 

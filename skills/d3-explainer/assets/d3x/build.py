@@ -647,11 +647,20 @@ class Builder:
 
     # ---- assets
     def fonts_css(self) -> str:
+        """Inclusive Sans UW (the university's house font) for text, D3 Symbols (an Inter subset) for the Greek letters, primes,
+        arrows, operators and check mark that Inclusive Sans UW lacks, IBM Plex Mono for labels and controls. See fonts/LICENSES.md."""
+        sym = "U+0370-03FF,U+2032-2033,U+2190-21FF,U+2200-22FF,U+2713"
         css = []
-        for family, weight, style, name in (("Inter", 400, "normal", "Inter-Regular"), ("Inter", 400, "italic", "Inter-Italic"), ("Inter", 600, "normal", "Inter-SemiBold"), ("Inter", 700, "normal", "Inter-Bold"),
-                                            ("IBM Plex Mono", 400, "normal", "IBMPlexMono-400-latin"), ("IBM Plex Mono", 500, "normal", "IBMPlexMono-500-latin"), ("IBM Plex Mono", 600, "normal", "IBMPlexMono-600-latin")):
+        for family, weight, style, name, urange in (
+                ("Inclusive Sans UW", 400, "normal", "InclusiveSansUW-Regular", None), ("Inclusive Sans UW", 400, "italic", "InclusiveSansUW-Italic", None),
+                ("Inclusive Sans UW", 500, "normal", "InclusiveSansUW-Medium", None), ("Inclusive Sans UW", 600, "normal", "InclusiveSansUW-SemiBold", None),
+                ("Inclusive Sans UW", 700, "normal", "InclusiveSansUW-Bold", None),
+                ("D3 Symbols", 400, "normal", "D3Symbols-Regular", sym), ("D3 Symbols", 700, "normal", "D3Symbols-Bold", sym),
+                ("IBM Plex Mono", 400, "normal", "IBMPlexMono-400-latin", None), ("IBM Plex Mono", 500, "normal", "IBMPlexMono-500-latin", None),
+                ("IBM Plex Mono", 600, "normal", "IBMPlexMono-600-latin", None)):
             b64 = base64.b64encode((ENGINE / "fonts" / f"{name}.woff2").read_bytes()).decode()
-            css.append(f"@font-face{{font-family:'{family}';font-style:{style};font-weight:{weight};font-display:swap;src:url(data:font/woff2;base64,{b64}) format('woff2')}}")
+            css.append(f"@font-face{{font-family:'{family}';font-style:{style};font-weight:{weight};font-display:swap;"
+                       + (f"unicode-range:{urange};" if urange else "") + f"src:url(data:font/woff2;base64,{b64}) format('woff2')}}")
         return "\n".join(css)
 
     def roles(self) -> list[dict]:

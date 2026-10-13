@@ -5,9 +5,11 @@
 var NS = 'http://www.w3.org/2000/svg';
 /* Theme colours. A project adds its own colour code through [[role]] in explainer.toml (window.D3X_ROLES):
    color('choice') then resolves to that role, in plots exactly as \\choice{...} does in formulas. */
-var THEME = {ink: '#0F2347', ink2: '#3F4F6B', ink3: '#74809A', rule: '#CFDAEA', rule2: '#B5C4DB', paper: '#F2F5FA', paper2: '#E4EBF5', card: '#FFFFFF',
-  navy: '#153F87', orange: '#F29100', teal: '#4D9AAA', darkblue: '#0A2864', lightblue: '#C8DCF0', gray: '#808080',
-  accent: '#F29100', c1: '#153F87', c2: '#4D9AAA', c3: '#0A2864', idle: '#808080', control: '#153F87', white: '#FFFFFF', black: '#000000'};
+/* Page colours follow the University of Würzburg CD (sand paper, navy ink); same values as the tokens in explainer.css. */
+var THEME = {ink: '#0A1B42', ink2: '#3C4658', ink3: '#6B7688', rule: '#E2DDD2', rule2: '#CFC8B8', paper: '#F7F5F0', paper2: '#F1EBDF', card: '#FFFFFF',
+  navy: '#02246C', orange: '#F29100', teal: '#009485', darkblue: '#011646', lightblue: '#CBD9EE', gray: '#808080',
+  blue: '#5E8AC7', yellow: '#F8C300', berry: '#821044', sand: '#F1EBDF', peach: '#FCE4BF', lavender: '#D9CCE6',   // further CD colours, outside the default roles
+  accent: '#F29100', c1: '#02246C', c2: '#009485', c3: '#011646', idle: '#808080', control: '#02246C', white: '#FFFFFF', black: '#000000'};
 var SERIES = ['navy', 'orange', 'teal'];   // default order for unnamed series; a 4th series gets idle + dash, see visualization.md
 
 function hex2rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.replace(/(.)/g, '$1$1');
@@ -591,7 +593,7 @@ function Flow(id, spec) {
       'stroke-dasharray': n.kind === 'external' ? '5 4' : null}, g);
     var lines = wrap(n.label, Math.floor(nw / 7.6)), hasSub = !!n.sub, y = n.cy - (lines.length - 1) * 7.5 - (hasSub ? 6 : 0) + 4.5;
     lines.forEach(function (ln, i) { S('text', {x: n.cx, y: y + i * 15, 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 600, fill: color(k[2])}, g, ln); });
-    if (hasSub) S('text', {x: n.cx, y: y + lines.length * 15 + 1, 'text-anchor': 'middle', 'font-size': 9.5, fill: n.kind === 'model' ? '#C8DCF0' : THEME.ink3,
+    if (hasSub) S('text', {x: n.cx, y: y + lines.length * 15 + 1, 'text-anchor': 'middle', 'font-size': 9.5, fill: n.kind === 'model' ? THEME.lightblue : THEME.ink3,
       'font-family': 'ui-monospace,Menlo,monospace'}, g, n.sub);
     if (n.detail) { g.addEventListener('click', function () { select(n, g); });
       g.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(n, g); } }); }
