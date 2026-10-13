@@ -27,7 +27,8 @@ SIGN_LABEL = {'pos': 'positive', 'neg': 'negative', 'ind': 'indeterminate', 'mod
 
 # Region sizes per look, in px: the body box and the column boxes of onecol/twocol/twocoltakeaway (chrome.py).
 BOX = {'klar': {'body': (1108, 400), 'col': (530, 400), 'short': (530, 318)},
-       'beamer': {'body': (1133, 432), 'col': (547, 432), 'short': (547, 274)}}
+       'beamer': {'body': (1133, 432), 'col': (547, 432), 'short': (547, 274)},
+       'uni': {'body': (1137, 420), 'col': (548, 420), 'short': (548, 335)}}
 
 
 def _attr(s=None, k=None, soft=False):
@@ -118,6 +119,10 @@ ICONS = {
     'x': '<path d="M18 6 6 18M6 6l12 12"/>',
     'xcircle': '<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
     'zap': '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+    # method icons for course roadmaps: a linear function, chance (three dice in a throw), a nonlinear curve
+    'linear': '<path d="M4 3v17h17"/><path d="M6.5 17 19 6"/>',
+    'dice': '<g transform="rotate(-16 6.6 16.2)" stroke-width="1.6"><rect x="2.50" y="12.10" width="8.2" height="8.2" rx="1.9"/><circle cx="4.50" cy="14.10" r="0.95" fill="currentColor" stroke="none"/><circle cx="6.60" cy="16.20" r="0.95" fill="currentColor" stroke="none"/><circle cx="8.70" cy="18.30" r="0.95" fill="currentColor" stroke="none"/></g><g transform="rotate(12 17.2 16.8)" stroke-width="1.6"><rect x="13.10" y="12.70" width="8.2" height="8.2" rx="1.9"/><circle cx="15.30" cy="14.90" r="0.95" fill="currentColor" stroke="none"/><circle cx="19.10" cy="18.70" r="0.95" fill="currentColor" stroke="none"/></g><g transform="rotate(28 12.3 6.2)" stroke-width="1.6"><rect x="8.20" y="2.10" width="8.2" height="8.2" rx="1.9"/><circle cx="12.30" cy="6.20" r="0.95" fill="currentColor" stroke="none"/></g>',   # three dice in a throw
+    'curve': '<path d="M4 3v17h17"/><path d="M6 17c2.5-9 5-10 7.5-4.5S17.5 15 19.5 5"/>',
 }
 
 
@@ -899,6 +904,7 @@ body.reveal-hide .k-brow.gh .k-blab,body.reveal-hide .k-brow.gh .k-btrack{opacit
 .k-lfig{position:relative;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;align-content:start}
 .k-lfig canvas{display:block;border-radius:6px;background:var(--navy-5)}
 .k-rack{display:grid;gap:16px;align-content:start}
+body.look-uni .k-rack{gap:10px}   /* the uni body box is shorter; keep the last row of controls clear of its edge */
 .k-ctl{display:grid;gap:6px}
 .k-ctop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .k-cval{font-size:var(--k-md);font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
@@ -932,6 +938,7 @@ table.k-table tr:last-child td{border-bottom:0}
 body.look-klar .kf-foot .prov{margin-left:auto;margin-right:0;max-width:640px;font-size:10.5px}
 body.look-klar .kf-foot .prov+.kf-num{margin-left:22px}
 body.look-beamer .prov{position:absolute;right:75px;top:614px;max-width:900px;text-align:right}
+body.look-uni .prov{position:absolute;left:850px;top:680px;width:300px;height:23px;line-height:23px;text-align:right;color:#6B7688}
 """
 
 # ── JS ───────────────────────────────────────────────────────────────────

@@ -42,7 +42,7 @@ build('my_talk')          # writes dist/my_talk.html
 
 `uv run slides.py` builds and prints `N slides · M steps · X MB → dist/my_talk.html`.
 
-- `meta()` must come first; it resets the deck. `sections` takes 1 to 7 names. `tracker=True` shows a section tracker in the footer band of content slides (it replaces the chair | presenter text there). `numbering='all'` counts every slide like Beamer; `'content'` matches the `contentnumbering` option: title, agenda, section, and thank-you slides carry no number and backup numbering restarts after `appendix()`.
+- `meta()` must come first; it resets the deck. Without `chair=`, the chair line follows `lang`: English by default, "Lehrstuhl für Wirtschaftsinformatik und Business Analytics" with `lang='de'`. `sections` takes 1 to 7 names. `tracker=True` shows a section tracker in the footer band of content slides (it replaces the chair | presenter text there). `numbering='all'` counts every slide like Beamer; `'content'` matches the `contentnumbering` option: title, agenda, section, and thank-you slides carry no number and backup numbering restarts after `appendix()`.
 - The title slide shows title and subtitle, like the LaTeX one. meta(date=...) is stored for the manifest only, like \date in LaTeX; put the date into the subtitle if it should appear.
 - Every slide function accepts `steps=1, notes='', src='', cls='', group=None, num=True, time=None, provenance=''`. `src` is a one-line summary that is never rendered; it feeds the `/` search palette. `cls` adds classes to the `<section>` for scoped CSS. `num=False` hides and skips the number. `time='0:45'` is the slide's speaking budget: the presenter window paces against the sum, and `shoot.py --slot` compares it with the slot (give every presented slide one, or none). `provenance='Table 3 · N = 38'` prints a small source line in the foot (klar) or above the footer (beamer), for numbers the audience may ask about; illustrative numbers say so there.
 - `feel` is the motion budget agreed in Step 1: `'calm'` (default) warns when more than about 40 percent of the content slides build; `'rich'` and `'interactive'` do not. The build warns about every content slide that is text only, whatever the feel.
@@ -53,11 +53,21 @@ build('my_talk')          # writes dist/my_talk.html
 
 `meta(look='beamer')` draws the frame of the LaTeX template instead (university logo, navy bar, footer tab, bold title; `tracker=True` moves the tracker into the footer band). Choose it when the HTML deck must match a PDF deck slide for slide.
 
+`meta(look='uni')` is the University of Würzburg master (PPT-Master-Universitaet-Wuerzburg.potx, 2025 corporate design) with no D3 branding, for teaching and other university decks. It sets everything in the house font Inclusive Sans UW and uses the university palette:
+
+- **Colours.** Navy `#02246C` carries titles and dark surfaces. Coral `#ED6A5B` is the primary accent for graphic marks (accented numbers, the seal on navy, shipped as a pre-coloured PNG so it prints cleanly). Berry `#821044` takes the role of D3 orange for text accents (kickers, `<b>` in takeaways and statements), because coral is too light for small text on white. Further tokens: light blue `#5E8AC7` (bullets, rules), sky `#5AA1D8` (agenda and part numbers) and sand `#F1EBDF` (takeaway bar). The kit colours map onto the palette: `orange` becomes berry, `teal` becomes `#009485`.
+- **Content slides.** The new logo sits top left over a hairline. The title is semibold navy at 32 px, the body is 24 px black text. The foot reads `presenter | chair | deck title`, with the page number in a navy tab at the bottom right. `takeaway=` becomes the sand bar with an arrow from the master's info-box layout. `tracker=True` puts the section tracker in the header.
+- **Covers.** `titleslide(cover='navy')` (default) is the all-navy cover with the coral seal. `cover='band'` is white with a navy band, and `cover='photo'` adds the Würzburg skyline (about 0.3 MB).
+- **Structure slides.** `section(n, question=...)` is a navy divider with `Part n of N`, a large sky-blue numeral, the part name and its question. `agenda()` lists two-digit numbers and topics. `thankyou(text=..., contact=[...])` is the closing slide with its navy contact box.
+- **Language.** `lang='de'` switches the labels: Teil n von N, Quellenangaben, Kontakt, Vielen Dank.
+
+The logos, the seal and the fonts are embedded once per file.
+
 ## 3. Slide functions
 
 | HTML | LaTeX | Notes |
 |---|---|---|
-| `titleslide()` | `\titleslide` | title template with the seal watermark |
+| `titleslide(cover='navy')` | `\titleslide` | title template with the seal watermark; `cover` ('navy', 'band', 'photo') only in the uni look |
 | `agenda()` | `\showagenda` | numbered circles, clickable to the section dividers that exist |
 | `section(n, question='')` | `\showsection{n}` | 1-based; also sets the current section for tracker and jump tabs. In the klar look the divider shows `Part n of N` and the question this part answers |
 | `statement(html)` | none | one sentence at 50 px, alone on the slide; mark the one word that carries it with `<b>` (orange). A few per talk, at the turns of the argument |
@@ -67,7 +77,8 @@ build('my_talk')          # writes dist/my_talk.html
 | `twocol(title, left, right)` | `\twocol` | two boxes of 547 px |
 | `twocoltakeaway(title, left, right, takeaway)` | `\twocoltakeaway` | shorter boxes, takeaway box below |
 | `slide(title, html)` | none | frame and title only; position elements yourself (for example a full-width figure) |
-| `thankyou()` | `\thankyouslide` | "Thank You!" and the presenter |
+| `thankyou(text='', contact=None)` | `\thankyouslide` | "Thank You!" and the presenter; in the uni look the closing slide with a contact box (`contact`: list of lines) |
+| `references(items, title='')` | none | reference list (Quellenangaben), small, two columns; exempt from the busy-slide warnings and the text-only lint |
 | `appendix()` | `\appendix` | everything after is backup |
 | `backuphome(title='Backup')` | none | hub listing the backup slides by `group`; H jumps here |
 | `build(name)` | | writes `dist/<name>.html` |
@@ -98,7 +109,7 @@ The component kit adds the designed objects (tiles with icons, `model()` figures
 
 ## 5. Step builds
 
-A step reveals something that is already laid out. Elements of later steps stand as pale grey ghosts (15 percent opacity) in their final place, so nothing is ever removed, nothing moves between steps, and the audience sees how much is still to come. `meta(..., reveal='hide')` makes them fully invisible instead, for decks where a ghost would give away the point; `data-soft="1"` dims a single element to 42 percent in either mode.
+A step reveals something that is already laid out. Elements of later steps stand as pale grey ghosts (15 percent opacity) in their final place, so nothing is ever removed, nothing moves between steps, and the audience sees how much is still to come. `meta(..., reveal='hide')` makes them fully invisible instead, for decks where a ghost would give away the point; `data-soft="1"` dims a single element to 42 percent in either mode, and `data-hide="1"` keeps a single element fully invisible on stage until its step (a vote's answer, a quiz solution), while previews and print still show it.
 
 ```python
 onecol('Three mechanisms explain the effect', '''
@@ -109,7 +120,7 @@ onecol('Three mechanisms explain the effect', '''
 </div>''' + scrim(3, 0, '60%', 0, 0), steps=4)
 ```
 
-- `data-s="k"`: sharp from step k (0-based). `data-soft="1"`: ghost to 42 percent instead of 15. `data-until="k"`: ghosted again after step k.
+- `data-s="k"`: sharp from step k (0-based). `data-soft="1"`: ghost to 42 percent instead of 15. `data-hide="1"`: no ghost on stage, for a reveal the ghost would give away. `data-until="k"`: ghosted again after step k.
 - `scrim(off, l, t, r, b)`: covers a rectangle of the slide (px numbers or `%` strings) and lifts at step `off`. Use it to reveal a grid cell by cell.
 - `steps=` on the slide is the number of steps and draws the step dots under the top-right bar.
 - The kit helpers take `s=` for the same purpose (`tile(..., s=1)`, `edge(..., s=2)`, `bar(..., s=1)`).

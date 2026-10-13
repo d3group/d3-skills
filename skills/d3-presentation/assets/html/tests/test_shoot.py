@@ -116,6 +116,19 @@ class Lint(Runner, unittest.TestCase):
         self.assertIn('wordy: ', r.stdout)
         self.assertIn('words on the slide', r.stdout)
 
+    def test_references_fit_in_every_look(self):
+        ref = 'Arrow, K. J., Harris, T., & Marschak, J. (1951). Optimal inventory policy. Econometrica, 19(3), 250-272.'
+        for look in ('klar', 'beamer', 'uni'):
+            B.meta(title='T', sections=['A'], look=look)
+            B.titleslide()
+            B.references([ref] * 14)
+            out = os.path.join(tempfile.mkdtemp(), 'deck.html')
+            B.build('deck', out=out, embed_fonts=False)
+            r, _ = self.run_shoot(out)
+            self.assertEqual(r.returncode, 0, f'{look}: ' + r.stdout + r.stderr)
+            self.assertIn('overflow audit: clean', r.stdout, look)
+            self.assertNotIn('wordy', r.stdout, look)
+
     def test_signature_and_report(self):
         r, out = self.run_shoot(lint_deck(('Object', '<div class="k-tile" style="height:380px">tile</div>', {}),
                                           ('Button', FILLED + '<button>go</button>', {}),

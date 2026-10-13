@@ -196,6 +196,60 @@ class Output(unittest.TestCase):
         with self.assertRaises(ValueError):
             B.facts('T', [])
 
+    def test_uni_look(self):
+        B.meta(title='Vorlesung', subtitle='Sitzung 3', presenter='Ada', sections=SECS, lang='de', look='uni', numbering='content')
+        B.titleslide()
+        B.agenda()
+        B.section(1, question='Warum?')
+        B.twocoltakeaway(B.K('Kosten', 'Zwei Seiten'), 'L', 'R', 'Das <b>Verhältnis</b> zählt')
+        B.references(['A (2001). Title.', 'B (2002). Title.'])
+        B.thankyou(contact=['Ada', 'ada@uni-wuerzburg.de'])
+        doc = self.build()
+        self.assertIn('look-uni', doc)
+        fonts = B.fonts_css(look='uni')
+        self.assertEqual(fonts.count("font-family:'Inclusive Sans UW'"), 5)
+        self.assertNotIn("'Inter'", fonts)                               # only the university font is embedded
+        self.assertNotIn('DataDrivenDecisions', doc)
+        self.assertNotIn('class="kf-d3"', doc)
+        self.assertEqual(doc.count('.uw-logo-navy{background-image:url(data:image/png'), 1)   # each raster once
+        self.assertNotIn('uw-photo{background-image', doc)              # the cover photo only when used
+        self.assertIn('Teil 1 von 4', doc)
+        self.assertIn('Quellenangaben', doc)
+        self.assertIn('Kontakt', doc)
+        self.assertIn('Vielen Dank', doc)
+        content = doc[doc.index('data-i="3"'):doc.index('data-i="4"')]
+        self.assertIn('<div class="uw-num">1</div>', content)
+        self.assertIn('<div class="uw-foot">Ada | Lehrstuhl für Wirtschaftsinformatik und Business Analytics | Vorlesung</div>', content)
+        self.assertIn('class="take"', content)
+        self.assertIn('class="refs"', doc)
+        B.meta(title='T', look='uni')
+        B.titleslide(cover='photo')
+        B.thankyou()
+        doc = self.build()
+        self.assertIn('uw-photo{background-image:url(data:image/jpeg', doc)
+        self.assertIn('Thank you', doc)
+        with self.assertRaises(ValueError):
+            B.titleslide(cover='pink')
+
+    def test_chair_default_follows_the_language(self):
+        self.assertEqual(B.meta(title='T')['chair'], 'Chair of Information Systems and Business Analytics')
+        self.assertEqual(B.meta(title='T', lang='de')['chair'], 'Lehrstuhl für Wirtschaftsinformatik und Business Analytics')
+        self.assertEqual(B.meta(title='T', lang='de-DE')['chair'], 'Lehrstuhl für Wirtschaftsinformatik und Business Analytics')
+        self.assertEqual(B.meta(title='T', lang='de', chair='Dekanat')['chair'], 'Dekanat')   # an explicit chair wins
+        self.assertEqual(B.meta(title='T', chair='')['chair'], '')                            # and so does an empty one
+
+    def test_data_hide_suppresses_the_ghost_on_stage(self):
+        from d3deck import engine
+        self.assertIn('.sl.is-current [data-hide].gh{opacity:0', engine.CSS)
+
+    def test_svg_lines_are_not_bullets(self):
+        B.meta(title='T', look='uni')
+        B.onecol('Graph', '<svg>' + '<line x1="0" y1="0" x2="1" y2="1"/>' * 9 + '</svg><ul><li>a</li></ul>')
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+            self.build()
+        self.assertFalse([x for x in w if 'bullets' in str(x.message)])
+
     def test_footer_and_numbers_by_kind(self):
         small_deck()
         doc = self.build()

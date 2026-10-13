@@ -34,6 +34,7 @@ html,body{height:100%;background:#0B0D10;overflow:hidden;-webkit-font-smoothing:
 .gh{opacity:0}                                   /* later steps are invisible and keep their place */
 body.reveal-ghost .gh{opacity:.15;filter:grayscale(1)}   /* opt-in: meta(reveal='ghost') */
 .gh-soft{opacity:.42;filter:grayscale(.8)}
+.sl.is-current [data-hide].gh{opacity:0;filter:none}   /* data-hide: no ghost on stage, for reveals the ghost would give away */
 .scrim{position:absolute;background:rgba(255,255,255,.6997);pointer-events:none;z-index:4;
  transition:opacity .4s cubic-bezier(.4,0,.2,1)}
 .scrim.off{opacity:0}

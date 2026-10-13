@@ -16,7 +16,8 @@ import shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))        # assets/html
 ASSETS = os.path.dirname(HERE)                           # assets
-LOGOS = ('Universitaet_Wuerzburg_Logo.svg', 'DataDrivenDecisions_2c.svg')
+LOGOS = ('Universitaet_Wuerzburg_Logo.svg', 'DataDrivenDecisions_2c.svg',
+         'uw-logo-navy.png', 'uw-logo-white.png', 'uw-seal-coral.png', 'uw-seal-faint.png', 'uw-cover.jpg')   # the last four: look='uni'
 
 STARTER = '''# -*- coding: utf-8 -*-
 """__NAME__: D3 HTML deck.  Build: uv run slides.py  ->  dist/__NAME__.html
@@ -30,7 +31,8 @@ meta(title='Action title that states the main message',
      chair='Chair of Information Systems and Business Analytics',
      sections=['Introduction', 'Methodology', 'Results', 'Conclusion'],
      numbering='content',    # structural slides carry no number, backup restarts ('all': count every slide)
-     look='klar',            # calm look: tracker on top, kicker titles, D3 logo in the foot ('beamer': LaTeX frame)
+     look='klar',            # calm look: tracker on top, kicker titles, D3 logo in the foot ('beamer': LaTeX frame,
+                             # 'uni': University of Würzburg master without D3 branding, for teaching)
      feel='calm')            # motion budget agreed with the presenter: 'calm', 'rich' or 'interactive'
 
 titleslide(time='0:15')
