@@ -1,0 +1,34 @@
+/* University of Würzburg look for the DSS course apps: house font Inclusive Sans UW (OFL), navy headings, coral accents. */
+@font-face{font-family:'Inclusive Sans UW';font-weight:400;font-style:normal;font-display:swap;src:url('public/fonts/InclusiveSansUW-Regular.ttf') format('truetype')}
+@font-face{font-family:'Inclusive Sans UW';font-weight:400;font-style:italic;font-display:swap;src:url('public/fonts/InclusiveSansUW-Italic.ttf') format('truetype')}
+@font-face{font-family:'Inclusive Sans UW';font-weight:500;font-style:normal;font-display:swap;src:url('public/fonts/InclusiveSansUW-Medium.ttf') format('truetype')}
+@font-face{font-family:'Inclusive Sans UW';font-weight:600;font-style:normal;font-display:swap;src:url('public/fonts/InclusiveSansUW-SemiBold.ttf') format('truetype')}
+@font-face{font-family:'Inclusive Sans UW';font-weight:700;font-style:normal;font-display:swap;src:url('public/fonts/InclusiveSansUW-Bold.ttf') format('truetype')}
+:root{
+  --uw-navy:#02246C; --uw-coral:#ED6A5B; --uw-berry:#821044; --uw-blue:#5E8AC7; --uw-sand:#F1EBDF; --uw-line:#D3D6DC;
+  /* marimo's accent colours mapped onto the university palette: navy for controls, light blue for links, coral for actions */
+  --primary:#02246C; --primary-foreground:#ffffff; --link:#5E8AC7; --link-visited:#5E8AC7;
+  --accent:#E6E9F0; --accent-foreground:#02246C; --ring:#5E8AC7;
+  --blue-1:#f6f8fc; --blue-2:#eef2f9; --blue-3:#e2e8f4; --blue-4:#d3dcee; --blue-5:#c2cde6; --blue-6:#abbadb;
+  --blue-7:#8fa1cc; --blue-8:#6b81b6; --blue-9:#02246C; --blue-10:#021f5e; --blue-11:#1b3a7b; --blue-12:#011646;
+  /* Tailwind colour tokens used by sliders and focus rings, and the typography plugin used inside tabs (shadow DOM) */
+  --color-blue-50:#f6f8fc; --color-blue-100:#eef2f9; --color-blue-200:#d3dcee; --color-blue-300:#abbadb; --color-blue-400:#6b81b6;
+  --color-blue-500:#02246C; --color-blue-600:#021f5e; --color-blue-700:#1b3a7b; --color-blue-800:#011646; --color-blue-900:#011646;
+  --tw-prose-headings:#02246C; --tw-prose-bold:#02246C; --tw-prose-links:#5E8AC7;
+  --action:#ED6A5B; --action-hover:#d85a4c; --action-border:#821044; --action-foreground:#ffffff;
+  --marimo-text-font:'Inclusive Sans UW',system-ui,sans-serif;
+  --marimo-heading-font:'Inclusive Sans UW',system-ui,sans-serif;
+}
+body{font-family:'Inclusive Sans UW',system-ui,sans-serif}
+.markdown h1,.markdown h2,.markdown h3,.markdown h4{font-family:'Inclusive Sans UW',system-ui,sans-serif;color:var(--uw-navy);letter-spacing:-.01em}
+.markdown h1{font-weight:700;font-size:2.4rem;margin-top:.2em}
+.markdown h2{font-weight:600;border-top:1px solid var(--uw-line);padding-top:.7em;margin-top:1.2em}
+.markdown h3{font-weight:600}
+.markdown p,.markdown li{font-family:'Inclusive Sans UW',system-ui,sans-serif}
+.markdown strong{color:var(--uw-navy)}
+.markdown a{color:var(--uw-blue)}
+.markdown .kicker{color:var(--uw-berry);font-weight:600;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:-.6em}
+.markdown blockquote{border-left:4px solid var(--uw-coral);background:var(--uw-sand);padding:.5em 1em}
+/* tables, tabs and stats in the master's plain style */
+[role=tab][data-state=active]{color:var(--uw-navy)!important;font-weight:600}
+th{color:var(--uw-navy)}
