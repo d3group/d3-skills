@@ -17,7 +17,7 @@ import shutil
 HERE = os.path.dirname(os.path.abspath(__file__))        # assets/html
 ASSETS = os.path.dirname(HERE)                           # assets
 LOGOS = ('Universitaet_Wuerzburg_Logo.svg', 'DataDrivenDecisions_2c.svg',
-         'uw-logo-navy.png', 'uw-logo-white.png', 'uw-seal.png', 'uw-cover.jpg')   # the last four: look='uni'
+         'uw-logo-navy.png', 'uw-logo-white.png', 'uw-seal-coral.png', 'uw-seal-faint.png', 'uw-cover.jpg')   # the last four: look='uni'
 
 STARTER = '''# -*- coding: utf-8 -*-
 """__NAME__: D3 HTML deck.  Build: uv run slides.py  ->  dist/__NAME__.html

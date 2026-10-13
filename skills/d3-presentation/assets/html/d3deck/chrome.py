@@ -17,7 +17,8 @@ UNI_SVG = 'Universitaet_Wuerzburg_Logo.svg'
 D3_SVG = 'DataDrivenDecisions_2c.svg'
 SEAL = os.path.join(paths.PKG, 'seal.png')
 UW_LOGO = {'navy': 'uw-logo-navy.png', 'white': 'uw-logo-white.png'}
-UW_SEAL = 'uw-seal.png'
+UW_SEAL = 'uw-seal-coral.png'        # pre-coloured: CSS masks print with visible edges in Chrome's PDF output
+UW_SEAL_FAINT = 'uw-seal-faint.png'  # navy at 12 % alpha, for the closing slide
 UW_COVER = 'uw-cover.jpg'
 
 _cache = {}
@@ -185,8 +186,8 @@ def uni_assets_css(cover=False):
     """The rasters of the uni look as CSS backgrounds, so every image is embedded once, not once per slide."""
     css = (f'body.look-uni .uw-logo-navy{{background-image:url({_data_uri(UW_LOGO["navy"])})}}'
            f'body.look-uni .uw-logo-white{{background-image:url({_data_uri(UW_LOGO["white"])})}}'
-           f'body.look-uni{{--seal-img:url({_data_uri(UW_SEAL)})}}'
-           'body.look-uni .uw-seal{-webkit-mask-image:var(--seal-img);mask-image:var(--seal-img)}')
+           f'body.look-uni .uw-seal{{background-image:url({_data_uri(UW_SEAL)})}}'
+           f'body.look-uni .uw-seal.uw-seal-end{{background-image:url({_data_uri(UW_SEAL_FAINT)})}}')
     if cover:
         css += f'body.look-uni .uw-photo{{background-image:url({_data_uri(UW_COVER)})}}'
     return css
@@ -343,7 +344,7 @@ body.look-uni{font-family:'Inclusive Sans UW',system-ui,sans-serif;
  --orange:#821044;--orange-ink:#821044;--orange-5:#F9F1F4;--orange-10:#F3E4EA;
  --lightblue:#CBD9EE;--teal:#009485;--teal-ink:#007A6E;--teal-10:#E6F4F3;--teal-25:#BFE4E0;
  --yellow:#F8C300;--peach:#F8CDC6;--lavender:#D9CCE6;--line:#D9DCE1;
- --seal:var(--coral)}   /* the booklet's 'Heritage' mark: the seal in coral on navy */
+ }   /* the seal is the booklet's 'Heritage' mark: coral on navy (pre-coloured PNG) */
 body.look-uni .sl{color:#000;font-size:24px;line-height:1.4;font-weight:400}
 body.look-uni .uw-logo{position:absolute;left:72px;top:23px;width:186px;height:55px;background:center/contain no-repeat}
 body.look-uni .uw-rule{position:absolute;left:73px;top:94px;width:1138px;height:1px;background:#D3D6DC}
@@ -391,8 +392,7 @@ body.look-uni .uw-agt{font-size:24px;color:#000;cursor:pointer}
 body.look-uni .uw-cover,body.look-uni .uw-dark{position:absolute;inset:0;background:var(--navy);color:#fff}
 body.look-uni .uw-c-band{background:#fff;color:var(--navy)}
 body.look-uni .uw-cover .uw-logo,body.look-uni .uw-dark .uw-logo{top:22px}
-body.look-uni .uw-seal{position:absolute;left:972px;top:412px;width:308px;height:308px;background:var(--seal);
- -webkit-mask:center/contain no-repeat;mask:center/contain no-repeat}
+body.look-uni .uw-seal{position:absolute;left:972px;top:412px;width:308px;height:308px;background:center/contain no-repeat}
 body.look-uni .uw-c-band .uw-seal{left:1013px;top:442px;width:228px;height:228px}
 body.look-uni .uw-band,body.look-uni .uw-box{position:absolute;left:39px;top:425px;height:245px;background:var(--navy)}
 body.look-uni .uw-band{width:1202px}
@@ -416,7 +416,7 @@ body.look-uni .uw-st{position:absolute;left:74px;top:527px;width:857px;font-size
 body.look-uni .uw-sq{font-size:22px;font-weight:400;line-height:1.4;color:#DCE4F2;margin-top:12px;max-width:44ch}
 /* closing slide */
 body.look-uni .uw-end{position:absolute;left:625px;top:0;width:655px;height:720px;background:#F2F2F2}
-body.look-uni .uw-seal-end{background:var(--navy);opacity:.12}
+body.look-uni .uw-seal-end{}
 body.look-uni .uw-thx{position:absolute;left:74px;top:171px;width:514px;height:189px;display:flex;align-items:flex-end;font-size:40px;font-weight:700;line-height:1.15;color:var(--navy)}
 body.look-uni .uw-contact{top:426px;padding:40px 35px 0;box-sizing:border-box;color:#fff;font-size:21px;line-height:1.7}
 body.look-uni .uw-contact b{display:block;font-weight:700;margin-bottom:6px}
