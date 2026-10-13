@@ -27,6 +27,10 @@ body{font-family:'Inclusive Sans UW',system-ui,sans-serif}
 .markdown p,.markdown li{font-family:'Inclusive Sans UW',system-ui,sans-serif}
 .markdown strong{color:var(--uw-navy)}
 .markdown a{color:var(--uw-blue)}
+/* masthead: the university logo with the course name, as on the slides */
+.uw-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-bottom:1px solid #D3D6DC;padding-bottom:.9rem;margin-bottom:1.4rem}
+.uw-head img{height:52px;width:auto;margin:0!important}
+.uw-head span{color:var(--uw-berry);font-weight:600;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase}
 .markdown .kicker{color:var(--uw-berry);font-weight:600;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:-.6em}
 .markdown blockquote{border-left:4px solid var(--uw-coral);background:var(--uw-sand);padding:.5em 1em}
 /* tables, tabs and stats in the master's plain style */
