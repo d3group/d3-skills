@@ -1,100 +1,205 @@
 % d3-poster.sty
-% D3-branded reskin for the baposter class.
-% Adds the D3 color palette, Inter font (XeLaTeX/LuaLaTeX), and the
-% \highlight / \keypoint / infobox / card macros that match
-% d3-abstract and d3-presentation.
+% D3-branded reskin for the baposter class in the 2025 corporate design of the
+% University of Wuerzburg (A0 template "Wissenschaftliches Poster").
+%
+%   * Palette: university navy #02246C (d3-navy); D3 orange #F29100 stays the
+%     accent; baposter's uniblue is remapped to d3-navy.
+%   * Font: Inclusive Sans UW via fontspec (XeLaTeX/LuaLaTeX); Helvetica clone
+%     under pdfLaTeX. Greek letters and math symbols the font lacks are mapped
+%     to math mode with newunicodechar.
+%   * University frame, drawn by a thin wrapper around baposter's poster
+%     environment: navy header box with the white university logo, white
+%     title and authors, blue seal flush with the box's bottom-right corner;
+%     grey (#ECECEC) section bars with navy SemiBold text (box key `emphasis`
+%     gives the cornflower bar with white text); footer with a navy rule, a
+%     logo row (D3 logo first) and a references slot.
+%   * \highlight / \keypoint / infobox / card macros shared with d3-abstract.
 %
 % Usage:
 %   \documentclass[a0paper]{baposter}
 %   \usepackage{assets/d3-poster}
+%   \begin{poster}{options}{}{Title}{Authors}{\dthreelogos}
+%     ...                       % the 5th argument fills the footer logo row
+%     \dthreereferences{...}    % optional: footer references slot
+%   \end{poster}
 %
-% Engine: prefers XeLaTeX or LuaLaTeX (for Inter via fontspec).
-% Falls back gracefully to pdflatex with Helvetica-like sans (TeX Gyre Heros).
+% Geometry is given in "template millimetres": 1\dthreeunit = 1 mm on A0
+% portrait; it scales with the shorter paper side for A1 and other sizes.
+%
+% The seal is an interim choice: the CD booklet replaces it with a faculty
+% ornament in faculty and chair communication once that package is released.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{d3-poster}[2026/05/14 D3 Poster Reskin for baposter]
+\ProvidesPackage{d3-poster}[2026/10/13 D3 Poster Reskin for baposter (UWue CD 2025)]
 
-% ====================
-% Engine detection (iftex is preloaded on modern TeX Live)
-% ====================
+\@ifclassloaded{baposter}{}{%
+  \PackageError{d3-poster}{d3-poster.sty needs the baposter class}%
+    {Use \string\documentclass[a0paper]{baposter} with baposter.cls next to the .tex file.}}
+
 \RequirePackage{iftex}
+\RequirePackage{graphicx}
+\RequirePackage{amssymb}        % \blacksquare (bullets), \checkmark
+\RequirePackage{newunicodechar}
 
 % ====================
-% D3 Color Palette
-% (Override baposter's uniblue with d3-navy so headers/borders/rules
-%  inherit the D3 brand without forking baposter.cls.)
+% Palette (2025 corporate design; names shared by all D3 skills)
 % ====================
-\definecolor{d3-navy}{RGB}{21,63,135}
-\definecolor{d3-orange}{HTML}{f29100}
-\definecolor{d3-gray}{RGB}{128,128,128}
-\definecolor{d3-lightblue}{RGB}{200,220,240}
-\definecolor{d3-darkblue}{RGB}{10,40,100}
+\definecolor{d3-navy}{HTML}{02246C}       % titles, structure, header box, rules
+\definecolor{d3-darkblue}{HTML}{011646}   % deepest surfaces
+\definecolor{d3-orange}{HTML}{F29100}     % D3 accent: \highlight, alert card
+\definecolor{d3-orange-ink}{HTML}{B86E00} % orange as small text on white
+\definecolor{d3-gray}{HTML}{808080}       % secondary marks, placeholders
+\definecolor{d3-lightblue}{HTML}{CBD9EE}  % card and infobox fills
+\definecolor{d3-blue}{HTML}{5E8AC7}       % cornflower: bullets, emphasis bar
+\definecolor{d3-sky}{HTML}{5AA1D8}        % large numerals
+\definecolor{d3-sand}{HTML}{F1EBDF}       % quiet boxes, takeaway background
+\definecolor{d3-teal}{HTML}{009485}       % chart series
+\definecolor{d3-teal-ink}{HTML}{007A6E}   % teal as text
+\definecolor{d3-yellow}{HTML}{F8C300}     % chart series
+\definecolor{d3-berry}{HTML}{821044}      % chart series
+\definecolor{d3-peach}{HTML}{FCE4BF}      % light orange fill
+\definecolor{d3-lavender}{HTML}{D9CCE6}   % light fill
+\definecolor{d3-hairline}{HTML}{D3D6DC}   % thin rules on white
+\definecolor{d3-headergray}{HTML}{ECECEC} % section heading bars
 
-% Redefine uniblue (already defined by baposter.cls) to match d3-navy.
-\AtBeginDocument{%
-  \definecolor{uniblue}{RGB}{21,63,135}%
-}
+% baposter.cls defines uniblue; older posters use it for borders and bars.
+\definecolor{uniblue}{HTML}{02246C}
+\AtBeginDocument{\definecolor{uniblue}{HTML}{02246C}}
 
 % ====================
-% Font Setup
-% Inter via fontspec under XeLaTeX/LuaLaTeX; TeX Gyre Heros under pdfLaTeX.
+% Fonts
+% Inclusive Sans UW has Regular, Italic, Medium, SemiBold and Bold. There is
+% no Bold Italic; it is faked with a slant. \titlefont = SemiBold (section
+% bars, subheadings, footer heading), \mediumfont = Medium.
+% The font has no tabular figures; do not request Numbers=Monospaced.
 % ====================
-\ifxetex
+\newif\ifdthree@fontspec
+\ifxetex \dthree@fontspectrue \fi
+\ifluatex \dthree@fontspectrue \fi
+
+\ifdthree@fontspec
   \RequirePackage{fontspec}
-  \setsansfont{Inter}[
+  \setsansfont{InclusiveSansUW}[
     Path = assets/fonts/,
     Extension = .ttf,
-    UprightFont = Inter_18pt-Regular,
-    BoldFont = Inter_18pt-Bold,
-    ItalicFont = Inter_18pt-Italic,
-    BoldItalicFont = Inter_18pt-BoldItalic
+    Ligatures = TeX,
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+    BoldItalicFont = *-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2}
   ]
-  \setmainfont{Inter}[
+  \setmainfont{InclusiveSansUW}[
     Path = assets/fonts/,
     Extension = .ttf,
-    UprightFont = Inter_18pt-Regular,
-    BoldFont = Inter_18pt-Bold,
-    ItalicFont = Inter_18pt-Italic,
-    BoldItalicFont = Inter_18pt-BoldItalic
+    Ligatures = TeX,
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+    BoldItalicFont = *-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2}
   ]
-  \newfontfamily{\titlefont}{Inter}[
+  \newfontfamily{\titlefont}{InclusiveSansUW}[
     Path = assets/fonts/,
     Extension = .ttf,
-    UprightFont = Inter_18pt-SemiBold,
-    BoldFont = Inter_18pt-Bold
+    Ligatures = TeX,
+    UprightFont = *-SemiBold,
+    BoldFont = *-Bold,
+    ItalicFont = *-SemiBold,
+    ItalicFeatures = {FakeSlant=0.2},
+    BoldItalicFont = *-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2}
   ]
-  \renewcommand{\familydefault}{\sfdefault}
-\else\ifluatex
-  \RequirePackage{fontspec}
-  \setsansfont{Inter}[
+  \newfontfamily{\mediumfont}{InclusiveSansUW}[
     Path = assets/fonts/,
     Extension = .ttf,
-    UprightFont = Inter_18pt-Regular,
-    BoldFont = Inter_18pt-Bold,
-    ItalicFont = Inter_18pt-Italic,
-    BoldItalicFont = Inter_18pt-BoldItalic
-  ]
-  \setmainfont{Inter}[
-    Path = assets/fonts/,
-    Extension = .ttf,
-    UprightFont = Inter_18pt-Regular,
-    BoldFont = Inter_18pt-Bold,
-    ItalicFont = Inter_18pt-Italic,
-    BoldItalicFont = Inter_18pt-BoldItalic
-  ]
-  \newfontfamily{\titlefont}{Inter}[
-    Path = assets/fonts/,
-    Extension = .ttf,
-    UprightFont = Inter_18pt-SemiBold,
-    BoldFont = Inter_18pt-Bold
+    Ligatures = TeX,
+    UprightFont = *-Medium,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic,
+    BoldItalicFont = *-Bold,
+    BoldItalicFeatures = {FakeSlant=0.2}
   ]
   \renewcommand{\familydefault}{\sfdefault}
 \else
-  % pdfLaTeX fallback: Helvetica-like.
+  % pdfLaTeX fallback: Helvetica clone, bold for SemiBold.
   \RequirePackage[scaled]{helvet}
   \renewcommand{\familydefault}{\sfdefault}
   \newcommand{\titlefont}{\sffamily\bfseries}
-\fi\fi
+  \newcommand{\mediumfont}{\sffamily}
+\fi
+
+% Inclusive Sans UW has no Greek letters and lacks several math symbols;
+% without this mapping they silently vanish. Math fonts stay unchanged.
+\newunicodechar{α}{\ensuremath{\alpha}}
+\newunicodechar{β}{\ensuremath{\beta}}
+\newunicodechar{γ}{\ensuremath{\gamma}}
+\newunicodechar{δ}{\ensuremath{\delta}}
+\newunicodechar{ε}{\ensuremath{\varepsilon}}
+\newunicodechar{ϵ}{\ensuremath{\epsilon}}
+\newunicodechar{ζ}{\ensuremath{\zeta}}
+\newunicodechar{η}{\ensuremath{\eta}}
+\newunicodechar{θ}{\ensuremath{\theta}}
+\newunicodechar{ϑ}{\ensuremath{\vartheta}}
+\newunicodechar{ι}{\ensuremath{\iota}}
+\newunicodechar{κ}{\ensuremath{\kappa}}
+\newunicodechar{λ}{\ensuremath{\lambda}}
+\newunicodechar{μ}{\ensuremath{\mu}}
+\newunicodechar{ν}{\ensuremath{\nu}}
+\newunicodechar{ξ}{\ensuremath{\xi}}
+\newunicodechar{ο}{\ensuremath{o}}
+\newunicodechar{π}{\ensuremath{\pi}}
+\newunicodechar{ρ}{\ensuremath{\rho}}
+\newunicodechar{ς}{\ensuremath{\varsigma}}
+\newunicodechar{σ}{\ensuremath{\sigma}}
+\newunicodechar{τ}{\ensuremath{\tau}}
+\newunicodechar{υ}{\ensuremath{\upsilon}}
+\newunicodechar{φ}{\ensuremath{\varphi}}
+\newunicodechar{ϕ}{\ensuremath{\phi}}
+\newunicodechar{χ}{\ensuremath{\chi}}
+\newunicodechar{ψ}{\ensuremath{\psi}}
+\newunicodechar{ω}{\ensuremath{\omega}}
+\newunicodechar{Α}{\ensuremath{\mathrm{A}}}
+\newunicodechar{Β}{\ensuremath{\mathrm{B}}}
+\newunicodechar{Γ}{\ensuremath{\Gamma}}
+\newunicodechar{Δ}{\ensuremath{\Delta}}
+\newunicodechar{Ε}{\ensuremath{\mathrm{E}}}
+\newunicodechar{Ζ}{\ensuremath{\mathrm{Z}}}
+\newunicodechar{Η}{\ensuremath{\mathrm{H}}}
+\newunicodechar{Θ}{\ensuremath{\Theta}}
+\newunicodechar{Ι}{\ensuremath{\mathrm{I}}}
+\newunicodechar{Κ}{\ensuremath{\mathrm{K}}}
+\newunicodechar{Λ}{\ensuremath{\Lambda}}
+\newunicodechar{Μ}{\ensuremath{\mathrm{M}}}
+\newunicodechar{Ν}{\ensuremath{\mathrm{N}}}
+\newunicodechar{Ξ}{\ensuremath{\Xi}}
+\newunicodechar{Ο}{\ensuremath{\mathrm{O}}}
+\newunicodechar{Π}{\ensuremath{\Pi}}
+\newunicodechar{Ρ}{\ensuremath{\mathrm{P}}}
+\newunicodechar{Σ}{\ensuremath{\Sigma}}
+\newunicodechar{Τ}{\ensuremath{\mathrm{T}}}
+\newunicodechar{Υ}{\ensuremath{\Upsilon}}
+\newunicodechar{Φ}{\ensuremath{\Phi}}
+\newunicodechar{Χ}{\ensuremath{\mathrm{X}}}
+\newunicodechar{Ψ}{\ensuremath{\Psi}}
+\newunicodechar{Ω}{\ensuremath{\Omega}}
+\newunicodechar{≤}{\ensuremath{\leq}}
+\newunicodechar{≥}{\ensuremath{\geq}}
+\newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{≠}{\ensuremath{\neq}}
+\newunicodechar{∞}{\ensuremath{\infty}}
+\newunicodechar{√}{\ensuremath{\surd}}
+\newunicodechar{∈}{\ensuremath{\in}}
+\newunicodechar{∑}{\ensuremath{\sum}}
+\newunicodechar{∫}{\ensuremath{\int}}
+\newunicodechar{∂}{\ensuremath{\partial}}
+\newunicodechar{⇒}{\ensuremath{\Rightarrow}}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
+\newunicodechar{←}{\ensuremath{\leftarrow}}
+\newunicodechar{↔}{\ensuremath{\leftrightarrow}}
+\newunicodechar{′}{\ensuremath{^{\prime}}}
+\newunicodechar{″}{\ensuremath{^{\prime\prime}}}
+\newunicodechar{✓}{\ensuremath{\checkmark}}
 
 % ====================
 % Additional packages used in poster bodies
@@ -109,36 +214,290 @@
 % reload babel with the appropriate locale.
 \let\d\relax
 \RequirePackage{siunitx}
+% Numbers in tables in the house font, not the math font.
+\sisetup{mode=text}
 \RequirePackage{enumitem}
 \setlist[itemize]{nosep, leftmargin=1.2em}
 \setlist[enumerate]{nosep, leftmargin=1.5em}
 
 \graphicspath{{./figures/}{./assets/logos/}{./logos/}{./assets/}}
 
+% Bullets: cornflower squares (baposter's default is a uniblue square).
+\renewcommand{\labelitemi}{\color{d3-blue}\scriptsize$\blacksquare$}
+
 % ====================
-% Highlight Macros (same semantics as d3-abstract)
+% Frame geometry, in template millimetres
+% A0 template: margins 25 mm; header box 791 x 119 mm; section bars start
+% 20 mm below it; content ends at y = 1095 mm; footer rule at 1107.5 mm;
+% logo row at 1126.7 mm; references at x = 428 mm, y = 1115 mm.
+% ====================
+\newlength{\dthreeunit}
+\ifdim\baposter@basepaperwidth<\baposter@basepaperheight
+  \setlength{\dthreeunit}{\dimexpr\baposter@basepaperwidth/841\relax}
+\else
+  \setlength{\dthreeunit}{\dimexpr\baposter@basepaperheight/841\relax}
+\fi
+
+% Page margins of the template; the 94 mm bottom margin holds the footer.
+\geometry{left=25\dthreeunit, right=25\dthreeunit,
+          top=25\dthreeunit, bottom=94\dthreeunit}
+
+\newlength{\dthreeheaderheight}   % header box (119) + gap to the first bar (20)
+\setlength{\dthreeheaderheight}{139\dthreeunit}
+\newlength{\dthreecolspacing}     % column gap of the template grid
+\setlength{\dthreecolspacing}{14.2\dthreeunit}
+
+% Header and footer type, scaled with the paper (A0: 59 pt title, 34 pt
+% authors, 28 pt footer heading, 24 pt references). \dthree@scale < 1 only
+% while a too-long title block or references block is being fitted.
+\newcommand{\dthree@scale}{1}
+\newcommand{\dthree@size}[2]{%
+  \fontsize{\dthree@scale\dimexpr#1\dthreeunit\relax}%
+           {\dthree@scale\dimexpr#2\dthreeunit\relax}\selectfont}
+\newcommand{\dthreetitlefont}{\bfseries\dthree@size{21}{25}}
+\newcommand{\dthreeauthorfont}{\mdseries\dthree@size{12}{15}}
+\newcommand{\dthreerefheadfont}{\titlefont\fontsize{10\dthreeunit}{12\dthreeunit}\selectfont}
+\newcommand{\dthreereffont}{\dthree@size{8.5}{10.6}}
+% Section bar text: navy SemiBold on #ECECEC.
+\newcommand{\dthreesectionfont}{\titlefont\Large}
+
+% Optional subtitle line inside the title argument (only when the user asks).
+\newcommand{\dthreesubtitle}[1]{\par\vspace{0.4\dthreeunit}{\dthreeauthorfont\itshape #1\par}}
+
+% ====================
+% baposter defaults for the university look
+% (options given in \begin{poster}{...} or per box still override these)
+% ====================
+\setkeys[ba]{poster}{
+  grid=false,
+  eyecatcher=false,
+  columns=2,
+  colspacing=\dthreecolspacing,
+  headerheight=\dthreeheaderheight,
+  background=plain,
+  bgColorOne=white,
+  bgColorTwo=white,
+}
+\setkeys[ba]{posterbox}{
+  borderColor=d3-headergray,
+  headerColorOne=d3-headergray,
+  headerColorTwo=d3-headergray,
+  headerFontColor=d3-navy,
+  headerfont=\dthreesectionfont,
+  headershape=rectangle,
+  headershade=plain,
+  headerborder=none,
+  boxheaderheight=2em,
+  boxColorOne=white,
+  boxColorTwo=white,
+  boxshade=plain,
+  textborder=none,
+  boxpadding=0.6em,
+}
+
+% Box key `emphasis`: cornflower bar with white text (the template's second
+% bar style). Use per box: \headerbox{Results}{name=Results,...,emphasis}{...}
+\define@key[ba]{posterbox}{emphasis}[true]{%
+  \ifthenelse{\equal{#1}{false}}{%
+    \def\baposter@box@headerColorOne{d3-headergray}%
+    \def\baposter@box@headerColorTwo{d3-headergray}%
+    \def\baposter@box@headerFontColor{d3-navy}%
+  }{%
+    \def\baposter@box@headerColorOne{d3-blue}%
+    \def\baposter@box@headerColorTwo{d3-blue}%
+    \def\baposter@box@headerFontColor{white}%
+  }}
+
+% Bar text starts at the same inset as the box text (baposter: fixed 0.4em),
+% and its capitals are centred in the bar whether or not the title has
+% descenders. No trailing semicolon: the caller ends the path.
+\renewcommand{\baposter@box@headerdrawtext@rectangle}[1]{%
+  \settoheight{\dthree@capht}{%
+    \begin{pgfinterruptpicture}\baposter@box@headerfont H\end{pgfinterruptpicture}}%
+  \path (\baposter@box@name nw) +(0em,-0.5\baposter@box@@boxheaderheight)
+    node[anchor=west, inner xsep=\baposter@box@@boxpadding, inner ysep=0pt,
+         text height=\dthree@capht, text depth=0pt] {#1}}
+\newlength{\dthree@capht}
+
+% ====================
+% Header, logo row and references
+% ====================
+\newsavebox{\dthree@hdrbox}
+\newsavebox{\dthree@logobox}
+\newsavebox{\dthree@refbox}
+\newlength{\dthree@tmp}
+\newlength{\dthree@textw}
+\def\dthree@title{}
+\def\dthree@authors{}
+\def\dthree@logos{}
+\def\dthree@refs{}
+
+% Footer references slot (right half). Use in the preamble or anywhere inside
+% the poster environment. Plain text; 3-5 short references fit.
+\newcommand{\dthreereferences}[1]{\gdef\dthree@refs{#1}}
+\newcommand{\dthreereferencesname}{References}
+
+% One logo cell of the footer row (72 x 38.9 mm, 7.1 mm apart, at most five).
+% The graphic is fitted into the cell, left-aligned and vertically centred.
+\newcommand{\dthreelogocell}[2][]{%
+  \vbox to 38.9\dthreeunit{\vss
+    \hbox to 72\dthreeunit{%
+      \includegraphics[width=72\dthreeunit,height=38.9\dthreeunit,keepaspectratio,#1]{#2}\hss}%
+    \vss}%
+  \hskip 7.1\dthreeunit\relax}
+
+% \dthreelogos: D3 logo in the first cell of the footer logo row. (Before the
+% 2025 design it put the old university logo and the D3 logo into the header.)
+\newcommand{\dthreelogos}{\dthreelogocell{logo-d3.pdf}}
+% \dthreelogowue: university logo only. The university logo now always sits in
+% the header, so this leaves the footer logo row empty.
+\newcommand{\dthreelogowue}{}
+
+% Fitting: first step the font size down (the block keeps its full width),
+% then, if the title carries its own size such as \Huge, scale the box.
+\newcommand{\dthree@steps}{0.92,0.85,0.78,0.72,0.66,0.6}
+\newcommand{\dthree@iftoolarge}[2]{% #1 box, #2 max total height
+  \setlength{\dthree@tmp}{\ht#1}%
+  \addtolength{\dthree@tmp}{\dp#1}%
+  \ifdim\dthree@tmp>#2\relax
+    \expandafter\@firstoftwo
+  \else
+    \expandafter\@secondoftwo
+  \fi}
+\newcommand{\dthree@fit}[4]{% #1 box, #2 max height, #3 setter macro, #4 what
+  \def\dthree@scale{1}#3%
+  \let\dthree@used\dthree@scale
+  \@for\dthree@s:=\dthree@steps\do{%
+    \dthree@iftoolarge{#1}{#2}{\let\dthree@scale\dthree@s#3\let\dthree@used\dthree@s}{}}%
+  \def\dthree@scale{1}%
+  \dthree@iftoolarge{#1}{#2}{%
+    \PackageWarning{d3-poster}{#4 is too tall for its slot and was scaled
+      down to fit. Shorten it}%
+    \sbox#1{\resizebox*{!}{#2}{\usebox#1}}%
+  }{%
+    \ifdim\dthree@used pt<1pt
+      \PackageWarning{d3-poster}{#4 was set at \dthree@used\space of its
+        normal size to fit its slot. Consider shortening it}%
+    \fi}}
+
+\newcommand{\dthree@sethdr}{%
+  \sbox{\dthree@hdrbox}{%
+    \begin{minipage}[t]{\dthree@textw}%
+      \color{white}\raggedright
+      {\dthreetitlefont\dthree@title\par}%
+      \ifx\dthree@authors\@empty\else
+        \vspace{\dthree@scale\dimexpr5\dthreeunit\relax}%
+        {\dthreeauthorfont\dthree@authors\par}%
+      \fi
+    \end{minipage}}}
+
+\newcommand{\dthree@makeheader}{%
+  \setlength{\dthree@textw}{\textwidth}%
+  \addtolength{\dthree@textw}{-366.1\dthreeunit}%   425 mm on A0
+  \dthree@fit{\dthree@hdrbox}{90\dthreeunit}{\dthree@sethdr}{The title block}%
+  \sbox{\dthree@logobox}{\dthree@logos}}
+
+\newcommand{\dthree@setrefs}{%
+  \setbox\dthree@refbox=\hbox{\begin{pgfinterruptpicture}%
+    \begin{minipage}[t]{\dthree@textw}%
+      \raggedright
+      {\color{d3-navy}\dthreerefheadfont\dthreereferencesname\par}%
+      \vspace{2.5\dthreeunit}%
+      {\dthreereffont\dthree@refs\par}%
+    \end{minipage}\end{pgfinterruptpicture}}}
+
+\newcommand{\dthree@makerefs}{%
+  \setlength{\dthree@textw}{0.5\textwidth}%
+  \addtolength{\dthree@textw}{-7.1\dthreeunit}%
+  \dthree@fit{\dthree@refbox}{58\dthreeunit}{\dthree@setrefs}{The references block}}
+
+% Drawn inside baposter's poster picture: (0,0) is the bottom-left corner of
+% the text area, (\textwidth,\textheight) its top-right corner.
+\newcommand{\dthree@drawheader}{%
+  \fill[d3-navy] (0pt,\textheight) rectangle (\textwidth,\textheight-119\dthreeunit);
+  \begin{scope}
+    \clip (0pt,\textheight) rectangle (\textwidth,\textheight-119\dthreeunit);
+    \node[anchor=south east, inner sep=0pt]
+      at (\textwidth,\textheight-119\dthreeunit)
+      {\includegraphics[width=92.7\dthreeunit]{uw-seal-blue.pdf}};
+  \end{scope}
+  \node[anchor=north west, inner sep=0pt]
+    at (15.4\dthreeunit,\textheight-14.9\dthreeunit)
+    {\includegraphics[width=135.2\dthreeunit]{uw-logo-white.pdf}};
+  \node[anchor=north west, inner sep=0pt]
+    at (269\dthreeunit,\textheight-15\dthreeunit) {\usebox{\dthree@hdrbox}};
+}
+
+\newcommand{\dthree@drawfooter}{%
+  \draw[d3-navy, line width=0.7\dthreeunit]
+    (0pt,-12.5\dthreeunit) -- (\textwidth,-12.5\dthreeunit);
+  \node[anchor=north west, inner sep=0pt]
+    at (0pt,-31.7\dthreeunit) {\usebox{\dthree@logobox}};
+  \ifx\dthree@refs\@empty\else
+    \dthree@makerefs
+    \node[anchor=north west, inner sep=0pt]
+      at (0.5\textwidth+7.1\dthreeunit,-20\dthreeunit) {\usebox{\dthree@refbox}};
+  \fi
+}
+
+% Wrap baposter's poster environment: same five arguments as before.
+%   #1 options, #2 eye catcher (ignored: the university logo takes its place),
+%   #3 title, #4 authors, #5 footer logo row (\dthreelogos).
+\let\dthree@baposter@begin\poster
+\let\dthree@baposter@end\endposter
+% baposter cancels the paragraph indent with \hspace{-1.5em}; keep both equal
+% for any body font (the Helvetica clone's em is not 10pt).
+\AtBeginDocument{\setlength{\parindent}{1.5em}}
+\renewenvironment{poster}[5]{%
+  \gdef\dthree@title{#3}%
+  \gdef\dthree@authors{#4}%
+  \gdef\dthree@logos{#5}%
+  \dthree@makeheader
+  % baposter's own title cell stays empty. Its eye-catcher branch centres the
+  % (empty) title, which avoids an underfull-box warning from the other branch.
+  \dthree@baposter@begin{#1,eyecatcher=true}{}{\mbox{}}{}{}%
+  \dthree@drawheader
+}{%
+  \dthree@drawfooter
+  \dthree@baposter@end
+}
+
+% ====================
+% Highlight macros (same semantics as d3-abstract)
 % ====================
 \providecommand{\highlight}[1]{{\color{d3-orange}\textbf{#1}}}
 
 \providecommand{\keypoint}[1]{%
   \begin{tikzpicture}
-    \node[fill=d3-navy!8, inner sep=10pt, text width=\linewidth-24pt] (kp) {%
+    \node[fill=d3-lightblue!45, inner sep=10pt, text width=\linewidth-24pt] (kp) {%
       {\color{d3-navy}\sffamily #1}%
     };
     \draw[d3-navy, line width=3pt] (kp.north west) -- (kp.south west);
   \end{tikzpicture}%
 }
 
+% Navy SemiBold subheading inside a box (the template's 28 pt titles).
+\providecommand{\subheading}[1]{%
+  \par\smallskip{\titlefont\large\color{d3-navy}#1\par}\nobreak\smallskip}
+
 % ====================
-% TikZ Card / Infobox Styles
+% TikZ card / infobox styles
 % Same names as d3-abstract for cross-skill consistency.
 % ====================
 \tikzset{
   card/.style={fill=d3-lightblue, inner sep=10pt},
   card gray/.style={fill=black!4, inner sep=10pt},
+  card sand/.style={fill=d3-sand, inner sep=10pt},
   card highlight/.style={fill=d3-navy!8, inner sep=12pt},
   card alert/.style={
     fill=d3-orange!8,
+    inner sep=10pt,
+    append after command={
+      (\tikzlastnode.north west) edge[line width=4pt, d3-orange] (\tikzlastnode.south west)
+    }
+  },
+  takeaway/.style={
+    fill=d3-sand,
     inner sep=10pt,
     append after command={
       (\tikzlastnode.north west) edge[line width=4pt, d3-orange] (\tikzlastnode.south west)
@@ -155,32 +514,6 @@
     }
   },
   tag/.style={fill=d3-navy!10, inner sep=4pt, font=\small},
-}
-
-% ====================
-% D3 Title Logo Macro
-% Drop into the {Logo} cell of \begin{poster}{...}{eyecatcher}{title}{authors}{logo}.
-% Renders WUE logo (left) and DataDrivenDecisions logo (right) at poster scale.
-% ====================
-% baposter reserves a fixed-width cell for the logo. We render the two D3
-% logos side-by-side, bottom-aligned with the author/affiliation line, so they
-% don't overpower the title or push the title text down. Use minipage[b] to
-% anchor the baseline at the bottom of the logo cell, matching where the
-% author block sits in the title cell.
-\newcommand{\dthreelogos}{%
-  \begin{minipage}[b]{20.0em}%
-    \raggedleft
-    \includegraphics[height=3em]{logo-wue.pdf}\hspace{0.6em}%
-    \includegraphics[height=3em]{logo-d3.pdf}%
-  \end{minipage}%
-}
-
-% Convenience: a single-logo variant if the user prefers WUE only.
-\newcommand{\dthreelogowue}{%
-  \begin{minipage}[b]{20.0em}%
-    \raggedleft
-    \includegraphics[height=3.5em]{logo-wue.pdf}%
-  \end{minipage}%
 }
 
 \endinput

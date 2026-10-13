@@ -113,7 +113,7 @@ The `above=-2pt of ... .north west, anchor=west` is what tucks the badges into t
 ## General TikZ-figure rules
 
 1. **One figure per box maximum.** If you find yourself needing two TikZ figures in one `\headerbox`, the box is overloaded.
-2. **Use only d3-navy, d3-orange, d3-gray (and their tints).** No rainbow palettes. Tints via `!N` syntax (e.g., `d3-navy!10`).
+2. **Use only d3-navy, d3-orange, d3-gray (and their tints).** If a figure needs more series, continue with d3-blue, d3-teal, d3-yellow, d3-berry in this order. No rainbow palettes. Tints via `!N` syntax (e.g., `d3-navy!10`).
 3. **Sans-serif inside figures.** Add `every node/.style={font=\sffamily\small}` (or `\footnotesize`) at the top of every `tikzpicture`.
 4. **Arrows: `-{Stealth[length=3mm or 4mm]}`** — arrows.meta gives consistent arrowheads. Avoid `->` (default is too thin).
 5. **Borders: `line width=0.8pt` for nested, `1pt` for outer.** Thicker looks heavy at A0; thinner disappears at print.

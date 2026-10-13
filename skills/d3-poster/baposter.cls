@@ -303,8 +303,8 @@
 
 % [D3 patch 2026-05-14] Removed the hard-coded Calibri/Consolas fontspec block
 % from the upstream vendored copy: Calibri is proprietary (not redistributable),
-% and the d3-poster.sty wrapper handles fonts (Inter via fontspec on XeLaTeX/
-% LuaLaTeX, TeX Gyre Heros on pdfLaTeX). Math stays in Latin Modern via
+% and the d3-poster.sty wrapper handles fonts (Inclusive Sans UW via fontspec
+% on XeLaTeX/LuaLaTeX, a Helvetica clone on pdfLaTeX). Math stays in Latin Modern via
 % lmodern+sfmath above.
 \usepackage{bm}
 \usepackage{bbm}

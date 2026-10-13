@@ -66,10 +66,10 @@ Score each category 0-10. Be honest.
 
 Categories:
 1. Layout -- 2- or 3-column grid, no content clipping at box edges, balanced box heights?
-2. Header -- both logos render, title fully visible, no overlap with logo cell?
-3. Box headers -- white text on d3-navy fill, consistent height across boxes?
-4. Colors -- d3-navy for headers, d3-orange ONLY for highlights, no rogue colors (red/blue/green/random hex)?
-5. Font -- Inter renders throughout (not a fallback serif)?
+2. Header & footer -- navy header box with the white university logo, title and authors fully inside, blue seal flush with the box's right and bottom edges; footer with navy rule, D3 logo first in the logo row, references inside the right half?
+3. Box headers -- navy SemiBold text on #ECECEC bars (cornflower with white text only where `emphasis` is set), consistent height across boxes?
+4. Colors -- D3 palette only (navy structure, d3-orange ONLY for highlights and alerts), no rogue colors (red/blue/green/random hex)?
+5. Font -- Inclusive Sans UW renders throughout (not a fallback), no missing Greek letters or symbols?
 6. TikZ elements -- infoboxes, cards, placeholders fit inside parent boxes?
 7. Tables -- aligned, booktabs rules render, no overfull hbox visible?
 8. Whitespace -- no large empty regions, no cramped boxes?
@@ -80,7 +80,7 @@ Output strictly in this Markdown format:
 | Category | Score | Notes |
 |---|---|---|
 | Layout | N/10 | ... |
-| Header | N/10 | ... |
+| Header & footer | N/10 | ... |
 | Box headers | N/10 | ... |
 | Colors | N/10 | ... |
 | Font | N/10 | ... |

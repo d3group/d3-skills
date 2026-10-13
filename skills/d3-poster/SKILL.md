@@ -15,7 +15,9 @@ description: |
 
 > **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-poster`; copied by hand: `~/.claude/skills/d3-poster`). Substitute the real path in every command. `<wording-dir>` means `<skill-dir>/../d3-scientific-wording`, the shared wording skill that every D3 plugin ships.
 
-Create professional A0-portrait research posters with D3 (Data Driven Decisions) and University of Würzburg branding. Builds on the `baposter` class for a grid layout, with a thin D3 reskin (`d3-poster.sty`) that overrides the brand color, adds the D3 logo, and ports the `\highlight` / `\keypoint` / `infobox` / `card` macros from `d3-abstract`. **Compiles with XeLaTeX or LuaLaTeX for Inter font; falls back to pdfLaTeX with Helvetica clone.**
+Create professional A0-portrait research posters with D3 (Data Driven Decisions) and University of Würzburg branding in the university's 2025 corporate design. Builds on the `baposter` class for a grid layout, with a thin D3 reskin (`d3-poster.sty`) that draws the frame of the university poster template (navy header box with the white university logo, white title and authors, and the blue seal; grey section bars with navy text; a footer with a navy rule, a logo row with the D3 logo first, and a references slot), sets the D3 palette (university navy, D3 orange accent), and ports the `\highlight` / `\keypoint` / `infobox` / `card` macros from `d3-abstract`. **Compiles with XeLaTeX or LuaLaTeX for the house font Inclusive Sans UW; falls back to pdfLaTeX with a Helvetica clone.**
+
+The seal in the header is an interim choice: the university's CD booklet replaces it with a faculty ornament in faculty and chair communication, and that faculty package is not released yet. Swap `uw-seal-blue.pdf` once it is.
 
 ## Reference files (loaded on demand)
 
@@ -25,7 +27,7 @@ The skill body below is the workflow; long reference material lives in `referenc
 |---|---|
 | `references/extraction.md` | About to extract content from a paper (any tier). Has the tier-by-tier extraction commands, PDF figure extraction (vector-first), low-res raster protocol, on-disk format priority, architecture-figure interview. |
 | `references/tikz-recipes.md` | About to draw a figure from scratch in TikZ. Has 4 verified-compiling recipes (block diagram, pipeline, layered architecture, comparison) plus general TikZ rules. |
-| `references/error-handling.md` | Compile errors or visible rendering bugs. Has the 6 known issues (missing class, missing fonts, siunitx `\d` conflict, headershade case bug, Calibri error, silent clipping). |
+| `references/error-handling.md` | Compile errors or visible rendering bugs. Has the 8 known issues (missing class, missing fonts, siunitx `\d` conflict, headershade case bug, Calibri error, silent clipping, vanished Greek letters or symbols, title block set smaller). |
 | `references/dual-agent-review.md` | Review depth is `standard` or `full` (see Review). Has the reviewer prompts, the iteration loop for `full` (capped at 4 rounds), score-to-README protocol. |
 | `references/macros-and-styling.md` | Writing the poster body and need to confirm macro names, color values, font sizes, table conventions. |
 
@@ -39,8 +41,8 @@ The skill body below is the workflow; long reference material lives in `referenc
 ├── references/                 # progressive-disclosure references (see table above)
 └── assets/                     # this entire folder IS copied into user projects
     ├── d3-poster.sty
-    ├── logos/                  # logo-wue.pdf, DataDrivenDecisions.png, seal-wue.png, logo-uni.pdf
-    └── fonts/                  # Inter_18pt-{Regular,Bold,Italic,BoldItalic,SemiBold}.ttf, OFL.txt
+    ├── logos/                  # uw-logo-white.pdf, uw-logo-navy.pdf, uw-seal-blue.pdf, logo-d3.pdf, DataDrivenDecisions.png
+    └── fonts/                  # InclusiveSansUW-{Regular,Italic,Medium,SemiBold,Bold}.ttf, OFL-InclusiveSansUW.txt
 ```
 
 **Two placement rules:**
@@ -108,7 +110,7 @@ cp -r <skill-dir>/assets       "$POSTER_DIR/drafts/assets"
 
 **Naming rule (critical for Overleaf):** the working file is always `poster.tex`, producing `poster.pdf`. Stem matches. Versioning uses git, not filename prefixes — no `v1_poster.tex`, no `YYYYMMDD_title.tex`. A previous version of this skill used such prefixes; in practice it confused Overleaf uploads (the user would set `v2_poster.tex` as main doc, but the cached `v1_poster.pdf` next to it made it unclear which was the real output).
 
-**Why duplicate `baposter.cls` + `assets/` in both `drafts/` and `final/`?** ~1.5 MB per copy, but it guarantees each folder is **independently uploadable to Overleaf** — a collaborator opening `final/` doesn't need anything from `drafts/`.
+**Why duplicate `baposter.cls` + `assets/` in both `drafts/` and `final/`?** ~1 MB per copy, but it guarantees each folder is **independently uploadable to Overleaf** — a collaborator opening `final/` doesn't need anything from `drafts/`.
 
 ## Document skeleton
 
@@ -135,33 +137,37 @@ Every poster MUST start with this structure:
 \begin{poster}{
   columns=2,                     % DEFAULT 2. Use 3 ONLY when content truly justifies it.
   grid=false,
-  borderColor=uniblue,           % uniblue is remapped to d3-navy by d3-poster.sty
-  headerColorOne=uniblue,
-  headerColorTwo=uniblue,
-  headerFontColor=white,
-  headerheight=11em,
-  boxColorOne=white,
-  boxpadding=1em,
-  headershape=rectangle,
-  headershade=plain,             % REQUIRED: baposter's default `shadeLR` is case-incorrect and leaves
-                                 % header backgrounds unfilled. See references/error-handling.md #4.
-  headerfont=\Large\sffamily\bfseries,
-  textborder=none,
+  eyecatcher=false,
+  % University frame from d3-poster.sty: 25 mm margins, navy header box,
+  % footer with logo row and references. These two lengths fit the template.
+  headerheight=\dthreeheaderheight,
+  colspacing=\dthreecolspacing,
   background=plain,
   bgColorOne=white,
   bgColorTwo=white,
-  headerborder=open,
+  % Section bars: #ECECEC with navy SemiBold text. Per box, the key
+  % `emphasis` gives the cornflower bar with white text.
+  borderColor=d3-headergray,
+  headerColorOne=d3-headergray,
+  headerColorTwo=d3-headergray,
+  headerFontColor=d3-navy,
+  headerfont=\dthreesectionfont,
+  headershape=rectangle,
+  headershade=plain,             % REQUIRED: baposter's default `shadeLR` is case-incorrect and leaves
+                                 % header backgrounds unfilled. See references/error-handling.md #4.
+  headerborder=none,
+  boxColorOne=white,
   boxshade=plain,
-  eyecatcher=false
+  boxpadding=0.6em,
+  textborder=none
 }
-%%% Eye Catcher (empty) %%%
+%%% Eye Catcher (empty; the university logo takes this place) %%%
 {}
-%%% Title -- single line, large, ragged-right.  No subtitle by default.
-{\sffamily\bfseries\Huge\raggedright Your Poster Title}
-%%% Authors -- one line; logo cell sits next to this line.
-{\vspace{0.6em}
-  Author Name, Data Driven Decisions Group\enspace|\enspace author@uni-wuerzburg.de}
-%%% Logos (bottom-right, aligned with author line)
+%%% Title -- plain text; set white Bold in the navy header box. No subtitle by default.
+{Your Poster Title}
+%%% Authors -- one line, white, below the title.
+{Author Name, Data Driven Decisions Group\enspace|\enspace author@uni-wuerzburg.de}
+%%% Footer logo row: D3 logo in the first cell
 {\dthreelogos}
 
 %%% Motivation (column 0, row 0)
@@ -181,10 +187,14 @@ Every poster MUST start with this structure:
   Methodology. End with the method-overview figure (no caption needed -- describe in body text).
 }
 
-%%% Results + inline Literature (column 1, fills to bottom)
+%%% Results (column 1, fills to bottom)
 \headerbox{Empirical Results}{name=Results,column=1,below=Approach,above=bottom}{
   Infoboxes with metrics + a booktabs comparison table.
-  End with an inline Literature paragraph (3 references, no separate box).
+}
+
+%%% Literature -- footer references slot (3 references, no separate box)
+\dthreereferences{
+  Author1 (Year, \textit{Venue}); Author2 (Year, \textit{Venue}); Author3 (Year, \textit{Venue}).
 }
 
 \end{poster}
@@ -192,6 +202,13 @@ Every poster MUST start with this structure:
 ```
 
 **CRITICAL:** Use `\usepackage{assets/d3-poster}` (with `assets/` prefix) — the wrapper expects to be loaded from a project root that has `assets/d3-poster.sty` and a sibling `baposter.cls`.
+
+**What `d3-poster.sty` draws** (from the university's A0 poster template; geometry scales with the paper, so A1 and other sizes keep the proportions):
+
+- 25 mm margins. Navy header box across the full width, 119 mm high, with the white university logo top left, the title (white Bold, about 59 pt on A0) and the authors (white, 34 pt) in the template's text field, and the blue seal flush with the box's right and bottom edges.
+- Section bars about 24 mm high: `#ECECEC` with navy SemiBold text. Add `emphasis` to a box's keys for the template's second style, a cornflower bar with white text.
+- Footer below the columns: a navy rule; on the left a logo row of 72 × 39 mm cells filled from the 5th argument of `\begin{poster}` (`\dthreelogos` = D3 logo first, `\dthreelogocell{file.pdf}` adds a partner logo, at most five); on the right the References slot (`\dthreereferences{...}`).
+- Earlier posters still compile: their option block keeps the old look of the bars, the header and footer are drawn anyway, and `\dthreelogos` now fills the footer logo row instead of the header.
 
 ## Box positioning, columns, title
 
@@ -202,19 +219,23 @@ Use `columns=2` by default. Use `columns=3` ONLY when:
 - The paper has 5+ truly distinct content sections that can't be combined (rare)
 - The user explicitly requests it for a venue that expects it
 
-In 2-column layout, **fold the Literature into the bottom of the Results box** (as a short paragraph, e.g., "**Literature.** Author1 (Year, *Venue*); Author2 (Year, *Venue*); ..."). Avoids the cramped boxes that 3-column tends to produce at A0 portrait.
+In every layout, **put the Literature into the footer's References slot** with `\dthreereferences{...}` (a short list, e.g., "Author1 (Year, *Venue*); Author2 (Year, *Venue*); ..."), not into a box. The university template reserves the right half of the footer for it, and it avoids the cramped Literature box that 3-column tends to produce at A0 portrait. 3-5 short references fit; a longer block is set smaller and the log says so.
 
 ### Default 2-column grid
 
 ```
++-----------------------------------------------+
+| [uni logo]  Title, authors (white)     [seal] |  navy header box
 +-----------------------+-----------------------+
 | Motivation            | Approach              |
 | (col 0, top)          | (col 1, top)          |
 +-----------------------+-----------------------+
 | Problem               | Empirical Results     |
-| (col 0, fills to      | + inline Literature   |
-|  bottom)              | (col 1, fills to      |
-|                       |  bottom)              |
+| (col 0, fills to      | (col 1, fills to      |
+|  bottom)              |  bottom)              |
++-----------------------+-----------------------+
+| -------------------- navy rule -------------- |
+| [D3 logo] [partner]   | References            |  footer
 +-----------------------+-----------------------+
 ```
 
@@ -224,10 +245,11 @@ In 2-column layout, **fold the Literature into the bottom of the Results box** (
 +---------------+---------------+---------------+
 | Motivation    | Approach      | Empirical     |
 | (col 0)       | (col 1,       | Results       |
-+---------------+  full height) | (col 2)       |
-| Problem       |               +---------------+
-| (col 0)       |               | Literature    |
-|               |               | (col 2)       |
++---------------+  full height) | (col 2,       |
+| Problem       |               |  full height) |
+| (col 0)       |               |               |
++---------------+---------------+---------------+
+| footer: logo row (D3 first)   | References    |
 +---------------+---------------+---------------+
 ```
 
@@ -243,11 +265,11 @@ In 2-column layout, **fold the Literature into the bottom of the Results box** (
 | `height=1` | Fill full column height | rarely needed in 2-col |
 | `span=N` | Span N columns | `span=2` (full-width banner) |
 
-### Title — large, single-line, no subtitle by default
+### Title — in the navy header box, no subtitle by default
 
-Title uses `\sffamily\bfseries\Huge\raggedright` (see `example-poster.tex`). Larger than upstream baposter because the D3 brand prioritises a readable hook. Keep titles short enough to fit on 1-2 visual lines at A0 width.
+Pass the title as plain text (see `example-poster.tex`): `d3-poster.sty` sets it white, Bold and ragged-right in the template's text field between the university logo and the seal (425 mm wide on A0, about 59 pt). Keep titles short enough to fit on 1-2 lines. A title block that does not fit the header box is set smaller and the log shows `d3-poster Warning: The title block was set at ...`; shorten the title instead of accepting that.
 
-**Subtitle: do NOT add one by default.** Single-line punchy title is the default. Add a subtitle only if the user asks; see `references/macros-and-styling.md` for the syntax.
+**Subtitle: do NOT add one by default.** Single-line punchy title is the default. Add a subtitle only if the user asks; see `references/macros-and-styling.md` for the syntax (`\dthreesubtitle{...}`).
 
 ## Paper / repo scanning workflow
 
@@ -270,7 +292,7 @@ Print `[HH:MM:SS] INPUT TIER: <X> -- <one-line description>` so the user can con
 
 Load `references/extraction.md` for the tier-specific commands. Summary:
 
-- **Tier A/B:** parse the .tex source — the extraction-mapping table maps `\section{...}` → poster boxes, `\begin{table}` → booktabs tables, `\includegraphics{...}` → figure inventory, `references.bib` → Literature paragraph.
+- **Tier A/B:** parse the .tex source — the extraction-mapping table maps `\section{...}` → poster boxes, `\begin{table}` → booktabs tables, `\includegraphics{...}` → figure inventory, `references.bib` → footer References slot.
 - **Tier C:** dump PDF text via `uv run --with pymupdf`; for figures, prefer the **PDF-page-crop approach** (vector-preserving) before falling back to raster embedding extraction or full-page high-DPI render.
 - **Tier D (.docx):** dump text and images via `uv run --with python-docx`.
 - **Tier D' (no file):** skip extraction; interview the user with the structured prompt template in `references/extraction.md`.
@@ -307,7 +329,7 @@ Paper found: paper/manuscript.tex
 - Sections: Intro -> Motivation; Setup -> Problem; Method -> Approach; Results -> Empirical Results
 - Figures inventoried: 6 in figures/ (top candidates: regret-vs-n.pdf, method-overview.pdf)
 - Tables inventoried: 2 in paper/ (main_comparison.tex looks like the headline)
-- Bib hits: 47 references; will narrow to 3-5 for the Literature paragraph
+- Bib hits: 47 references; will narrow to 3-5 for the footer References slot
 
 Want to use this as the seed, or override anything?
 ```
@@ -344,7 +366,7 @@ Three passes. Never skip a pass.
 
 1. If a paper was scanned, use the extracted content as primary input.
 2. If a knowledge brief exists, layer it in.
-3. Draft a bullet-point outline (Title, Authors, Motivation, Problem, Approach, Results+Literature). For each: what goes in it.
+3. Draft a bullet-point outline (Title, Authors, Motivation, Problem, Approach, Results, Literature in the footer). For each: what goes in it.
 4. Run the **glance test** — title + box headers + headline number must telegraph the contribution at 2m.
 5. Present to user and get approval.
 6. Print: `[HH:MM:SS] OUTLINE: Approved by user`.
@@ -399,7 +421,8 @@ Empirical Results:
   - 2-3 infoboxes (headline metrics)
   - 1 comparison table (booktabs, NeurIPS style)
   - 1-2 sentence conclusion with \highlight{} on the win margin
-  - inline Literature paragraph (3 references)
+Literature (footer References slot):
+  - 3 references
 ```
 
 ### Budget content space (concise by default)
@@ -413,7 +436,8 @@ Default budgets for the 2-column layout:
 | Motivation (col 0, top) | 60-100 words, 1 `\highlight{}`, NO figure |
 | Problem (col 0, bottom) | 80-150 words + 1-2 equations + 1 `\keypoint{}` |
 | Approach (col 1, top) | 100-180 words (2-3 bold-lead paragraphs) + 1 figure |
-| Empirical Results (col 1, bottom) | 30-60 words + 2-3 infoboxes + 1 comparison table + 3-citation Literature paragraph |
+| Empirical Results (col 1, bottom) | 30-60 words + 2-3 infoboxes + 1 comparison table |
+| Footer References slot | 3 short references (authors, year, venue); 5 at most |
 
 If you exceed these by more than ~20%, you are overpacking. Cut sentences before adding line-spacing tweaks.
 
@@ -447,7 +471,7 @@ xelatex -interaction=nonstopmode poster.tex
 xelatex -interaction=nonstopmode poster.tex
 ```
 
-**Engine notes:** XeLaTeX is default (loads Inter via fontspec). LuaLaTeX works the same. pdfLaTeX falls back to TeX Gyre Heros — use only if both Xe and Lua fail.
+**Engine notes:** XeLaTeX is default (loads Inclusive Sans UW via fontspec). LuaLaTeX works the same. pdfLaTeX falls back to a Helvetica clone (`helvet`) — use only if both Xe and Lua fail.
 
 ### Step 1b: Overleaf fallback (only if local fails AND submodule path is available)
 
@@ -500,7 +524,7 @@ doc.close()
 
 **Note on uv:** this skill uses `uv run --with <pkg>` for all Python — never install packages globally.
 
-Inspect each PNG with the Read tool. Check for: content clipping, header rendering, box headers (white on d3-navy), font (Inter not fallback), colors (d3-navy / d3-orange / d3-gray only), TikZ and figures fit inside parent boxes.
+Inspect each PNG with the Read tool. Check for: content clipping; header (navy box, white university logo, title and authors fully inside, blue seal flush with the box's right and bottom edges); section bars (`#ECECEC` with navy text, cornflower with white text only where `emphasis` is set); footer (navy rule, D3 logo first in the logo row, references inside the right half); font (Inclusive Sans UW, not a fallback); colors (D3 palette only, d3-orange only for highlights and alerts); TikZ and figures fit inside parent boxes.
 
 ### Step 3: Check compilation warnings
 
@@ -508,7 +532,7 @@ Inspect each PNG with the Read tool. Check for: content clipping, header renderi
 grep -c "Overfull\|Warning" poster.log
 ```
 
-A handful of underfull-hbox warnings is expected. Investigate `Overfull \hbox` exceeding 50pt (content too wide), `Font ... not found` (use XeLaTeX), or `File ... not found` (missing logo / figure / baposter.cls).
+A handful of underfull-hbox warnings is expected. Investigate `Overfull \hbox` exceeding 50pt (content too wide), `Font ... not found` (use XeLaTeX), `File ... not found` (missing logo / figure / baposter.cls), and `d3-poster Warning: The title block was set at ...` or `The references block ...` (shorten that text). Also run `grep "Missing character" poster.log | grep -v nullfont`: any hit is a character Inclusive Sans UW lacks (see `references/error-handling.md` #7). The `;` lines in `nullfont` come from `baposter.cls` and are harmless.
 
 ### Step 4: Lint the wording
 
@@ -538,7 +562,7 @@ baposter does NOT push overflow to a new page like the article class — **it si
 - [ ] No box body content clipped at its bottom edge
 - [ ] No infobox/card/figure overflows its parent box
 - [ ] All `\keypoint{}` callouts fully render
-- [ ] Author line fully visible (not truncated by logo cell)
+- [ ] Title and author lines fully inside the navy header box (no "set at ... of its normal size" warning)
 - [ ] No "Overfull \hbox" warnings > 50pt in the .log
 
 ### If clipping detected
@@ -596,26 +620,30 @@ The most-used macros for a typical poster. See `references/macros-and-styling.md
 
 | Macro | Use |
 |---|---|
-| `\dthreelogos` | WUE + DataDrivenDecisions logos, bottom-aligned in the header logo cell |
+| `\dthreelogos` | D3 logo in the first cell of the footer logo row (5th argument of `\begin{poster}`); the university logo is always in the header |
+| `\dthreelogocell{file}` | One more logo cell in the footer row (partner or funder logo), after `\dthreelogos` |
+| `\dthreereferences{...}` | Footer References slot (right half): 3-5 short references |
 | `\highlight{text}` | Inline d3-orange bold; 2-3 per box max |
 | `\keypoint{text}` | d3-navy tinted callout box with left accent; 1 per box max |
 | `\headerbox{Title}{keys}{content}` | Primary content box (baposter built-in) |
 | `\hhrule` | Horizontal d3-navy rule (separator inside a box) |
 
-TikZ styles available inside `tikzpicture`: `card`, `card gray`, `card highlight`, `card alert`, `infobox`, `tag`.
+TikZ styles available inside `tikzpicture`: `card`, `card gray`, `card sand`, `card highlight`, `card alert`, `takeaway`, `infobox`, `tag`. Box key: `emphasis` (cornflower section bar with white text).
 
-D3 colors (use ONLY these): `d3-navy`, `d3-orange`, `d3-gray`, `d3-lightblue`, `d3-darkblue`. Never `red`/`blue`/`green` or arbitrary hex codes.
+D3 colors (use ONLY these): `d3-navy` (#02246C, university navy), `d3-orange` (#F29100, D3 accent), `d3-gray`, `d3-lightblue`, `d3-darkblue`, plus `d3-blue`, `d3-sky`, `d3-sand`, `d3-teal`, `d3-yellow`, `d3-berry`, `d3-hairline`, `d3-headergray` (full table in `references/macros-and-styling.md`). Never `red`/`blue`/`green` or arbitrary hex codes.
 
 ## Error handling
 
 Load `references/error-handling.md` when a compile error or rendering issue appears. Known issues:
 
 1. **Class file not found** — `baposter.cls` must sit next to `poster.tex`, not under `assets/`.
-2. **Font not found (Inter)** — use XeLaTeX, verify `assets/fonts/` exists.
+2. **Font not found (Inclusive Sans UW)** — use XeLaTeX, verify `assets/fonts/` exists.
 3. **`\d` already defined (siunitx conflict)** — d3-poster.sty does `\let\d\relax` before loading siunitx; outdated .sty means recopy.
 4. **Header backgrounds rendered without fill** — the baposter `headershade` case bug. Set `headershade=plain` explicitly (already in Document Skeleton).
 5. **Calibri font error** — using unpatched upstream baposter.cls. Use the vendored copy at the skill root.
 6. **Box content clipped (no LaTeX error)** — baposter silently clips overflow. See Overflow & clipping above.
+7. **Greek letters or symbols vanish** — Inclusive Sans UW has no Greek and lacks ≤ ≥ ≈ ≠ ∞ √ ∈ ∑ ∫ ∂ ⇒ ′ ″ ✓; `d3-poster.sty` maps these to math mode. Other missing glyphs: write them in math mode.
+8. **Title or references set smaller** — the block did not fit its slot; shorten it.
 
 ## Quality checklist
 
@@ -636,13 +664,13 @@ Before marking a poster complete:
 
 **Content**
 - [ ] Column count confirmed with user (default 2)
-- [ ] Title is `\Huge\raggedright`, single line, no subtitle (unless user asked)
-- [ ] Author block is one short line; logos bottom-aligned next to it
+- [ ] Title passed as plain text (white Bold in the header box), 1-2 lines, no subtitle (unless user asked)
+- [ ] Author block is one short line below the title; D3 logo first in the footer logo row (`\dthreelogos`)
 - [ ] Motivation: 60-100 words with 1 `\highlight{}`, NO figure
 - [ ] Problem: 1-2 equations + 1 `\keypoint{}`
 - [ ] Approach: 100-180 words + 1 figure (no caption)
-- [ ] Empirical Results: 2-3 infoboxes + comparison table + inline Literature
-- [ ] No standalone Literature box (folded into Results bottom)
+- [ ] Empirical Results: 2-3 infoboxes + comparison table
+- [ ] Literature in the footer References slot (`\dthreereferences`), no standalone Literature box
 - [ ] Figures have NO captions unless user explicitly asked
 - [ ] Each box has at most 1-2 figures
 - [ ] `\highlight{}` ≤ 3 per box; `\keypoint{}` ≤ 1 per box
@@ -654,9 +682,10 @@ Before marking a poster complete:
 **Visual validation**
 - [ ] PDF rendered to PNG and inspected
 - [ ] No box content clipped at any edge
-- [ ] Header: both logos render, title fully visible
-- [ ] Inter font renders correctly (not fallback serif)
-- [ ] Colors: d3-navy for box headers, d3-orange for highlights only
+- [ ] Header: navy box, white university logo, title fully visible, blue seal flush with the box's right and bottom edges
+- [ ] Footer: navy rule, D3 logo first in the logo row, references inside the right half
+- [ ] Inclusive Sans UW renders correctly (not a fallback); no missing Greek letters or symbols
+- [ ] Colors: section bars `#ECECEC` with navy text (cornflower only for `emphasis`), d3-orange for highlights only
 - [ ] All figures and tables fit within parent boxes
 - [ ] No "Overfull \hbox" warnings > 50pt
 
@@ -677,7 +706,7 @@ Before marking a poster complete:
 - **Figure preference** — which 1-2 figures from the paper to feature
 - **Architecture figure** — if detected: use-as-is / simplify / replace / skip (see `references/extraction.md` §8)
 - **Captions on figures** — off by default; ask only if mentioned (e.g., venue requirement)
-- **Bibliography filtering** — which 3-5 references to feature in the Literature paragraph
+- **Bibliography filtering** — which 3-5 references to feature in the footer References slot
 - **Knowledge enrichment** — vault recall / NotebookLM / both / skip (only when the request is high-level)
 - **Review depth** — do not ask; use `standard` unless the user's words pick `light` or `full`, and say which one runs
 - **Wording mode** — standard scientific wording (default) or Simplified Technical English; asked with the outline approval
