@@ -62,6 +62,16 @@
       "skills": [
         "./skills/d3-scientific-wording"
       ]
+    },
+    {
+      "name": "d3-marimo",
+      "version": "0.1.0",
+      "description": "Interactive teaching apps as marimo notebooks that run in the browser (WASM) on the chair website, in the University of Würzburg look",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/d3-marimo"
+      ]
     }
   ]
 }
