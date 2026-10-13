@@ -904,6 +904,7 @@ body.reveal-hide .k-brow.gh .k-blab,body.reveal-hide .k-brow.gh .k-btrack{opacit
 .k-lfig{position:relative;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;align-content:start}
 .k-lfig canvas{display:block;border-radius:6px;background:var(--navy-5)}
 .k-rack{display:grid;gap:16px;align-content:start}
+body.look-uni .k-rack{gap:10px}   /* the uni body box is shorter; keep the last row of controls clear of its edge */
 .k-ctl{display:grid;gap:6px}
 .k-ctop{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .k-cval{font-size:var(--k-md);font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
