@@ -1,6 +1,6 @@
 # Macros & Styling Reference
 
-Full inventory of macros exported by `d3-poster.sty`, the university frame it draws, the D3 color palette (2025 University of Würzburg corporate design), font sizing conventions, and table/figure formatting rules. Load this file once when you start writing the poster body and want to confirm a macro name or value. SKILL.md has a short pointer with the most-used macros.
+Full inventory of macros exported by `d3-poster.sty`, the university frame it draws, the D3 color palette (2026 University of Würzburg corporate design), font sizing conventions, and table/figure formatting rules. Load this file once when you start writing the poster body and want to confirm a macro name or value. SKILL.md has a short pointer with the most-used macros.
 
 ## Macros exported by d3-poster.sty
 
@@ -13,12 +13,12 @@ Full inventory of macros exported by `d3-poster.sty`, the university frame it dr
 | Margins | 25 mm | set by the .sty (overrides the class `margin` option) |
 | Header box | full width, 119 mm high, `d3-navy` | `headerheight=\dthreeheaderheight` (139 mm: box + 20 mm gap) |
 | University logo | white, 135 mm wide, 15 mm from the box's top-left corner | `uw-logo-white.pdf` |
-| Title + authors | text field from x = 294 mm (269 mm into the box), 425 mm wide, top-aligned with the logo | white; title Bold (`\dthreetitlefont`, ~59 pt), authors Regular (`\dthreeauthorfont`, 34 pt) |
+| Title + authors | text field from x = 294 mm (269 mm into the box), 425 mm wide, top-aligned with the logo | white; title Bold (`\dthreetitlefont`, 50 pt), authors Regular (`\dthreeauthorfont`, 34 pt) |
 | Seal | blue, 93 × 93 mm, flush with the box's right and bottom edges | `uw-seal-blue.pdf` (a corner crop). Interim: the CD booklet replaces it with a faculty ornament once the faculty package is released |
 | Section bars | box width, 2em (~24 mm) high | `#ECECEC` (`d3-headergray`), navy SemiBold text (`\dthreesectionfont`); key `emphasis` = `d3-blue` bar, white text |
 | Column gap | 14.2 mm | `colspacing=\dthreecolspacing` |
 | Footer rule | navy, 0.7 mm, 12.5 mm below the columns | content ends at y = 1095 mm (94 mm bottom margin) |
-| Logo row | cells 72 × 39 mm, 7.1 mm apart, from the left margin | 5th argument of `\begin{poster}`; at most five cells |
+| Logo row | cells 72 × 39 mm, 7.1 mm apart, from the left margin | 5th argument of `\begin{poster}`; five cells, the D3 logo takes the first two |
 | References | right half (x = 428 mm), heading `\dthreereferencesname` in navy | `\dthreereferences{...}`; 24 pt text |
 
 If the title block or the references block does not fit its slot, the .sty sets it smaller (font size in steps down to 60 %, then scaling) and writes `d3-poster Warning: ... was set at <factor> of its normal size`. Shorten the text instead of accepting a small title.
@@ -26,7 +26,7 @@ If the title block or the references block does not fit its slot, the .sty sets 
 ### Header and footer macros
 
 - `\begin{poster}{options}{eyecatcher}{title}{authors}{logos}` — title and authors are plain text; the .sty sets them in the header box. The eye-catcher argument is ignored (the university logo takes its place). The logos argument fills the footer logo row.
-- `\dthreelogos` — the D3 logo in the first cell of the footer logo row. Before the 2025 design it placed the old university logo and the D3 logo in the header; the university logo now always sits in the header box.
+- `\dthreelogos` — the D3 logo across the first two cells of the footer logo row (about 30 mm high on A0). Before the 2026 design it placed the old university logo and the D3 logo in the header; the university logo now always sits in the header box.
 - `\dthreelogowue` — "university logo only": leaves the footer logo row empty (kept for older posters).
 - `\dthreelogocell[<includegraphics options>]{file}` — one more logo cell (partner, funder), placed after `\dthreelogos`: `{\dthreelogos\dthreelogocell{partner-logo.pdf}}`.
 - `\dthreereferences{...}` — the footer References slot; use in the preamble or anywhere inside the poster environment. Plain text, 3-5 short references. Rename the heading with `\renewcommand{\dthreereferencesname}{Literatur}`.
@@ -126,7 +126,7 @@ Never use rainbow palettes. Our methods must be identifiable at 2m.
 
 ## Color palette
 
-The 2025 University of Würzburg corporate design with the D3 orange as accent (the university's coral is not used next to it). Use ONLY these colors:
+The 2026 University of Würzburg corporate design with the D3 orange as accent (the university's coral is not used next to it). Use ONLY these colors:
 
 | Color | Value | Usage |
 |---|---|---|
@@ -168,7 +168,7 @@ If text doesn't fit, **shorten the text** — don't decrease font sizes.
 
 ## Title / subtitle
 
-**Title:** plain text in the title argument. The .sty sets it white, Bold, ragged-right in the navy header box (about 59 pt on A0, 425 mm text field). Keep titles short enough to fit on one or two lines — if a title needs three lines, shorten it. Size commands such as `\Huge` from older posters still work; the block is then scaled to fit the header box.
+**Title:** plain text in the title argument. The .sty sets it white, Bold, ragged-right in the navy header box (50 pt on A0 as in the template, 425 mm text field). Keep titles short enough to fit on one or two lines — if a title needs three lines, shorten it. Size commands such as `\Huge` from older posters still work; the block is then scaled to fit the header box.
 
 **Subtitle: do NOT add one by default.** Single-line punchy title is the default. If the user explicitly asks for a subtitle, add it with `\dthreesubtitle{}` inside the title argument (white, italic, author size):
 

@@ -1,5 +1,5 @@
 % d3-poster.sty
-% D3-branded reskin for the baposter class in the 2025 corporate design of the
+% D3-branded reskin for the baposter class in the 2026 corporate design of the
 % University of Wuerzburg (A0 template "Wissenschaftliches Poster").
 %
 %   * Palette: university navy #02246C (d3-navy); D3 orange #F29100 stays the
@@ -30,7 +30,7 @@
 % ornament in faculty and chair communication once that package is released.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{d3-poster}[2026/10/13 D3 Poster Reskin for baposter (UWue CD 2025)]
+\ProvidesPackage{d3-poster}[2026/10/13 D3 Poster Reskin for baposter (UWue CD 2026)]
 
 \@ifclassloaded{baposter}{}{%
   \PackageError{d3-poster}{d3-poster.sty needs the baposter class}%
@@ -42,7 +42,7 @@
 \RequirePackage{newunicodechar}
 
 % ====================
-% Palette (2025 corporate design; names shared by all D3 skills)
+% Palette (2026 corporate design; names shared by all D3 skills)
 % ====================
 \definecolor{d3-navy}{HTML}{02246C}       % titles, structure, header box, rules
 \definecolor{d3-darkblue}{HTML}{011646}   % deepest surfaces
@@ -247,14 +247,14 @@
 \newlength{\dthreecolspacing}     % column gap of the template grid
 \setlength{\dthreecolspacing}{14.2\dthreeunit}
 
-% Header and footer type, scaled with the paper (A0: 59 pt title, 34 pt
+% Header and footer type, scaled with the paper (A0: 50 pt title as in the template, 34 pt
 % authors, 28 pt footer heading, 24 pt references). \dthree@scale < 1 only
 % while a too-long title block or references block is being fitted.
 \newcommand{\dthree@scale}{1}
 \newcommand{\dthree@size}[2]{%
   \fontsize{\dthree@scale\dimexpr#1\dthreeunit\relax}%
            {\dthree@scale\dimexpr#2\dthreeunit\relax}\selectfont}
-\newcommand{\dthreetitlefont}{\bfseries\dthree@size{21}{25}}
+\newcommand{\dthreetitlefont}{\bfseries\dthree@size{17.6}{21.1}}
 \newcommand{\dthreeauthorfont}{\mdseries\dthree@size{12}{15}}
 \newcommand{\dthreerefheadfont}{\titlefont\fontsize{10\dthreeunit}{12\dthreeunit}\selectfont}
 \newcommand{\dthreereffont}{\dthree@size{8.5}{10.6}}
@@ -337,7 +337,7 @@
 \newcommand{\dthreereferences}[1]{\gdef\dthree@refs{#1}}
 \newcommand{\dthreereferencesname}{References}
 
-% One logo cell of the footer row (72 x 38.9 mm, 7.1 mm apart, at most five).
+% One logo cell of the footer row (72 x 38.9 mm, 7.1 mm apart, five in a row; \dthreelogos takes two).
 % The graphic is fitted into the cell, left-aligned and vertically centred.
 \newcommand{\dthreelogocell}[2][]{%
   \vbox to 38.9\dthreeunit{\vss
@@ -346,9 +346,18 @@
     \vss}%
   \hskip 7.1\dthreeunit\relax}
 
-% \dthreelogos: D3 logo in the first cell of the footer logo row. (Before the
-% 2025 design it put the old university logo and the D3 logo into the header.)
-\newcommand{\dthreelogos}{\dthreelogocell{logo-d3.pdf}}
+% A double cell (the width of two cells and their gap, 151.1 x 38.9 mm): the D3 logo, a wide 5:1 mark, stands
+% about 30 mm high there instead of 14 mm in a single cell.
+\newcommand{\dthree@widecell}[1]{%
+  \vbox to 38.9\dthreeunit{\vss
+    \hbox to 151.1\dthreeunit{%
+      \includegraphics[width=151.1\dthreeunit,height=30\dthreeunit,keepaspectratio]{#1}\hss}%
+    \vss}%
+  \hskip 7.1\dthreeunit\relax}
+
+% \dthreelogos: D3 logo in the first two cells of the footer logo row. (Before the
+% 2026 design it put the old university logo and the D3 logo into the header.)
+\newcommand{\dthreelogos}{\dthree@widecell{logo-d3.pdf}}
 % \dthreelogowue: university logo only. The university logo now always sits in
 % the header, so this leaves the footer logo row empty.
 \newcommand{\dthreelogowue}{}

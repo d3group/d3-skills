@@ -15,7 +15,7 @@ description: |
 
 > **`<skill-dir>`** in this skill means the skill's own base directory, which Claude Code shows when the skill loads (installed as a plugin: `${CLAUDE_PLUGIN_ROOT}/skills/d3-poster`; copied by hand: `~/.claude/skills/d3-poster`). Substitute the real path in every command. `<wording-dir>` means `<skill-dir>/../d3-scientific-wording`, the shared wording skill that every D3 plugin ships.
 
-Create professional A0-portrait research posters with D3 (Data Driven Decisions) and University of Würzburg branding in the university's 2025 corporate design. Builds on the `baposter` class for a grid layout, with a thin D3 reskin (`d3-poster.sty`) that draws the frame of the university poster template (navy header box with the white university logo, white title and authors, and the blue seal; grey section bars with navy text; a footer with a navy rule, a logo row with the D3 logo first, and a references slot), sets the D3 palette (university navy, D3 orange accent), and ports the `\highlight` / `\keypoint` / `infobox` / `card` macros from `d3-abstract`. **Compiles with XeLaTeX or LuaLaTeX for the house font Inclusive Sans UW; falls back to pdfLaTeX with a Helvetica clone.**
+Create professional A0-portrait research posters with D3 (Data Driven Decisions) and University of Würzburg branding in the university's 2026 corporate design. Builds on the `baposter` class for a grid layout, with a thin D3 reskin (`d3-poster.sty`) that draws the frame of the university poster template (navy header box with the white university logo, white title and authors, and the blue seal; grey section bars with navy text; a footer with a navy rule, a logo row with the D3 logo first, and a references slot), sets the D3 palette (university navy, D3 orange accent), and ports the `\highlight` / `\keypoint` / `infobox` / `card` macros from `d3-abstract`. **Compiles with XeLaTeX or LuaLaTeX for the house font Inclusive Sans UW; falls back to pdfLaTeX with a Helvetica clone.**
 
 The seal in the header is an interim choice: the university's CD booklet replaces it with a faculty ornament in faculty and chair communication, and that faculty package is not released yet. Swap `uw-seal-blue.pdf` once it is.
 
@@ -205,9 +205,9 @@ Every poster MUST start with this structure:
 
 **What `d3-poster.sty` draws** (from the university's A0 poster template; geometry scales with the paper, so A1 and other sizes keep the proportions):
 
-- 25 mm margins. Navy header box across the full width, 119 mm high, with the white university logo top left, the title (white Bold, about 59 pt on A0) and the authors (white, 34 pt) in the template's text field, and the blue seal flush with the box's right and bottom edges.
+- 25 mm margins. Navy header box across the full width, 119 mm high, with the white university logo top left, the title (white Bold, 50 pt on A0, as in the template) and the authors (white, 34 pt) in the template's text field, and the blue seal flush with the box's right and bottom edges.
 - Section bars about 24 mm high: `#ECECEC` with navy SemiBold text. Add `emphasis` to a box's keys for the template's second style, a cornflower bar with white text.
-- Footer below the columns: a navy rule; on the left a logo row of 72 × 39 mm cells filled from the 5th argument of `\begin{poster}` (`\dthreelogos` = D3 logo first, `\dthreelogocell{file.pdf}` adds a partner logo, at most five); on the right the References slot (`\dthreereferences{...}`).
+- Footer below the columns: a navy rule; on the left a logo row of 72 × 39 mm cells filled from the 5th argument of `\begin{poster}` (`\dthreelogos` = the D3 logo across the first two cells, about 30 mm high; `\dthreelogocell{file.pdf}` adds a partner logo, at most three more); on the right the References slot (`\dthreereferences{...}`).
 - Earlier posters still compile: their option block keeps the old look of the bars, the header and footer are drawn anyway, and `\dthreelogos` now fills the footer logo row instead of the header.
 
 ## Box positioning, columns, title
@@ -267,7 +267,7 @@ In every layout, **put the Literature into the footer's References slot** with `
 
 ### Title — in the navy header box, no subtitle by default
 
-Pass the title as plain text (see `example-poster.tex`): `d3-poster.sty` sets it white, Bold and ragged-right in the template's text field between the university logo and the seal (425 mm wide on A0, about 59 pt). Keep titles short enough to fit on 1-2 lines. A title block that does not fit the header box is set smaller and the log shows `d3-poster Warning: The title block was set at ...`; shorten the title instead of accepting that.
+Pass the title as plain text (see `example-poster.tex`): `d3-poster.sty` sets it white, Bold and ragged-right in the template's text field between the university logo and the seal (425 mm wide on A0, 50 pt). Keep titles short enough to fit on 1-2 lines. A title block that does not fit the header box is set smaller and the log shows `d3-poster Warning: The title block was set at ...`; shorten the title instead of accepting that.
 
 **Subtitle: do NOT add one by default.** Single-line punchy title is the default. Add a subtitle only if the user asks; see `references/macros-and-styling.md` for the syntax (`\dthreesubtitle{...}`).
 
@@ -620,7 +620,7 @@ The most-used macros for a typical poster. See `references/macros-and-styling.md
 
 | Macro | Use |
 |---|---|
-| `\dthreelogos` | D3 logo in the first cell of the footer logo row (5th argument of `\begin{poster}`); the university logo is always in the header |
+| `\dthreelogos` | D3 logo across the first two cells of the footer logo row (5th argument of `\begin{poster}`); the university logo is always in the header |
 | `\dthreelogocell{file}` | One more logo cell in the footer row (partner or funder logo), after `\dthreelogos` |
 | `\dthreereferences{...}` | Footer References slot (right half): 3-5 short references |
 | `\highlight{text}` | Inline d3-orange bold; 2-3 per box max |
