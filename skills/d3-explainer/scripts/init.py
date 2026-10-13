@@ -86,7 +86,7 @@ code_links  = "auto"              # auto (GitHub permalinks when origin is on Gi
 # The project's colour code (two to five roles): a colour name in plots, a macro \\key{{...}} in formulas, a legend entry in the hero.
 # [[role]]
 # key = "choice"
-# color = "#F29100"               # D3 palette: #02246C navy, #F29100 orange, #009485 teal, #808080 gray
+# color = "#F29100"               # role palette (colour-blind safe): #2A519D blue, #F29100 orange, #27A495 teal, #922351 berry, #8C6D02 ochre
 # label = "what we choose"
 
 # [hero]

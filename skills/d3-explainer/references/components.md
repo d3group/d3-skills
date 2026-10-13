@@ -48,7 +48,7 @@ key   = "skip"                            # letters only: colour name in plots, 
 color = "#F29100"
 label = "what we choose: the cutoff"      # shown in the hero's legend
 [[role]]
-key = "win"; color = "#02246C"; label = "the rule picks the best"      # (one table per role; shown compactly here)
+key = "win"; color = "#2A519D"; label = "the rule picks the best"      # (one table per role; shown compactly here)
 
 [hero]
 equation = "eq:limit"                     # pull the central equation from the paper, or write it with the role macros:
@@ -65,7 +65,7 @@ lines = ["skip r − 1, then take the first record", "Pₙ(r) = (r−1)/n · Σ 
 extra = ""                                # rarely needed
 ```
 
-Role colours come from the D3 palette in the 2025 university design: navy `#02246C`, orange `#F29100`, teal `#009485`, and gray `#808080` for a fourth role. These three hues stay apart under colour-blindness simulation; a fourth hue from the palette does not, so keep to three plus gray. Teal and gray have the same lightness, so red-green colour-blind readers cannot tell them apart: when both are roles, label both series directly or draw the gray one dashed. Orange is light on white: an orange series needs a label. Orange is also the colour of the draggable handle, so it suits the role "what we choose".
+Role colours come from the role palette, in this order: blue `#2A519D`, orange `#F29100`, teal `#27A495`, berry `#922351`, ochre `#8C6D02`. It is built from the university's colours (a lighter step of the navy, the teal, the berry and a darker step of the yellow) around D3 orange, and it is colour-blind safe as a set: under simulated protanopia and deuteranopia (Machado et al. 2009) every pair stays at least 13 apart in OKLab ΔE×100 (8 is the target), and at least 18 with full colour vision, so any two roles may meet in a figure. The build runs the same check on a project's own role colours and warns about every pair below 8 (colour-blind) or 15 (full vision). Marks use the role colour; formulas and role words use its ink, the same hue darkened to 4.5:1 on the paper (orange becomes `#B25600`). Orange is light on white: an orange series needs a label. Orange is also the colour of the draggable handle, so it suits the role "what we choose". Gray is not a role; it marks references and baselines.
 
 ## 2. Section files
 
@@ -268,7 +268,7 @@ var plot = ctx.plot({
 | `plot.handle(x, y, {setX: 'x', setY: null, label: 'drag'})` | draggable point; dragging writes the named params (clamped to their min, max, step). Give the param a slider too, so it stays keyboard-accessible |
 | `plot.sx(x)`, `plot.sy(y)`, `plot.ix(px)`, `plot.iy(py)`, `plot.bx(i)`, `plot.bw()` | scales, inverses, band centre and width, for custom marks via `ctx.el` |
 
-Colours: the project's role keys first (`'skip'`, `'win'`), then the D3 names `'navy'`, `'orange'`, `'teal'`, `'gray'`, `'lightblue'`, `'darkblue'`, plus `'ink'`, `'ink2'`, `'ink3'`; tints as `'navy!30'`. The further university colours `'blue'` (cornflower), `'yellow'`, `'berry'`, `'sand'`, `'peach'` and `'lavender'` exist for fills and schematics, not as extra series. Unspecified line colours cycle navy, orange, teal.
+Colours: the project's role keys first (`'skip'`, `'win'`), then the role palette `'blue'`, `'orange'`, `'teal'`, `'berry'`, `'ochre'`, then `'navy'` (structure and controls), `'gray'` (references), `'lightblue'`, `'darkblue'`, plus `'ink'`, `'ink2'`, `'ink3'`; tints as `'blue!30'`. The further university colours `'cornflower'`, `'sky'`, `'yellow'`, `'sand'`, `'peach'` and `'lavender'` exist for fills and schematics, not as extra series. Unspecified series cycle through the role palette in its order.
 
 ## 10. Flow diagrams: `D3X.flow`
 

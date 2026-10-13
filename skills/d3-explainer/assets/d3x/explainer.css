@@ -1,4 +1,4 @@
-/* D3 explainer stylesheet: an editorial long-read in the University of Würzburg corporate design (2025) with the D3 orange accent.
+/* D3 explainer stylesheet: an editorial long-read in the University of Würzburg corporate design (2026) with the D3 orange accent.
    Inclusive Sans UW for text, mono for every label and control, a sand-toned page with one narrow column and wider figures.
    Inlined by build.py; never edited per project.
    Project colours come from [[role]] entries in explainer.toml (they become --r-<key> variables); extra CSS goes into [css] extra. */

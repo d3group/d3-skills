@@ -104,7 +104,7 @@ For each interactive figure (each <figure class="widget">):
    Would moving the named control make it checkable, and is it falsifiable from the picture?
 3. Controls: two to four, ranges include the degenerate cases, defaults at the paper's setting, a preset where useful.
 4. Chart discipline: axis labels with units, colours used with the meaning the project's colour code gives them (the
-   [[role]] entries, listed in the hero), at most three coloured series (navy, orange, teal) plus gray, no dual axes, legend or end labels
+   [[role]] entries, listed in the hero), at most five coloured series from the role palette (blue, orange, teal, berry, ochre) plus gray for references, no dual axes, legend or end labels
    present, nothing cut off or overlapping in the screenshot.
    Is the effect visible at the default setting, or do the curves sit in a sliver of the panel?
    Do the toy's constants match the code's or the paper's, and where they differ, does the caption name both?

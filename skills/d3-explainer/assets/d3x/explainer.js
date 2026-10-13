@@ -6,11 +6,15 @@ var NS = 'http://www.w3.org/2000/svg';
 /* Theme colours. A project adds its own colour code through [[role]] in explainer.toml (window.D3X_ROLES):
    color('choice') then resolves to that role, in plots exactly as \\choice{...} does in formulas. */
 /* Page colours follow the University of Würzburg CD (sand paper, navy ink); same values as the tokens in explainer.css. */
+/* The role palette (blue, orange, teal, berry, ochre) is colour-blind safe as a set: steps of the university's navy,
+   teal, berry and yellow around D3 orange, every pair at least 13 apart (OKLab ΔE×100) under simulated protanopia and
+   deuteranopia, at least 18 with full colour vision. Navy is for structure and controls, gray for reference marks. */
 var THEME = {ink: '#0A1B42', ink2: '#3C4658', ink3: '#6B7688', rule: '#E2DDD2', rule2: '#CFC8B8', paper: '#F7F5F0', paper2: '#F1EBDF', card: '#FFFFFF',
-  navy: '#02246C', orange: '#F29100', teal: '#009485', darkblue: '#011646', lightblue: '#CBD9EE', gray: '#808080',
-  blue: '#5E8AC7', yellow: '#F8C300', berry: '#821044', sand: '#F1EBDF', peach: '#FCE4BF', lavender: '#D9CCE6',   // further CD colours, outside the default roles
+  blue: '#2A519D', orange: '#F29100', teal: '#27A495', berry: '#922351', ochre: '#8C6D02',            // the role palette, in this order
+  navy: '#02246C', darkblue: '#011646', lightblue: '#CBD9EE', gray: '#808080',
+  cornflower: '#5E8AC7', sky: '#5AA1D8', yellow: '#F8C300', sand: '#F1EBDF', peach: '#FCE4BF', lavender: '#D9CCE6',   // fills and schematics
   accent: '#F29100', c1: '#02246C', c2: '#009485', c3: '#011646', idle: '#808080', control: '#02246C', white: '#FFFFFF', black: '#000000'};
-var SERIES = ['navy', 'orange', 'teal'];   // default order for unnamed series; a 4th series gets idle + dash, see visualization.md
+var SERIES = ['blue', 'orange', 'teal', 'berry', 'ochre'];   // default order for unnamed series; more than five: split the figure
 
 function hex2rgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.replace(/(.)/g, '$1$1');
   return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
@@ -235,7 +239,7 @@ Plot.prototype._legend = function (o, shape) {
 /** line through (xs, ys). opts: color, label, width, dash, end (direct label at the line end), hover (default true) */
 Plot.prototype.line = function (xs, ys, o) {
   o = o || {};
-  var c = color(o.color || SERIES[this.series.length % 3]);
+  var c = color(o.color || SERIES[this.series.length % SERIES.length]);
   S('path', {d: this._path(xs, ys), fill: 'none', stroke: c, 'stroke-width': o.width || 2, 'stroke-linejoin': 'round',
     'stroke-linecap': 'round', 'stroke-dasharray': o.dash ? (o.dash === true ? '6 4' : o.dash) : null, opacity: o.opacity, 'data-series': 1}, this.marks);
   if (o.hover !== false) this.series.push({xs: xs, ys: ys, color: c, label: o.label || ''});
