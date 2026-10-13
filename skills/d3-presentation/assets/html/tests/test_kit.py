@@ -271,3 +271,9 @@ class Browser(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class MethodIcons(unittest.TestCase):
+    def test_roadmap_icons_render(self):
+        for name in ('linear', 'roulette', 'curve'):
+            self.assertIn('viewBox="0 0 24 24"', K.icon(name))

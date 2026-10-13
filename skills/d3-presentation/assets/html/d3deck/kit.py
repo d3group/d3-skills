@@ -119,6 +119,12 @@ ICONS = {
     'x': '<path d="M18 6 6 18M6 6l12 12"/>',
     'xcircle': '<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
     'zap': '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+    # method icons for course roadmaps: a linear function, chance (roulette wheel), a nonlinear curve
+    'linear': '<path d="M4 3v17h17"/><path d="M6.5 17 19 6"/>',
+    'roulette': '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.6"/>'
+                '<path d="M12 3v6.4M12 14.6V21M3 12h6.4M14.6 12H21M5.6 5.6l4.6 4.6M13.8 13.8l4.6 4.6M18.4 5.6l-4.6 4.6M10.2 13.8l-4.6 4.6"/>'
+                '<circle cx="16.8" cy="9.2" r="1.2" fill="currentColor" stroke="none"/>',
+    'curve': '<path d="M4 3v17h17"/><path d="M6 17c2.5-9 5-10 7.5-4.5S17.5 15 19.5 5"/>',
 }
 
 
