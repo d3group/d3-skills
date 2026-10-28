@@ -65,7 +65,7 @@
     },
     {
       "name": "d3-marimo",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Interactive teaching apps as marimo notebooks that run in the browser (WASM) on the chair website, in the University of Würzburg look",
       "source": "./",
       "strict": false,
