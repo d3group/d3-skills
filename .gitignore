@@ -9,3 +9,5 @@ skills/d3-explainer/assets/example/explainer/review/
 skills/*-workspace/
 # university corporate-design source material (staff-only downloads; the repo is public)
 corporate design/
+# the PowerPoint master wherever pptx_export.py finds it (talk folders, d3deck/office/)
+*.potx
