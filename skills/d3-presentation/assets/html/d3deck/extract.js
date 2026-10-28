@@ -192,6 +192,17 @@
     if (tag(el) === 'li') return;
     const b = getComputedStyle(el, '::before');
     if (b.content === 'none' || b.position !== 'absolute') return;
+    if (/url\(/.test(b.backgroundImage)) {
+      // an icon drawn by ::before (the takeaway arrow): a stand-in element with the same box is shot as a picture
+      const im = document.createElement('i');
+      im.className = 'xpseudo';
+      for (const k of ['position', 'left', 'top', 'width', 'height', 'transform', 'backgroundImage', 'backgroundSize',
+                       'backgroundPosition', 'backgroundRepeat']) im.style[k] = b[k];
+      el.appendChild(im);
+      const q = R(im);
+      if (q.w > 0 && q.h > 0) items.push({type: 'img', x: q.x, y: q.y, w: q.w, h: q.h, xid: shot(im), step: stepOf(el)});
+      return;
+    }
     const fill = color(b.backgroundColor); if (!fill) return;
     const w = parseFloat(b.width), h = parseFloat(b.height);
     if (!(w > 0 && h > 0)) return;
@@ -207,7 +218,7 @@
   const shot = (el, target) => { const id = 'x' + (xid++); (target || el).setAttribute('data-xid', id); return id; };
 
   function visit(el) {
-    if (!visible(el) || el.matches('.stepdots') || matches(el, opts.chrome)) return;
+    if (!visible(el) || el.matches('.stepdots, .xpseudo') || matches(el, opts.chrome)) return;
     if (getComputedStyle(el).display === 'contents' && !isPara(el)) { [...el.children].forEach(c => visit(c)); return; }
     const boxOnly = matches(el, opts.boxOnly);
     const r = R(el);
@@ -227,7 +238,7 @@
       return;
     }
     const bx = boxOnly ? {fill: null, sides: {}, all: false, r: r} : box(el, r);
-    pseudoStrip(el, r);
+    if (!boxOnly) pseudoStrip(el, r);
 
     // a native table holds text only: a table with badges, bars or icons in its cells is rebuilt cell by cell
     const rich = t === 'table' && [...el.querySelectorAll('td *, th *')].some(e => ['svg', 'img', 'button', 'input', 'canvas'].includes(tag(e)) ||

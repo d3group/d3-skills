@@ -75,7 +75,10 @@ INFO_JS = '''() => { const s = document.querySelector('.sl.on'), q = c => s.quer
   // a footer the HTML cuts with an ellipsis is cut the same way, so it does not wrap onto a second line
   const foot = !f ? '' : f.scrollWidth <= f.clientWidth + 1 ? f.textContent.trim()
              : f.textContent.trim().slice(0, Math.floor(f.textContent.trim().length * f.clientWidth / f.scrollWidth) - 2).trimEnd() + '…';
-  return {cover: cov ? (cov.className.match(/uw-c-(\\w+)/) || [])[1] : null, take: !!q('.take'), refs: !!q('.refs'),
+  // the layout's info box only stands in for a takeaway in the frame's slot, not for one placed inside the body
+  const tk = q('.take'), tr = tk && tk.getBoundingClientRect();
+  const slot = !!tr && Math.abs(tr.left - 74) < 8 && Math.abs(tr.bottom - 662) < 8 && Math.abs(tr.width - 902) < 8;
+  return {cover: cov ? (cov.className.match(/uw-c-(\\w+)/) || [])[1] : null, take: slot, refs: !!q('.refs'),
           num: !!q('.uw-num'), foot: foot, footw: f ? f.getBoundingClientRect().width : 0,
           agenda: !!q('.uw-agl'), dark: !!q('.uw-dark'),
           title: (q('.uw-title') || {textContent: ''}).textContent.trim()}; }'''
@@ -132,7 +135,10 @@ def measure(deck):
             info = page.evaluate(INFO_JS)
             if info['agenda'] and not info['dark'] and kind == 'content':
                 ch = ch + ['.uw-title']                 # 'Agenda' is printed on the layout
-            items = page.evaluate(js, {'mode': 'content', 'chrome': ch, 'boxOnly': bo, 'roles': ROLES})
+            roles = ROLES
+            if not info['take']:                        # draw the box and arrow of a takeaway outside the slot
+                bo, roles = [b for b in bo if b != '.take'], [r for r in ROLES if r[1] != 'take']
+            items = page.evaluate(js, {'mode': 'content', 'chrome': ch, 'boxOnly': bo, 'roles': roles})
             pics = {}
             for it in items:
                 if it.get('xid'):
@@ -143,7 +149,8 @@ def measure(deck):
                     pics[it['xid']] = page.locator(sel).screenshot(omit_background=True)
                     page.evaluate('''() => { document.documentElement.classList.remove('xshot');
                         document.querySelectorAll('.xshot-on').forEach(e => e.classList.remove('xshot-on')); }''')
-            page.evaluate("document.querySelectorAll('[data-xid]').forEach(e => e.removeAttribute('data-xid'))")
+            page.evaluate("document.querySelectorAll('[data-xid]').forEach(e => e.removeAttribute('data-xid'));"
+                          "document.querySelectorAll('.xpseudo').forEach(e => e.remove())")
             return {'items': items, 'pics': pics, 'info': info}
 
         for m in manifest:

@@ -141,6 +141,27 @@ class UniExport(unittest.TestCase):
         _, pres = slide_xml(self.out)
         self.assertNotIn('Anleitung', pres)
 
+    def test_only_a_takeaway_in_the_frame_slot_uses_the_info_box(self):
+        B.meta(title='Takeaways', presenter='A. Author', look='uni')
+        B.titleslide()
+        B.twocoltakeaway('In the slot', 'left', 'right', 'Slot text.')
+        B.onecol('In the body', '<p>Lead</p><div class="take">Body text.</div>')
+        B.thankyou()
+        deck = os.path.join(tempfile.mkdtemp(), 'deck.html')
+        B.build('deck', out=deck, embed_fonts=False)
+        r, out = export(deck, '--master', uni_master())
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        from pptx import Presentation
+        slot, body = Presentation(out).slides[1], Presentation(out).slides[2]
+        self.assertEqual(slot.slide_layout.name, 'Inhaltsfolie 2')
+        self.assertTrue(any(ph.placeholder_format.idx == 18 and 'Slot text.' in ph.text_frame.text for ph in slot.placeholders))
+        self.assertNotEqual(body.slide_layout.name, 'Inhaltsfolie 2')
+        box = [sh for sh in body.shapes if sh.has_text_frame and 'Body text.' in sh.text_frame.text]
+        self.assertEqual(len(box), 1)
+        self.assertEqual(box[0].fill.type, 1)                   # the sand box is drawn (1: solid)
+        self.assertTrue(any(sh.shape_type == 13 and sh.left > box[0].left and sh.top > box[0].top   # the arrow, inside it
+                            for sh in body.shapes))
+
     def test_missing_master_names_the_ways_to_provide_it(self):
         env = dict(os.environ, D3_UNI_MASTER='')
         deck = build('uni')
