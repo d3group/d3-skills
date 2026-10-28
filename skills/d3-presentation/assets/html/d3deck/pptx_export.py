@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import html
 import io
 import os
 import re
@@ -104,9 +105,7 @@ def hexc(c):
 
 def strip_html(s):
     s = re.sub(r'<br\s*/?>|</p>|</li>', '\n', s or '')
-    s = re.sub(r'<[^>]+>', '', s)
-    for a, b in (('&nbsp;', ' '), ('&amp;', '&'), ('&lt;', '<'), ('&gt;', '>'), ('&mdash;', '—'), ('&rarr;', '→')):
-        s = s.replace(a, b)
+    s = html.unescape(re.sub(r'<[^>]+>', '', s)).replace('\xa0', ' ')     # tags first: &lt;b&gt; stays text
     return re.sub(r'\n{3,}', '\n\n', s).strip()
 
 

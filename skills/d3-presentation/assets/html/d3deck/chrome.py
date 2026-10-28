@@ -189,8 +189,10 @@ def uni_agenda(sections, links=None, lang='en', current=None, question='', dark=
     def cls(k):
         if current is None: return ''
         return ' on' if k == current else (' done' if k < current else '')
+    def q(k):
+        return f'<span class="uw-agq">{question}</span>' if k == current and question else ''
     rows = ''.join(f'<div class="uw-ag{cls(k)}"><span class="uw-agn"{j}>{k:02d}</span><span class="uw-agt"{j}>{name}'
-                   f'{f"<span class=uw-agq>{question}</span>" if k == current and question else ""}</span></div>'
+                   f'{q(k)}</span></div>'
                    for k, name in enumerate(sections, 1)
                    for j in [f' data-jump="@@{links[k]}@@"' if links and k in links else ''])
     body = f'<div class="uw-title">{uni_words(lang)["agenda"]}</div><div class="uw-agl">{rows}</div>'
