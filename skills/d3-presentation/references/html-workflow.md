@@ -65,6 +65,8 @@ Every look is built on the University of Würzburg PowerPoint master (`PPT-Maste
 
 `meta(look='uni')` drops the D3 branding, for teaching and other university decks (for example a dean's office talk). Coral `#ED6A5B` is the accent for graphic marks (accented numbers, the seal on navy). Berry `#821044` takes the role of D3 orange for text accents (kickers, `<b>` in takeaways and statements), because coral is too light for small text on white. Light blue `#5E8AC7` marks bullets and rules, and `takeaway=` is the sand bar with the master's arrow. The kit colours map onto the palette: `orange` becomes berry. The kit objects are toned down to the master's plain style (no cards, no icons, sans-serif labels).
 
+`meta(dividers='agenda')` replaces the section dividers with the agenda: every `section()` shows the full agenda on navy, the current section highlighted with its question beneath it and the earlier sections muted, and `agenda()` turns navy to match. Teaching decks use it so the room always sees where the session stands. The default `dividers='section'` keeps the divider with the big part number.
+
 ## 3. Slide functions
 
 | HTML | LaTeX | Notes |

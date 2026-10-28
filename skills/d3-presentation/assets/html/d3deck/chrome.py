@@ -183,12 +183,20 @@ def uni_divider(n, sections, question, lang):
     return divider(n, sections, question, lang)
 
 
-def uni_agenda(sections, links=None, lang='en'):
-    """Agenda: two-digit numbers in sky blue, topics beside them, 60 px apart, as in the master."""
-    rows = ''.join(f'<div class="uw-ag"><span class="uw-agn"{j}>{k:02d}</span><span class="uw-agt"{j}>{name}</span></div>'
+def uni_agenda(sections, links=None, lang='en', current=None, question='', dark=False):
+    """Agenda: two-digit numbers in sky blue, topics beside them, 60 px apart, as in the master (Agenda 1).
+    current: the section this divider opens (1-based): highlighted with its question, earlier sections muted."""
+    def cls(k):
+        if current is None: return ''
+        return ' on' if k == current else (' done' if k < current else '')
+    rows = ''.join(f'<div class="uw-ag{cls(k)}"><span class="uw-agn"{j}>{k:02d}</span><span class="uw-agt"{j}>{name}'
+                   f'{f"<span class=uw-agq>{question}</span>" if k == current and question else ""}</span></div>'
                    for k, name in enumerate(sections, 1)
                    for j in [f' data-jump="@@{links[k]}@@"' if links and k in links else ''])
-    return f'<div class="uw-title">{uni_words(lang)["agenda"]}</div><div class="uw-agl">{rows}</div>'
+    body = f'<div class="uw-title">{uni_words(lang)["agenda"]}</div><div class="uw-agl">{rows}</div>'
+    if dark:   # navy slide with white logo, rule and seal, like the section divider
+        return f'<div class="uw-dark uw-agdark">{uni_logo("white")}<div class="uw-rule"></div>{_uw_seal()}{body}</div>'
+    return body
 
 
 def uni_thankyou(text, contact, lang='en', d3=False):
@@ -289,6 +297,17 @@ body.look-uni .trk{left:700px;top:42px;width:511px}
 .uw-ag{display:flex;align-items:baseline;height:60px}
 .uw-agn{width:66px;flex:none;font-size:32px;font-weight:700;color:var(--sky);cursor:pointer}
 .uw-agt{font-size:24px;color:#000;cursor:pointer}
+.uw-ag.done .uw-agn,.uw-ag.done .uw-agt{color:#A9B0BC}
+.uw-ag.on{height:auto;min-height:60px;padding-bottom:12px}
+.uw-ag.on .uw-agn{color:var(--navy)}
+.uw-ag.on .uw-agt{color:var(--navy);font-weight:700}
+.uw-agq{display:block;font-size:19px;font-weight:400;color:var(--berry);margin-top:4px}
+.uw-agdark .uw-title{color:#fff}
+.uw-agdark .uw-agt{color:rgba(255,255,255,.85)}
+.uw-agdark .uw-ag.done .uw-agn,.uw-agdark .uw-ag.done .uw-agt{color:rgba(255,255,255,.38)}
+.uw-agdark .uw-ag.on .uw-agn{color:var(--sky)}
+.uw-agdark .uw-ag.on .uw-agt{color:#fff}
+.uw-agdark .uw-agq{color:var(--sky)}
 /* ── closing slide (Abschlussseite) ── */
 .uw-end{position:absolute;left:625px;top:0;width:655px;height:720px;background:#F2F2F2}
 .uw-thx{position:absolute;left:74px;top:171px;width:514px;height:189px;display:flex;align-items:flex-end;font-size:40px;font-weight:700;line-height:1.15;color:var(--navy)}
