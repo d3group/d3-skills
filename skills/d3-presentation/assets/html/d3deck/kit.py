@@ -937,6 +937,7 @@ table.k-table tr:last-child td{border-bottom:0}
 /* ── provenance line ── */
 .prov{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .uw-fl>.prov{flex:0 1 auto;max-width:50%;margin-left:auto;height:23px;line-height:23px;text-align:right;color:#6B7688}   /* in the footer line, left of the page tab: up to half of it */
+body.look-beamer .trk~.uw-fl>.prov{max-width:300px}   /* beamer: the tracker holds the footer line up to x 834 */
 """
 
 # ── JS ───────────────────────────────────────────────────────────────────
