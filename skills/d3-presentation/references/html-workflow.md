@@ -11,6 +11,7 @@ my_talk/
 ├── d3deck/             the engine (copied by init.py, never edited per talk), with fonts/, logos/ and mathjax/ inside
 ├── dist/my_talk.html   build output, one file
 ├── dist/my_talk.pdf    optional print export (shoot.py --pdf)
+├── dist/my_talk.pptx   optional editable PowerPoint (pptx_export.py)
 └── shots/              per-step screenshots and contact sheets from shoot.py
 ```
 
@@ -214,6 +215,27 @@ The script waits 480 ms per step so the 420 ms transition has settled, then fini
 - `shots/report.json` holds all of it.
 
 Contact sheets need Pillow (the --with pillow above); without it, read the per-step shots in shots/ directly. Then continue at the review depth chosen in Step 0 of `SKILL.md`: light stops here, standard adds one reviewer pass over `slides.py` and `shots/contact_*.png`, full runs the two-agent loop.
+
+### PowerPoint export
+
+For colleagues who want to edit the slides themselves, export the built deck to an editable `.pptx` on the university master:
+
+```bash
+uv run --with playwright --with python-pptx d3deck/pptx_export.py dist/my_talk.html          # -> dist/my_talk.pptx
+uv run --with playwright --with python-pptx d3deck/pptx_export.py dist/my_talk.html --no-notes
+```
+
+It needs `PPT-Master-Universitaet-Wuerzburg.potx`, the university PowerPoint master. The repository is public, so the master is not part of the skill: put it into the talk folder or any parent folder (for example the folder that holds all lectures), set `D3_UNI_MASTER=/path/to/master.potx`, or pass `--master`.
+
+The script measures every slide in its final step in the browser and rebuilds it from native PowerPoint objects:
+
+- Every slide goes onto the matching layout of the master: the cover onto Deckblatt 1, 2 or 4 (navy, photo, band), dividers onto Trennseite 2, an agenda onto Agenda 1, a plain list onto Inhaltsfolie 1 (into its content placeholder), a slide with a takeaway onto Inhaltsfolie 2, other content slides onto Blanko 1, the closing slide onto Abschlussseite. Logo, rule, footer, page number and seal come from the master, not from copies on the slide.
+- Titles, subtitles, presenter and date, divider names and agenda entries fill the layout placeholders, so the outline view and accessibility tools see them. The D3 logo of klar and beamer stays on the slide as a picture.
+- Text, lists, tables, boxes, chevrons, bars, timelines and cards become text boxes, tables and shapes at the measured positions, with bold, colour, transparency, CSS list markers and inline math as editable text.
+- Figures, charts, inline SVG, form controls and lines that hold nothing but a formula become pictures with transparent backgrounds.
+- Step builds become appear-on-click animations (paragraph by paragraph for lists), speaker notes go into the notes pages, the deck's sections become PowerPoint sections, and `jump()` links become click actions.
+
+What differs from the HTML: the text takes the master's theme font (Segoe UI), so a line can wrap at a different word; page numbers are PowerPoint's slide-number field, so they count every slide (and stay right when slides are reordered); interactive objects (instruments, replays, Q&A) are frozen in their final state. The closing slide's master prints a fixed "Tel." label in the contact box, so give `thankyou()` a phone line (`contact=['Name', 'Tel. +49 931 31-…', 'mail']`) for a clean export.
 
 ## 12. Presenting
 
