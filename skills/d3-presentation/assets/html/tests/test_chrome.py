@@ -138,7 +138,7 @@ class Geometry(unittest.TestCase):
                        '.uw-title{position:absolute;left:74px;top:111px;width:1137px;font-size:32px;font-weight:600',
                        '.body{position:absolute;left:74px;top:225px;width:1137px;height:420px;overflow:hidden}',
                        '.col.r{left:663px}', '.col.short{height:335px}',
-                       '.uw-foot{position:absolute;left:74px;top:680px;width:760px;height:23px',
+                       '.uw-fl{position:absolute;left:74px;top:680px;width:1076px;height:23px',
                        '.uw-num{position:absolute;left:1169px;top:671px;width:42px;height:49px;background:var(--navy)',
                        '.uw-seal{position:absolute;left:972px;top:412px;width:308px;height:308px',
                        '.uw-band,.uw-box{position:absolute;left:39px;top:425px;height:245px',

@@ -124,10 +124,10 @@ def frame(title, inner, page='', foot='', tracker='', dots='', prov='', d3=True)
     if title:
         parts.append(f'<div class="uw-title">{title}</div>')
     parts.append(inner)
-    if prov:
-        parts.append(f'<div class="prov">{prov}</div>')
-    if foot:
-        parts.append(f'<div class="uw-foot">{foot}</div>')
+    if foot or prov:
+        # one footer line: the source keeps its width, the footer text gives way and is cut first
+        parts.append('<div class="uw-fl">' + (f'<div class="uw-foot">{foot}</div>' if foot else '')
+                     + (f'<div class="prov">{prov}</div>' if prov else '') + '</div>')
     if page:
         parts.append(f'<div class="uw-num">{page}</div>')
     parts.append(dots)
@@ -237,7 +237,8 @@ body .sl ul.refs>li::before{display:none}
 .col.l{left:74px}
 .col.r{left:663px}
 .col.short{height:335px}
-.uw-foot{position:absolute;left:74px;top:680px;width:760px;height:23px;display:flex;align-items:center;font-size:13.3px;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uw-fl{position:absolute;left:74px;top:680px;width:1076px;height:23px;display:flex;align-items:center;gap:16px}
+.uw-foot{flex:1 1 0;min-width:0;height:23px;line-height:23px;font-size:13.3px;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .uw-num{position:absolute;left:1169px;top:671px;width:42px;height:49px;background:var(--navy);color:#fff;font-size:13.3px;
  display:flex;align-items:center;justify-content:center;line-height:1}
 body .stepdots{left:74px;right:auto;top:660px}
