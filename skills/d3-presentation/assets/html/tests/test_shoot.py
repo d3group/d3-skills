@@ -62,10 +62,12 @@ class Shoot(Runner, unittest.TestCase):
         self.assertIn('top', r.stdout)
 
 
-def lint_deck(*slides, css=''):
-    """A deck with a title slide and the given (title, body, kwargs) content slides."""
-    B.meta(title='T', sections=['A'])
+def lint_deck(*slides, css='', meta=None):
+    """A deck with a title slide and the given (title, body, kwargs) content slides. meta: extra meta() arguments."""
+    m = B.meta(**dict(dict(title='T', sections=['A']), **(meta or {})))
     B.titleslide()
+    if m['tracker']:                     # the tracker shows on the slides of a section
+        B.section(1)
     for title, body, kw in slides:
         B.onecol(title, body, **kw)
     if css:
@@ -115,6 +117,12 @@ class Lint(Runner, unittest.TestCase):
         r, out = self.run_shoot(lint_deck(('Long', FILLED, {'provenance': long}), ('Short', FILLED, {'provenance': 'Table 3 · N = 38'})))
         self.assertEqual(r.stdout.count('provenance cut'), 1, r.stdout)
         self.assertRegex(r.stdout, r'2\.1 +warn +provenance cut')            # the long one on slide 2, not the short one
+
+    def test_provenance_keeps_clear_of_the_beamer_tracker(self):
+        # beamer: the tracker takes the footer line up to x 834, so the source line keeps the 300 px right of it
+        mid = 'Own calculation, survey wave 2 (N = 412), weighted, 2025'     # about 480 px: fits half the line, not 300 px
+        r, out = self.run_shoot(lint_deck(('Mid', FILLED, {'provenance': mid}), meta={'look': 'beamer', 'tracker': True}))
+        self.assertRegex(r.stdout, r'3\.1 +warn +provenance cut', r.stdout)  # slide 3, after the section divider
 
     def test_wordy(self):
         words = ' '.join(['word'] * 120)

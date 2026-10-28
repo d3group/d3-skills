@@ -197,6 +197,23 @@ class UniExport(unittest.TestCase):
         self.assertTrue(prov[0].endswith('…'), prov[0])
         self.assertLess(len(prov[0]), 120)
 
+    def test_the_navy_agenda_of_agenda_dividers_shows_its_entries(self):
+        B.meta(title='Lecture', presenter='A. Author', sections=['Basics', 'Equilibria'], look='uni', dividers='agenda')
+        B.titleslide()
+        B.agenda()
+        B.section(1, question='What is a game?')
+        B.onecol('A slide', '<p>Lead</p>')
+        B.thankyou()
+        deck = os.path.join(tempfile.mkdtemp(), 'deck.html')
+        B.build('deck', out=deck, embed_fonts=False)
+        r, out = export(deck, '--master', uni_master())
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        from pptx import Presentation
+        for s in list(Presentation(out).slides)[1:3]:          # agenda() and section(1)
+            self.assertEqual(s.slide_layout.name, 'Trennseite 2')       # the navy layout draws background, logo and seal
+            self.assertIn('Equilibria', [sh.text_frame.text for sh in s.shapes if sh.has_text_frame])
+            self.assertFalse(any(sh.shape_type == 1 and sh.width > 9000000 for sh in s.shapes))   # no navy box over the text
+
     def test_missing_master_names_the_ways_to_provide_it(self):
         env = dict(os.environ, D3_UNI_MASTER='')
         deck = build('uni')

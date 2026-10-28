@@ -144,6 +144,8 @@ def measure(deck):
             info = page.evaluate(INFO_JS)
             if info['agenda'] and not info['dark'] and kind == 'content':
                 ch = ch + ['.uw-title']                 # 'Agenda' is printed on the layout
+            if info['agenda'] and info['dark']:         # the navy agenda of dividers='agenda': the navy layout draws it
+                ch, bo = CHROME['title']
             roles = ROLES
             if not info['take']:                        # draw the box and arrow of a takeaway outside the slot
                 bo, roles = [b for b in bo if b != '.take'], [r for r in ROLES if r[1] != 'take']
@@ -602,7 +604,7 @@ class MasterWriter(Writer):
         info, items = data['info'], data['items']
         if m['k'] == 'title':
             return UNI_COVER.get(info.get('cover') or 'navy', 'Deckblatt 1')
-        if m['k'] == 'section':
+        if m['k'] == 'section' or (info.get('agenda') and info.get('dark')):
             return 'Trennseite 2'
         if m['k'] == 'thankyou':
             return 'Abschlussseite'
