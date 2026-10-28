@@ -233,14 +233,12 @@ class Output(unittest.TestCase):
         self.assertIn('class="refs"', doc)
         B.meta(title='T', look='uni')
         B.titleslide(cover='photo')
-
         B.thankyou()
         doc = self.build()
         self.assertIn('uw-photo{background-image:url(data:image/jpeg', doc)
         self.assertIn('Thank you', doc)
         with self.assertRaises(ValueError):
             B.titleslide(cover='pink')
-
 
     def test_agenda_dividers(self):
         B.meta(title='Lecture', presenter='Ada', sections=SECS, look='uni', dividers='agenda')
@@ -256,11 +254,12 @@ class Output(unittest.TestCase):
         self.assertIn('uw-agdark', divider)                                 # the divider is the agenda ...
         self.assertIn('<div class="uw-ag done">', divider)                  # ... earlier sections muted
         self.assertIn('<div class="uw-ag on">', divider)                    # ... the current one highlighted
-        self.assertIn('<span class=uw-agq>How?</span>', divider)            # ... with its question
+        self.assertIn('<span class="uw-agq">How?</span>', divider)          # ... with its question
         self.assertNotIn('uw-sn', divider)                                  # no big part numeral
         self.assertNotIn('uw-foot', divider)                                # no content frame around it
         with self.assertRaises(ValueError):
             B.meta(title='x', dividers='tabs')
+
     def test_chair_default_follows_the_language(self):
         self.assertEqual(B.meta(title='T')['chair'], 'Chair of Information Systems and Business Analytics')
         self.assertEqual(B.meta(title='T', lang='de')['chair'], 'Lehrstuhl für Wirtschaftsinformatik und Business Analytics')

@@ -978,7 +978,7 @@ JS = r"""
  document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop()},true);
  document.addEventListener('d3paint',e=>{if(e.detail.prev!==e.detail.cur)closePop()});
  /* ── sliders show their value; data-fmt int | pct | 1 | 2 ── */
- function fmt(v,f){if(f==='pct')return Math.round(v*100)+' %'; if(f==='1'||f==='2')return v.toFixed(+f); return Math.round(v).toLocaleString('en-US')}
+ function fmt(v,f){if(f==='pct')return Math.round(v*100)+'\u00a0%'; if(f==='1'||f==='2')return v.toFixed(+f); return Math.round(v).toLocaleString('en-US')}
  function showVal(inp){const o=document.getElementById(inp.id+'-val'); if(o)o.textContent=fmt(inp.valueAsNumber,inp.dataset.fmt)}
  document.querySelectorAll('.k-ctl input[type=range]').forEach(showVal);
  document.addEventListener('input',e=>{if(e.target.matches&&e.target.matches('.k-ctl input[type=range]'))showVal(e.target)});
