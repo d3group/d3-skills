@@ -104,6 +104,10 @@ LINT_JS = r"""(o) => {
     const m = n.nodeValue.match(EMO);
     if (m) add(p, 'error', 'emoji', `emoji/dingbat "${m[0]}" in visible text; use an inline icon: icon('${ICON[m[0]] || '...'}')`);
   }
+  /* a source line longer than its half of the footer line is cut with an ellipsis */
+  const pv = s.querySelector('.uw-fl > .prov');
+  if (pv && vis(pv) && pv.scrollWidth > pv.clientWidth + 1)
+    add(pv, 'warn', 'prov-cut', `provenance cut: ${pv.scrollWidth} px of text in ${pv.clientWidth} px; shorten provenance= (move detail to notes=)`);
   /* lowercase Greek inside an uppercase label prints as a capital: alpha becomes A */
   const GR = /[α-ωϑϕϖϵ]/;
   for (const [n, p] of texts) {
