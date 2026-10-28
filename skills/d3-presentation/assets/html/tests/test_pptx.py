@@ -66,6 +66,11 @@ class Runs(unittest.TestCase):
         out = X.Writer.clean_runs([{'t': 'A', 'pre': True}, {'t': '\t', 'pre': True}, {'t': ' yes'}])
         self.assertEqual(''.join(r['t'] for r in out), 'A\tyes')
 
+    def test_notes_decode_every_html_entity(self):
+        # tags go first, so an escaped tag stays text; a no-break space becomes a plain one
+        self.assertEqual(X.strip_html('Zwei F&auml;lle &ndash; N &ge; 30 &#8776; 3&nbsp;% &lt;b&gt; <b>fett</b>'),
+                         'Zwei Fälle – N ≥ 30 ≈ 3 % <b> fett')
+
 
 # The export needs the university master, which is not part of the (public) repository: set D3_UNI_MASTER.
 @unittest.skipUnless(HAVE_PW and HAVE_PPTX and uni_master(), 'needs playwright, python-pptx and D3_UNI_MASTER')
