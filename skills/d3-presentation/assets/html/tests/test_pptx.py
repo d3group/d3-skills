@@ -115,6 +115,21 @@ class Export(unittest.TestCase):
         logos = [sh for sh in s.shapes if sh.shape_type == 13 and sh.left > 9000000 and sh.top < 1000000]   # 13: picture
         self.assertEqual(len(logos), 1)
 
+    def test_a_slide_that_only_builds_a_picture_has_no_empty_build_list(self):
+        B.meta(title='Picture build', presenter='A. Author')
+        B.titleslide()
+        B.onecol('Figure', '<p>Lead</p><div data-s="1"><svg width="400" height="200"><rect width="400" height="200" '
+                 'fill="#F29100"/></svg></div>', steps=2)
+        B.thankyou()
+        deck = os.path.join(tempfile.mkdtemp(), 'deck.html')
+        B.build('deck', out=deck, embed_fonts=False)
+        r, out = export(deck)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        xml = slide_xml(out)[0][1]
+        self.assertIn('<p:timing>', xml)
+        self.assertNotIn('<p:bldLst/>', xml)                    # PowerPoint repairs files with an empty bldLst
+        self.assertNotIn('<p:bldLst></p:bldLst>', xml)
+
     def test_sections_follow_the_deck(self):
         names = re.findall(r'<p14:section name="([^"]+)"', self.pres)
         self.assertEqual(names, ['Start', 'Part one', 'Part two'])

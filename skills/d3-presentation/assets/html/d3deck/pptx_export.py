@@ -497,11 +497,13 @@ class Writer:
                 seen.add(shape.shape_id)
                 build = ' build="p"' if any(sh.shape_id == shape.shape_id and kk is not None for _, sh, kk in steps) else ''
                 blds.append(f'<p:bldP spid="{shape.shape_id}" grpId="0"{build}/>')
+            # an empty bldLst is invalid (PowerPoint repairs the file): a slide that only builds pictures has none
+            bld_lst = f'<p:bldLst>{"".join(blds)}</p:bldLst>' if blds else ''
             xml = f'''<p:timing xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst>
 <p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst>{''.join(clicks)}</p:childTnLst></p:cTn>
 <p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst>
 <p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq>
-</p:childTnLst></p:cTn></p:par></p:tnLst><p:bldLst>{''.join(blds)}</p:bldLst></p:timing>'''
+</p:childTnLst></p:cTn></p:par></p:tnLst>{bld_lst}</p:timing>'''
             seq = iter(range(1, 10 ** 6))      # PowerPoint wants the cTn ids in document order
             xml = re.sub(r'<p:cTn id="\d+"', lambda mo: f'<p:cTn id="{next(seq)}"', xml)
             timing = etree.fromstring(xml)
