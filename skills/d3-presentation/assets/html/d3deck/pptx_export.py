@@ -70,6 +70,14 @@ UNI_PH = {
     'Abschlussseite': {'thx': [21], 'contact': [22, 23, 24]},
 }
 UNI_COVER = {'navy': 'Deckblatt 1', 'photo': 'Deckblatt 2', 'band': 'Deckblatt 4'}
+# single-line text the HTML cuts with an ellipsis (footer, source line) is cut the same way: PowerPoint has no ellipsis
+CUT_JS = '''() => { for (const el of document.querySelectorAll('.sl.on *')) {
+  if (el.children.length || el.scrollWidth <= el.clientWidth + 1) continue;
+  const cs = getComputedStyle(el); if (cs.textOverflow !== 'ellipsis' || cs.whiteSpace !== 'nowrap') continue;
+  const full = el.textContent.trim(); let lo = 0, hi = full.length;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; el.textContent = full.slice(0, m).trimEnd() + '…';
+    if (el.scrollWidth <= el.clientWidth + 1) lo = m; else hi = m - 1; }
+  el.textContent = full.slice(0, lo).trimEnd() + '…'; } }'''
 INFO_JS = '''() => { const s = document.querySelector('.sl.on'), q = c => s.querySelector(c);
   const cov = q('.uw-cover'); const f = q('.uw-foot');
   // a footer the HTML cuts with an ellipsis is cut the same way, so it does not wrap onto a second line
@@ -132,6 +140,7 @@ def measure(deck):
             ch, bo = CHROME[kind]
             page.evaluate(f'show({i}, steps({i}) - 1)')
             page.wait_for_timeout(60)
+            page.evaluate(CUT_JS)
             info = page.evaluate(INFO_JS)
             if info['agenda'] and not info['dark'] and kind == 'content':
                 ch = ch + ['.uw-title']                 # 'Agenda' is printed on the layout

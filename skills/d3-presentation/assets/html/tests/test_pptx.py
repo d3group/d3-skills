@@ -166,6 +166,22 @@ class UniExport(unittest.TestCase):
         self.assertTrue(any(sh.shape_type == 13 and sh.left > box[0].left and sh.top > box[0].top   # the arrow, inside it
                             for sh in body.shapes))
 
+    def test_text_the_html_cuts_with_an_ellipsis_is_cut_alike(self):
+        B.meta(title='Cut', presenter='A. Author', look='uni')
+        B.titleslide()
+        B.onecol('Source', '<p>Lead</p>', provenance=' · '.join(['A long source line with details'] * 6))
+        B.thankyou()
+        deck = os.path.join(tempfile.mkdtemp(), 'deck.html')
+        B.build('deck', out=deck, embed_fonts=False)
+        r, out = export(deck, '--master', uni_master())
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        from pptx import Presentation
+        prov = [sh.text_frame.text for sh in Presentation(out).slides[1].shapes
+                if sh.has_text_frame and sh.text_frame.text.startswith('A long source')]
+        self.assertEqual(len(prov), 1)
+        self.assertTrue(prov[0].endswith('…'), prov[0])
+        self.assertLess(len(prov[0]), 120)
+
     def test_missing_master_names_the_ways_to_provide_it(self):
         env = dict(os.environ, D3_UNI_MASTER='')
         deck = build('uni')
