@@ -33,7 +33,7 @@ def _():
 def _(mo):
     mo.md(
         """
-        <p class="kicker">Decision Support Systems · Universität Würzburg</p>
+        <div class="uw-head"><img src="public/uw-logo-navy.png" alt="Universität Würzburg"><span>Decision Support Systems</span></div>
 
         # The Toy Factory
 

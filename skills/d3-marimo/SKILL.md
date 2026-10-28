@@ -34,7 +34,7 @@ notebook with `marimo export html-wasm`; the website's `scripts/build.py` does t
    pandas, altair. Not available: PuLP's CBC binary, Gurobi, OR-Tools. Use `scipy.optimize.linprog(method="highs")`
    for LPs and `scipy.optimize.milp` for integer programs. `requests` works for simple GETs.
 4. **Start from the template.** `cp <skill-dir>/assets/app_template.py <site>/apps/<course>-<topic>.py`. It already has
-   the kicker line, the style cell, section icons, a solver cell and the footer. Keep cells small: one idea per cell,
+   the masthead (university logo plus course name), the style cell, section icons, a solver cell and the footer. Keep cells small: one idea per cell,
    UI elements in their own cell, results in the next.
 5. **Data.** Put files in `<site>/apps/public/data/`. Load them with `mo.notebook_location() / "public" / "data" / name`
    and, in the browser, through `pyodide.http.open_url` (see the template). Record source, date and licence in the app.
@@ -71,6 +71,7 @@ notebook with `marimo export html-wasm`; the website's `scripts/build.py` does t
 |---|---|
 | `assets/app_template.py` | marimo app skeleton with the university look, a data loader that works in WASM, a solver cell |
 | `assets/uw.css` | the look: Inclusive Sans UW, navy/coral, marimo theme variables (copy to `<site>/apps/uw.css`) |
+| `assets/uw-logo-navy.png` | the university logo for the masthead (copy to `<site>/apps/public/uw-logo-navy.png`) |
 | `assets/inline_uw_css.py` | copies `uw.css` into the style cell of every app that uses it (copy to `<site>/scripts/`) |
 | `scripts/check_app.py` | native run, WASM export, headless browser check, optional live check |
 | `references/pitfalls.md` | what breaks in WASM and in notebook ports, with the fix for each |
