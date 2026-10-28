@@ -78,7 +78,8 @@ def _strip(s):
 
 
 def meta(title, subtitle='', date='', presenter='', chair=None, sections=(),
-         tracker=False, numbering='all', lang='en', reveal='ghost', look='klar', math=None, macros=None, feel='calm'):
+         tracker=False, numbering='all', lang='en', reveal='ghost', look='klar', math=None, macros=None, feel='calm',
+         dividers='section'):
     """Deck metadata; call once before the first slide. Resets the deck. date is stored for the
     manifest only, like \\date in LaTeX; put it into the subtitle if it should appear.
     chair=None: the chair line in the language of the deck (English, or German with lang='de'); pass a string to override.
@@ -95,7 +96,10 @@ def meta(title, subtitle='', date='', presenter='', chair=None, sections=(),
     macros: LaTeX macros for the formulas, e.g. {'E': r'\\mathbb{E}', 'norm': r'\\lVert #1 \\rVert'}.
     feel: the motion budget agreed at intake. 'calm' (default): builds on at most about 40 percent of the content slides.
     'rich': builds and arrival motion wherever they report something. 'interactive': rich plus Q&A interactions or a
-    live instrument; the build warns when the deck has none."""
+    live instrument; the build warns when the deck has none.
+    dividers='section' (default): each section() is the navy divider with the part number and name. dividers='agenda':
+    each section() repeats the agenda on navy with the current section highlighted (its question beneath it, earlier
+    sections muted), and agenda() turns navy to match. Suits teaching decks whose audience follows a fixed agenda."""
     if look not in LOOKS:
         raise ValueError(f"look must be one of {LOOKS}")
     if reveal not in ('hide', 'ghost'):
@@ -104,6 +108,8 @@ def meta(title, subtitle='', date='', presenter='', chair=None, sections=(),
         raise ValueError("numbering must be 'all' or 'content'")
     if feel not in FEELS:
         raise ValueError(f"feel must be one of {FEELS}")
+    if dividers not in ('section', 'agenda'):
+        raise ValueError("dividers must be 'section' or 'agenda'")
     if chair is None:                     # the chair line follows the deck language unless it is given
         chair = DEFAULT_CHAIR_DE if (lang or '').lower().startswith('de') else DEFAULT_CHAIR
     sections = list(sections)
@@ -112,7 +118,7 @@ def meta(title, subtitle='', date='', presenter='', chair=None, sections=(),
     D.reset()
     D.meta = dict(title=title, subtitle=subtitle, date=date, presenter=presenter, chair=chair,
                   sections=sections, tracker=bool(tracker), numbering=numbering, lang=lang, reveal=reveal, look=look,
-                  math=math, macros=dict(macros or {}), feel=feel)
+                  math=math, macros=dict(macros or {}), feel=feel, dividers=dividers)
     return D.meta
 
 
@@ -162,7 +168,7 @@ def agenda(**kw):
     _need_meta()
 
     def inner():
-        return chrome.uni_agenda(D.meta['sections'], _links(), D.meta['lang'])
+        return chrome.uni_agenda(D.meta['sections'], _links(), D.meta['lang'], dark=D.meta.get('dividers') == 'agenda')
     return _add('agenda', 'Agenda', inner, **kw)
 
 
@@ -186,6 +192,8 @@ def section(n, question='', **kw):
     mark(f'sec-{n}')
 
     def inner():
+        if D.meta.get('dividers') == 'agenda':   # the agenda with this section highlighted
+            return chrome.uni_agenda(secs, _links(), D.meta['lang'], current=n, question=question, dark=True)
         part = _part(idx) if D.meta.get('look') == 'klar' else None
         return chrome.divider(n, secs, question, D.meta['lang'], part)
     idx = _add('section', secs[n - 1], inner, **kw)
@@ -503,7 +511,7 @@ def render_slides():
         dots = ('<div class="stepdots">' + '<i></i>' * s.steps + '</div>') if s.steps > 1 else ''
         in_backup = D.backup_at is not None and i >= D.backup_at
         look = m.get('look', 'klar')
-        if s.kind == 'title' or s.kind == 'section':
+        if s.kind in ('title', 'section') or (s.kind == 'agenda' and m.get('dividers') == 'agenda'):
             body = inner
         elif s.kind == 'thankyou':
             body = chrome.uni_logo() + inner
