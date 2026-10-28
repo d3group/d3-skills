@@ -110,6 +110,12 @@ class Lint(Runner, unittest.TestCase):
         self.assertIn('α prints as Α', r.stdout)
         self.assertIn('nocaps', r.stdout)
 
+    def test_provenance_cut_only_when_too_long(self):
+        long = ' · '.join(['Eigene Rechnung mit vielen Details'] * 6)
+        r, out = self.run_shoot(lint_deck(('Long', FILLED, {'provenance': long}), ('Short', FILLED, {'provenance': 'Table 3 · N = 38'})))
+        self.assertEqual(r.stdout.count('provenance cut'), 1, r.stdout)
+        self.assertRegex(r.stdout, r'2\.1 +warn +provenance cut')            # the long one on slide 2, not the short one
+
     def test_wordy(self):
         words = ' '.join(['word'] * 120)
         r, out = self.run_shoot(lint_deck(('Wordy', f'<p style="font-size:9px;line-height:1">{words}</p>' + FILLED, {})))
