@@ -141,6 +141,10 @@ class UniExport(unittest.TestCase):
         _, pres = slide_xml(self.out)
         self.assertNotIn('Anleitung', pres)
 
+    def test_opens_on_the_slides_not_the_master(self):
+        with zipfile.ZipFile(self.out) as z:
+            self.assertNotIn('lastView="sldMasterView"', z.read('ppt/viewProps.xml').decode())
+
     def test_only_a_takeaway_in_the_frame_slot_uses_the_info_box(self):
         B.meta(title='Takeaways', presenter='A. Author', look='uni')
         B.titleslide()

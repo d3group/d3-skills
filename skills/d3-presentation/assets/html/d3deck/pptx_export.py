@@ -576,6 +576,9 @@ def open_template(path):
             data = src.read(item.filename)
             if item.filename == '[Content_Types].xml':
                 data = data.replace(b'presentationml.template.main+xml', b'presentationml.presentation.main+xml')
+            elif item.filename == 'ppt/viewProps.xml':
+                # the template was saved in master view: open the deck on its slides instead
+                data = re.sub(rb'\slastView="[^"]*"', b'', data)
             out.writestr(item, data)
     buf.seek(0)
     return Presentation(buf)
