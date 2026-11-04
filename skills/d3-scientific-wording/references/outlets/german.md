@@ -4,4 +4,4 @@ Read this together with `../outlets.md` (detection, genre profile, reader, term 
 
 - The same rules hold. "Nicht X, sondern Y" and "nicht nur ..., sondern auch" are the German contrast framing. Gedankenstriche as punctuation are avoided like em-dashes. Nominal style ("die Durchführung einer Analyse") becomes verbs ("analysieren").
 - "Wir" for the group's work.
-- STE exists only for English. For German text, apply the sentence caps of the genre.
+- STE exists only for English. For German text, apply the sentence caps of the genre; `check_wording.py --ste` does the same and says "STE not applied" in its header.

@@ -680,6 +680,7 @@ def check_text(path: Path, raw: str, genre_opt: str | None, ste: bool, lang_opt:
     prose = mk.text()
     genre = genre_opt or detect_genre(path, raw, kind)
     lang = lang_opt or detect_lang(prose)
+    ste_asked, ste = ste, ste and lang == "en"   # STE exists only for English; German keeps the genre's caps
     line = LineIndex(raw)
     out: list[Finding] = []
 
@@ -802,7 +803,8 @@ def check_text(path: Path, raw: str, genre_opt: str | None, ste: bool, lang_opt:
                  f"{len(sentences) - len(terminal)} other units (titles, bullets, cells)")
     else:
         stats = f"no full sentences; {len(sentences)} units (titles, bullets, cells)"
-    header = f"genre {genre}, {lang}{', STE' if ste else ''}; {stats}"
+    mode = ", STE" if ste else (", STE not applied (English only)" if ste_asked else "")
+    header = f"genre {genre}, {lang}{mode}; {stats}"
     return out, header
 
 

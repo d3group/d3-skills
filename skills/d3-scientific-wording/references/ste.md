@@ -96,7 +96,7 @@ A word is technical only in its technical sense. "Policy" in reinforcement learn
 ### Sentences
 
 - **One topic per sentence.**
-- **Descriptions: at most 25 words per sentence. Instructions: at most 20.** In an explainer, "Try" captions and usage steps are instructions; everything else is description. On slides, the cap is 20 words for all text on the slide; speaker notes are descriptions.
+- **Descriptions: at most 25 words per sentence. Instructions: at most 20.** In an explainer, "Try" captions and usage steps are instructions; everything else is description. On slides, the cap is 20 words for all text on the slide; speaker notes are descriptions. The lint cannot tell an instruction from a description: it checks 25 words (20 on slides), and the 20-word cap for instructions is part of your own pass.
 - **Condition first:** "If the propensity is below 0.01, the weight is clipped."
 - **Vertical lists** for steps and for three or more parallel items.
 - **Connecting words between sentences** whose topics are related: then, because, therefore, however, if, but. They replace the subordinate clauses that the length limit removes.

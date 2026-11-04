@@ -55,7 +55,7 @@
     },
     {
       "name": "d3-scientific-wording",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Wording layer of the D3 skills: direct claims, neutral related work, claims within the evidence, short sentences, outlet-aware register, optional Simplified Technical English (ASD-STE100), wording lint",
       "source": "./",
       "strict": false,
