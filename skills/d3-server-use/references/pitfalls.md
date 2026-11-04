@@ -4,7 +4,7 @@ Symptom, cause, fix. Most were met in practice.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| The server stops answering; new ssh sessions hang after login | heavy work on the login host (a polars scan used every core and saturated memory and disk) | everything that reads data or trains goes into a Slurm job; on the login host only light commands. If a remote command hangs, assume your own process first and kill it |
+| A command on the login host crawls or ends with `Killed` | each user has 4 CPUs and 8 GB there (slowed from 6 GB); on the old server, where login and compute were one machine, a polars scan once made it unresponsive for everyone | everything that reads data or trains goes into a Slurm job; on the login host only light commands. If a remote command hangs, assume your own process first and kill it |
 | Job pending forever, reason `PartitionTimeLimit` | `--time` above 24 h (e.g. old scripts with 48 h) | at most 24 h; checkpoints and segments |
 | `sbatch` rejected right away | `--partition=main` without a GPU, or `--partition=cpu` with one | leave `--partition` out |
 | Your jobs hold all GPUs while a colleague waits hours | no preemption: running jobs keep their GPUs until they end | `d3run.py submit` keeps a share free while others wait, `feed` releases the rest later; shorter GPU segments when the group is busy (cluster.md, section 4) |

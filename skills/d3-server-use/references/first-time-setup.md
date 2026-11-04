@@ -68,11 +68,15 @@ ssh kiregio hostname
   created with the server account and starts with a default password from the admin's mail: change it at once under
   `/hub/change-password`. A notebook gets at most one GPU; more GPUs only through `sbatch`.
 - Browsers warn about the certificate until the KiRegio root CA is imported, once per computer. Download `ca.crt`
-  from the address in the admin's mail (accept the warning for this one file), then:
-  - macOS: double-click, add to the "login" keychain; in Keychain Access open "KiRegio Root CA", Trust, "When using
-    this certificate: Always Trust".
+  from the address in the admin's mail (accept the warning for this one file). Compare its fingerprint with the one
+  in the admin's mail (also on the server's start page, `https://<host name>/`) before trusting it; if it differs,
+  do not import it and tell the admin.
+  - macOS: double-click, add to the "login" keychain; in Keychain Access open "KiRegio Root CA", compare SHA-256
+    under "Fingerprints" (shown with spaces instead of colons), then Trust, "When using this certificate: Always
+    Trust".
   - Windows: double-click, compare the SHA-1 thumbprint under Details with the admin's mail, then Install
     Certificate, Current User, "Trusted Root Certification Authorities".
+  - Linux, Chrome on Linux and Firefox (own certificate stores): the steps are on the start page.
 - Grafana (utilization, storage, home quota) has a shared login from the admin's mail. It stays in the mail or a
   password manager.
 

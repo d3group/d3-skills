@@ -5,7 +5,8 @@
 # --signal and the D3RUN_* variables on the command line (they override the #SBATCH defaults below):
 #   uv run tools/d3run.py submit <run_id> --script jobs/train.sbatch --time 06:00:00 --cpus 1 --mem 8G --gpus 1 \
 #       -- --config configs/x.yaml
-# A plain `sbatch jobs/train.sbatch` also works with the defaults below (smoke tests, one-off jobs).
+# A plain `sbatch jobs/train.sbatch` also works with the defaults below (smoke tests, one-off jobs) once
+# `mkdir -p logs/slurm` has run: Slurm does not create the --output folder, and the job fails without a log.
 #
 # No --partition: GPU jobs go to main and CPU-only jobs to cpu by themselves. For a GPU job add
 # `--gpus 1` to the submit call (or a `#SBATCH --gres=gpu:1` line below).

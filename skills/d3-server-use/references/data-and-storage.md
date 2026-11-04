@@ -1,7 +1,9 @@
 # Data and storage
 
 The server home is small (warning above 100 GB, hard limit 200 GB), on NFS, and has no backups. The S3 bucket on the
-KiRegio storage (MinIO) is the store; the server keeps only what running jobs need.
+group's NAS (MinIO) is the store; the server keeps only what running jobs need. The NAS keeps its disks in a RAID,
+so one failed disk loses nothing, but it has no backups either: whoever needs a result safe for certain downloads
+it and backs it up themselves.
 
 ## Contents
 1. What lives where
@@ -166,7 +168,9 @@ Ask again for the bucket now and then; once it exists, set it with `d3run.py ini
 
 Measured on this storage: 10 GB of large files took about 7 minutes; 0.7 GB in 50,000 small log files took about
 65 minutes; listing 370,000 keys took about 14 minutes. File count dominates. Pack many small files (one SQLite or
-Parquet per job, `tar` for log folders that are only archived) before they reach NFS or S3.
+Parquet per job, `tar` for log folders that are only archived) before they reach NFS or S3. The NAS has two hard
+disks shared by everyone: one job reading about 50 MB/s from it kept both disks 99 % busy (October 2026). So jobs
+read the round's copy in the home (section 5), not their data straight from S3.
 
 ## 9. Sensitive data
 

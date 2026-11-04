@@ -2,8 +2,9 @@
 
 State after the rebuild of October 2026 (checked with `scontrol show partition`, `sprio -w` and `sbatch --test-only`
 on 2026-10-27, and `scontrol show config` on 2026-11-04: Slurm 23.11.4, `PreemptMode=OFF`, `KillWait=30 sec`,
-`OverTimeLimit=0`, `JobRequeue=1`, `bf_window=1440,bf_max_job_test=2000,bf_max_job_user=100`). Settings can change:
-re-check with the same commands before relying on a number.
+`OverTimeLimit=0`, `JobRequeue=1`, `bf_window=1440,bf_max_job_test=2000,bf_max_job_user=100`; login limits and
+JupyterHub against the admin's configuration on 2026-11-04). Settings can change: re-check with the same commands
+before relying on a number.
 
 ## Contents
 1. Hosts and hardware
@@ -16,7 +17,8 @@ re-check with the same commands before relying on a number.
 
 ## 1. Hosts and hardware
 
-- **Login host** `login`: ssh, git, uv, Slurm commands. No GPU, no `nvidia-smi`. Light commands only.
+- **Login host** `login`: ssh, git, uv, Slurm commands. No GPU, no `nvidia-smi`. Light commands only: each user's
+  processes there share 4 CPUs and 8 GB (slowed from 6 GB, killed above 8 GB).
 - **Compute node** `compute`: 166 CPUs for jobs (170, 4 reserved), 624 GB memory, 4 × RTX 4090 (24 GB each, no
   vGPU, one job per GPU), driver 580 / CUDA 13. Not reachable by ssh; only through `sbatch`/`srun`.
 - **Home** `/home/<login>` on NFS, shared by both hosts. Quota: warning above 100 GB, hard limit 200 GB. No backups.
@@ -133,8 +135,9 @@ that opens a new ssh session every few seconds loads the login host (use Control
 
 https only, at most one GPU per notebook server. More GPUs, or anything longer than the session, goes through
 `sbatch` (a terminal in JupyterHub can submit too). Stop the server when done (File, Hub Control Panel, Stop My
-Server): an idle notebook holding a GPU blocks a quarter of the group's GPUs. Under the old setup a session ended
-after its runtime or 30 minutes of inactivity; check the current profile list before relying on that.
+Server): an idle notebook holding a GPU blocks a quarter of the group's GPUs. A notebook server ends when the
+runtime chosen at the start (1 to 24 h) is over, or after 30 minutes without activity. Profiles: CPU with 1, 8 or
+16 cores (4, 16, 32 GB) and one GPU profile (2 cores, 16 GB, 1 GPU).
 
 ## 7. What changed with the rebuild
 

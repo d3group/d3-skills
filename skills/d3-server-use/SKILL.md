@@ -16,7 +16,7 @@ description: |
   MANDATORY TRIGGERS: KiRegio, Slurm, sbatch, srun, squeue, sq, sacct, seff, sprio, job pending, GPU server,
   compute server, run on the server, submit jobs, cluster, checkpoint, 24 hours, time limit, JupyterHub, MinIO,
   S3 bucket, home quota, d3run, run registry, server alert, alerts channel, Server Police, HomeQuotaWarning,
-  JobGpuIdle, JobCpuUnderused, NasUnreachable
+  HomeQuotaReached, JobGpuIdle, JobCpuUnderused, NasUnreachable
 ---
 
 # Jobs on the KiRegio server
@@ -78,8 +78,9 @@ the user (a test, a plan for later) list the questions instead of writing a site
 ## 1. Rules, and why
 
 - **Everything that computes is a Slurm job.** No ssh to the compute node; on the login host only `ls`, `du` of a
-  small folder, `git`, `uv sync`, `sq`, `sacct`, `d3run.py`. A data scan with polars on a login node once made the
-  whole server unresponsive for everyone: polars, numpy and JAX take every core.
+  small folder, `git`, `uv sync`, `sq`, `sacct`, `d3run.py`. Each user has 4 CPUs and 8 GB there: heavy work crawls,
+  is killed above 8 GB, and its file reads still load the shared NFS server. On the old server, where login and
+  compute were one machine, a polars scan once made everything unresponsive for everyone.
 - **No scans of the whole home, not even in a job.** `du` or `find` over `~` sends the shared NFS server a request
   for every file and slows everyone. The total is in Grafana, run folders in `d3run.py usage`, a single folder in
   `du -sh <folder>`.
@@ -103,10 +104,12 @@ the user (a test, a plan for later) list the questions instead of writing a site
 - **Committed code, recorded per run.** The code reaches the server by `git pull` in `<proj>`. A job runs the code
   that is on the server when it *starts*, so never pull while jobs of a round are queued; `d3run.py new` refuses
   uncommitted changes and records the commit.
-- **S3 is the store, the server is scratch.** Upload as you go, verify, then delete the local copy. Without a
-  bucket the user's own computer is the store (rsync, then `clean --manifest`). Clean up after every round and
-  whenever `d3run.py usage` passes about 50 GB. Nothing on the server is deleted before a copy is verified by
-  checksum (MD5 against the bucket's ETag, SHA-256 for other copies; `--size-only` only on the user's request).
+- **S3 is the store, the server is scratch.** Upload as you go, verify, then delete the local copy. The bucket sits
+  on the group's NAS, in a RAID but without backups: whoever needs a result safe for certain downloads it and backs
+  it up themselves. Without a bucket the user's own computer is the store (rsync, then `clean --manifest`). Clean up
+  after every round and whenever `d3run.py usage` passes about 50 GB. Nothing on the server is deleted before a copy
+  is verified by checksum (MD5 against the bucket's ETag, SHA-256 for other copies; `--size-only` only on the user's
+  request).
 - **No secrets in files you write.** Passwords, access keys and the Grafana login stay in the user's own files
   (`~/.aws/credentials`, password manager) and the admin's mails, never in a repo, a note, a job script or `<site>`.
 - **One writer per file.** Only `d3run.py` on the login host writes the registry; jobs write their own run folder.
@@ -168,10 +171,11 @@ reuse one connection.
 
 ## When an alert arrives
 
-The admin's monitoring ("Server Police") posts alerts to a Slack channel (`alerts_channel` in `<site>`), in English
-or German: `HomeQuotaWarning` (home above 100 GB), `JobGpuIdle` (a GPU held over an hour at under about 10 % use),
-`JobCpuUnderused` (jobs with more than one CPU below 60 % of their CPUs), `NasUnreachable` (storage monitoring
-blind, an admin matter), plus maintenance notices. They are notices, not blame. Find the job, say
+The admin's monitoring ("Server Police") posts alerts to a Slack channel (`alerts_channel` in `<site>`), in English:
+`HomeQuotaWarning` (home above 100 GB), `HomeQuotaReached` (less than 1 GB left below the 200 GB limit),
+`JobGpuIdle` (a GPU held over an hour at under about 10 % use), `JobCpuUnderused` (CPU jobs below 60 % of their
+CPUs that together leave 2.5 or more CPUs idle), `NasUnreachable` (storage monitoring blind, an admin matter), plus
+maintenance notices. They are notices, not blame. Find the job, say
 what the alert means, and fix the cause with [references/alerts.md](references/alerts.md); with a Slack connector,
 read the alert itself (search the channel for the user's login), but never post there.
 
