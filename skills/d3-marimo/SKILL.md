@@ -40,7 +40,7 @@ notebook with `marimo export html-wasm`; the website's `scripts/build.py` does t
    and, in the browser, through `pyodide.http.open_url` (see the template). Record source, date and licence in the app.
 6. **Look.** The app declares `css_file="uw.css"` (used by local `marimo edit`) and carries a generated style cell
    (used by the WASM export, which ignores `css_file`). After any change to `<site>/apps/uw.css` run
-   `python scripts/inline_uw_css.py` in `<site>`. Keep it light: university font and colours through marimo's theme
+   `uv run scripts/inline_uw_css.py` in `<site>`. Keep it light: university font and colours through marimo's theme
    variables, one coral `mo.icon("lucide:…")` per section heading, no further reskinning.
 7. **Check.** `uv run --with playwright <skill-dir>/scripts/check_app.py <site>/apps/<app>.py --expect "<text>"`
    runs the app natively (every cell must execute), exports it to WASM, serves it locally and waits in headless

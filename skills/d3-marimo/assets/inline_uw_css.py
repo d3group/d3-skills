@@ -1,5 +1,5 @@
 """Copy apps/uw.css into the style cell of every app that uses it (marimo's html-wasm export ignores css_file).
-Run after editing uw.css:  python scripts/inline_uw_css.py"""
+Run after editing uw.css:  uv run scripts/inline_uw_css.py"""
 import re
 from pathlib import Path
 

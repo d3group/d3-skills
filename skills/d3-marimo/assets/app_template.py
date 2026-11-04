@@ -25,7 +25,7 @@ def _():
     return Bounds, LinearConstraint, alt, linprog, milp, mo, np, pd
 
 
-# After copying this file into <site>/apps/, run `python scripts/inline_uw_css.py` in <site>:
+# After copying this file into <site>/apps/, run `uv run scripts/inline_uw_css.py` in <site>:
 # it inserts the style cell here (the WASM export ignores css_file).
 
 

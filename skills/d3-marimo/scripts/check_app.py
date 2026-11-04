@@ -99,12 +99,14 @@ def main():
     ap.add_argument("app", nargs="?", help="path to the marimo app (.py); omit with --live")
     ap.add_argument("--live", help="check a deployed URL instead of a local file")
     ap.add_argument("--expect", action="append", default=[], help="text that must become visible (repeatable)")
-    ap.add_argument("--click", action="append", default=[], help="role:name (tab:, button:, switch:) or plain text to click")
+    ap.add_argument("--click", action="append", default=[], help="role:name (tab:, button:, switch:, checkbox:, radio:) or plain text to click")
     ap.add_argument("--expect-after", action="append", default=[], help="text that must be visible after the clicks")
     ap.add_argument("--timeout", type=int, default=180, help="seconds to wait for each --expect text")
     a = ap.parse_args()
     if not a.live and not a.app:
         ap.error("give an app path or --live URL")
+    if not a.expect:
+        ap.error("give at least one --expect text; without one, a page that never renders would pass")
     ok = True
     srv = None
     if a.live:
