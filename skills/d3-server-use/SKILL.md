@@ -110,9 +110,11 @@ the user (a test, a plan for later) list the questions instead of writing a site
   after every round and whenever `d3run.py usage` passes about 50 GB. Nothing on the server is deleted before a copy
   is verified by checksum (MD5 against the bucket's ETag, SHA-256 for other copies; `--size-only` only on the user's
   request).
-- **With a bucket, data travels through it.** Git carries code, never data. Inputs go from the laptop into the
-  bucket (`jobs/push_inputs.sh`) and from there to the server (`d3run.py pull … --checksum`); results go from the job
-  into the bucket and from there to the laptop (`aws s3 sync`). Nothing is rsynced to or from the server.
+- **Data takes one route per project.** With a bucket, it travels through the bucket: inputs from the laptop into
+  it (`jobs/push_inputs.sh`) and from there to the server (`d3run.py pull … --checksum`), results from the job into
+  it and from there to the laptop (`aws s3 sync`). Without a bucket yet, rsync is the route: the same script sends
+  the inputs straight into `<proj>`, and results come back by rsync. Git carries code, and without a bucket also small
+  text results that belong in the repository. Once a bucket exists, the project switches to it.
 - **No secrets in files you write.** Passwords, access keys and the Grafana login stay in the user's own files
   (`~/.aws/credentials`, password manager) and the admin's mails, never in a repo, a note, a job script or `<site>`.
 - **One writer per file.** Only `d3run.py` on the login host writes the registry; jobs write their own run folder.
@@ -134,10 +136,11 @@ reuse one connection.
    Setup (once per project): `git clone` into `<proj>`, `uv sync --managed-python`, `uv cache prune`. Copy
    `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`) and the job template
    `<skill-dir>/assets/job_template.sbatch` (e.g. `jobs/train.sbatch`) yourself, as part of the change you prepare:
-   the delivered project must run as it is, without the user copying files out of the skill folder. With a bucket,
-   `<skill-dir>/assets/push_inputs.sh` goes to `jobs/` too, with its three values set: `S3_URI_DEFAULT` and
-   `AWS_PROFILE_DEFAULT` from `<site>`, and `ALLOWED`, the folders the server may receive (never data that an
-   agreement keeps on the laptop); the inputs are listed in `jobs/server_inputs.txt`. Add `runs/` and
+   the delivered project must run as it is, without the user copying files out of the skill folder.
+   `<skill-dir>/assets/push_inputs.sh` goes to `jobs/` too, set from `<site>`: `S3_URI_DEFAULT` and
+   `AWS_PROFILE_DEFAULT` with a bucket, otherwise `SERVER_DEFAULT` (`<alias>:<proj>`), and in both cases `ALLOWED`,
+   the folders the server may receive (never data that an agreement keeps on the laptop); the inputs are listed in
+   `jobs/server_inputs.txt`. Add `runs/` and
    `__pycache__/` to `.gitignore`, commit. Then `uv run tools/d3run.py init --user <login> --s3-uri s3://<bucket>/<prefix>` with the
    values from `<site>` (or `--no-s3`).
    Record the project in `<site>` under `[projects.<name>]`, with or without a bucket: `server_dir` (the checkout
@@ -149,9 +152,10 @@ reuse one connection.
    ([references/interruptible-jobs.md](references/interruptible-jobs.md)). Lint every job script:
    `uv run <skill-dir>/scripts/check_sbatch.py jobs/*.sbatch`.
 4. **Deploy.** Commit and push on the laptop, `git pull` in `<proj>` (nothing of the project queued), `uv sync`
-   if `pyproject.toml` or `uv.lock` changed. Inputs the round needs go through the bucket: on the laptop
-   `bash jobs/push_inputs.sh` (dry run), then `--go`; in `<proj>` the `d3run.py pull … --checksum` it prints
-   (`--submit` above 1 GB or 2,000 files). Without a bucket, rsync them into `<proj>`.
+   if `pyproject.toml` or `uv.lock` changed. Inputs the round needs: on the laptop
+   `bash jobs/push_inputs.sh` (dry run), then `--go`. With a bucket it uploads them and prints the
+   `d3run.py pull … --checksum` to run in `<proj>` (`--submit` above 1 GB or 2,000 files); without one it rsyncs them
+   into `<proj>`.
 5. **Smoke test.** Parse every config of the round once locally and check the types (YAML reads `seed: 08` as
    text). Run the local resume test (references/interruptible-jobs.md, section 7). Then one tiny config per resource class, `--time 00:10:00`, with `--allow-dirty` only if needed:
    imports, GPU visible from inside the job (print `jax.devices()` or `torch.cuda.is_available()`), data paths,
@@ -177,9 +181,9 @@ reuse one connection.
    `d3run.py push data/processed --clean --submit`, back with `pull`. Without a bucket: the rsync route in
    [references/data-and-storage.md](references/data-and-storage.md), section 7. The first time a store is used,
    run a restore drill: bring one cleaned run back (`d3run.py pull runs/<id> --checksum`, or rsync it back) and
-   check it, before the server keeps nothing else. Then `d3run.py usage`. Results the user needs on the laptop come
-   from the bucket: `aws s3 sync s3://<bucket>/<prefix>/runs/<id>/results/ <folder> --profile <aws_profile>` on the
-   laptop (`--exclude`/`--include` for a part of them).
+   check it, before the server keeps nothing else. Then `d3run.py usage`. Results the user needs on the laptop: from the
+   bucket with `aws s3 sync s3://<bucket>/<prefix>/runs/<id>/results/ <folder> --profile <aws_profile>`
+   (`--exclude`/`--include` for a part of them), without a bucket by the rsync route above.
 
 ## When an alert arrives
 
@@ -221,7 +225,7 @@ existing orchestrator: [references/registry.md](references/registry.md).
 | `scripts/d3job.py` | job side: exact end time, measured stop margin, checkpoints with S3 upload, resume, `status.json` |
 | `scripts/check_sbatch.py` | lint job scripts: 24 h, partition and GPU, ignored `#SBATCH` lines, pip/conda, secrets |
 | `assets/job_template.sbatch` | job script with run-ID logs, USR1 trap, GPU memory log, `uv run --no-sync` |
-| `assets/push_inputs.sh` | laptop → bucket upload of the server's inputs: allowed folders only, dry run, prints the server's `pull` |
+| `assets/push_inputs.sh` | sends the server's inputs from the laptop: into the bucket (prints the server's `pull`), or by rsync without one; allowed folders only, dry run first |
 | `assets/site.example.toml` | template of the user's site file (no secrets) |
 | `references/first-time-setup.md` | account, ssh key and Host block, JupyterHub password, certificate |
 | `references/cluster.md` | partitions, submit filter, limits, priority and backfill, monitoring, JupyterHub |

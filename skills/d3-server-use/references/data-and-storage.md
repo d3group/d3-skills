@@ -27,8 +27,9 @@ it and backs it up themselves.
 | Logs, results | until `archive --clean` | all of it |
 | Registry `runs/registry.db` | the working copy | a daily snapshot (`registry/`) |
 
-With a bucket, data travels through it in both directions and git carries code only: inputs go laptop → bucket →
-server, results go job → bucket → laptop (section 5), and nothing is rsynced to or from the server.
+With a bucket, data travels through it in both directions: inputs laptop → bucket → server, results job → bucket →
+laptop (section 5), and git carries code. Without one yet, rsync does the same job (section 7): `jobs/push_inputs.sh`
+sends the inputs straight into the checkout, and results come back by rsync.
 
 ## 2. Setting up the AWS CLI
 
@@ -105,18 +106,18 @@ the attempt, because a log is still open while its job runs.
 
 ## 5. A round's data cycle
 
-1. Inputs that exist only on the laptop go into the bucket first: `bash jobs/push_inputs.sh` (dry run), then
-   `--go`. The script uploads the paths of `jobs/server_inputs.txt` with the laptop's profile and refuses any path
-   outside its `ALLOWED` folders (section 9). Then `pull` the datasets the round needs into `data/` once, with
-   `--checksum` (as a `--submit` job if large); the script prints that command. All jobs read that one copy; never
-   let a hundred jobs download the same file.
+1. Inputs that exist only on the laptop: `bash jobs/push_inputs.sh` (dry run), then `--go`. It sends the paths of
+   `jobs/server_inputs.txt` and refuses any path outside its `ALLOWED` folders (section 9): into the bucket with the
+   laptop's profile, or, without a bucket, by rsync into the checkout. From the bucket, `pull` the datasets the round
+   needs into `data/` once, with `--checksum` (as a `--submit` job if large); the script prints that command. All jobs
+   read that one copy; never let a hundred jobs download the same file.
 2. Preprocessing jobs write to `data/processed/`; `push` it when done.
 3. Run the round; jobs upload checkpoints and results themselves.
 4. After the round: `archive --finished --clean --submit`, then `push data/… --clean` for what the next round does
    not need, then `usage`.
-5. Results to the laptop, from the bucket: `aws s3 sync s3://<bucket>/<prefix>/runs/<id>/results/ <folder>
-   --profile <profile>` (add `--exclude "*" --include "<pattern>"` for a part). `d3run.py pull runs/<id>` is the
-   same on the server, for resuming or post-processing there.
+5. Results to the laptop, from the bucket (without one: section 7): `aws s3 sync
+   s3://<bucket>/<prefix>/runs/<id>/results/ <folder> --profile <profile>` (add `--exclude "*" --include "<pattern>"`
+   for a part). `d3run.py pull runs/<id>` is the same on the server, for resuming or post-processing there.
 
 ## 6. Cleaning up
 
@@ -135,6 +136,10 @@ the attempt, because a log is still open while its job runs.
 Until the admin has set up a bucket, the user's own computer is the store. The server still deletes nothing that
 is not verified in a copy: `d3run.py manifest` lists files and sizes, `d3run.py clean --manifest` compares the
 server's files with the copy's list and deletes only when every file is there with the same size.
+
+**Inputs to the server.** `jobs/push_inputs.sh` with `SERVER_DEFAULT` set and no bucket path rsyncs the listed
+paths into `<proj>`, with the same allowed folders as the bucket route; `--check` shows which route it takes. Small
+text inputs that belong in the repository can simply be committed.
 
 **rsync to the user's computer (default).** Everything goes there: runs (logs, checkpoints, results), and the
 data folders the next round does not need. Run on the laptop, in a folder of the user's choice (e.g.
@@ -171,7 +176,8 @@ to `clean --manifest` with `--copied-to <where>`. Own cloud storage only for dat
 (section 9).
 
 Ask again for the bucket now and then; once it exists, set it with `d3run.py init --s3-uri …`, record
-`has_bucket = "yes"` in `<site>`, and push the laptop archive to S3 if the user wants one store.
+`has_bucket = "yes"` in `<site>`, set `S3_URI_DEFAULT` in `jobs/push_inputs.sh` (the script then uploads instead of
+rsyncing), and push the laptop archive to S3 if the user wants one store.
 
 ## 8. Speed and small files
 
@@ -187,6 +193,6 @@ Personal data, partner data and anything under a data agreement go only to stora
 (the server, the bucket, the work laptop) and wherever the agreement allows. Never to GitHub, never to personal cloud storage, never into
 an issue or a chat. Own cloud storage (section 7) is a fallback for everything else. When an agreement keeps data on
 the laptop, it stays out of `jobs/server_inputs.txt` and out of the `ALLOWED` pattern of `jobs/push_inputs.sh`: the
-script refuses such paths, `..` and symbolic links before anything is uploaded, and skips links inside
-folders. Large files never go into
+script refuses such paths, `..` and symbolic links before anything is sent (to the bucket or by rsync), and
+skips links inside folders. Large files never go into
 git at all (no git-lfs either): they go to S3, and the repository lists them in `.gitignore`.
