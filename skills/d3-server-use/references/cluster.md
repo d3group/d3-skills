@@ -54,6 +54,21 @@ re-check with the same commands before relying on a number.
 - Jobs that wait on a dependency start ageing only when it is met, so they rank below GPU jobs that waited longer.
 - After a large round your fair share drops for about a week: other users' jobs start first. That is intended.
 
+**How usage is counted** (checked 2026-11-04 with `scontrol show config`, `scontrol show partition`, `sshare`)
+
+```
+ billing per second = max( CPUs × 1.0 , memory GB × 0.266 , GPUs × 41.5 )   (PriorityFlags = MAX_TRES)
+ usage              = billing-seconds, halved every 7 days
+ fair share         = your rank among all users by usage (Fair Tree: steps of 1 / number of users)
+```
+
+- One GPU bills 41.5 per second, a quarter of the node, the same as 41.5 CPUs or about 156 GB of memory.
+- The rank matters, not the amount: with 18 users one rank is worth 100,000 / 18 = 5,556 priority points, more
+  than half of what age can add in a week. `sshare -U -l` shows your usage and fair share.
+- Examples: a 10-minute smoke test on one GPU 24,900; one GPU-hour 149,400; a 1-CPU job for 24 h 86,400; 40 runs
+  of 3 h on one GPU each 17.9 million. Work on the laptop and commands on the login host cost nothing.
+- So: CPU work on CPUs, measure before a round, no idle JupyterHub server holding a GPU (it bills like a job).
+
 **What helps**
 
 - Submit the CPU-only part of a round **before** the GPU part.
@@ -87,8 +102,10 @@ The rule of the group: one user's jobs take all GPUs or all CPUs only while nobo
 - **`d3run.py feed`** (one `squeue`, at most two `scontrol` calls): releases held `d3run` jobs, oldest first, as
   far as the share or, with nobody waiting, the whole machine allows; when others start waiting and your startable
   jobs exceed the share, it holds back the newest pending ones. It never touches running jobs or jobs without the
-  `d3run` comment. It runs with every `reconcile`; for a long round run it as a feeder job, `feed --submit` (1 CPU,
-  1 GB, checks every 5 minutes, ends when nothing is held or after 23.5 h).
+  `d3run` comment. It runs with every `reconcile`, which costs nothing: while your computer is on, a `reconcile`
+  every 15 minutes does the feeding. A feeder job (`feed --submit`: 1 CPU, 1 GB, checks every 5 minutes, ends when
+  nothing is held or after 23.5 h) bills one CPU while it runs, about 86,400 billing-seconds a day (some 35
+  GPU-minutes); use it for rounds that run while your computer is off.
 - Change the share per project with `d3run.py init --share-gpus N --share-cpus N`; skip the check with
   `submit --no-throttle` only when you know nobody else uses the server.
 - Without d3run, Slurm's own array throttle does the static part: `sbatch --array=0-79%3` runs at most 3 tasks at

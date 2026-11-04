@@ -1,4 +1,4 @@
-"""Train a sequence model on the load data. Takes about 30 hours on one RTX 4090 (120 epochs)."""
+"""Train a sequence model on a time series. Takes about 30 hours on one RTX 4090 (120 epochs)."""
 import argparse
 import json
 from pathlib import Path

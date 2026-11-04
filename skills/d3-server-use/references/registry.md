@@ -83,4 +83,5 @@ to `d3run.py`. Check these points instead:
    (`WHERE slurm_job_id IN …`) return wrong experiments once new IDs reach the old range. Give them experiment IDs or
    a round tag.
 5. **Commit per experiment**, and refuse submissions from a dirty tree.
-6. **Aggregation jobs that overwrite shared outputs** (paper tables, plots) do not belong in an automatic round.
+6. **Jobs that rewrite shared outputs from all runs** (summary tables, figures) do not belong in an automatic
+   round: run them on purpose, on a chosen set of runs.

@@ -99,15 +99,15 @@ ends and size the margin to one epoch.
 - Orbax needs an **absolute** path: `ocp.StandardCheckpointer().save(path.resolve(), state)` inside
   `with ctx.checkpoint(step) as path:`, then `checkpointer.wait_until_finished()` before the block ends, so the
   rename happens only after the asynchronous write is complete.
-- Save optimizer state, step, RNG keys and any non-parameter state the model keeps outside `nnx.Variable`s (e.g.
-  spline grids of KAN layers): a restore without it loads the parameters onto a different function.
+- Save optimizer state, step, RNG keys and any state the model keeps outside its parameters (grids, buffers or
+  statistics stored as plain attributes): a restore without it loads the parameters onto a different function.
 - CPU-only JAX jobs: `JAX_PLATFORMS=cpu` (the CUDA plugin traceback in the log is harmless). Large models on one GPU:
   `XLA_PYTHON_CLIENT_MEM_FRACTION=0.95`, or `XLA_PYTHON_CLIENT_PREALLOCATE=false` while measuring the real peak
   in a pilot (the default preallocation shows 75 % of the GPU in `nvidia-smi` whatever the model needs).
 
 ## 5. Work lists (configs, seeds, chunks)
 
-Many short units inside one job (ALE curves, post-processing, a seed sweep in one process):
+Many short units inside one job (evaluation metrics, post-processing, a seed sweep in one process):
 
 - One result file per unit, written atomically (temp name, then `os.replace`). On start, skip the units whose result
   exists: the result files are the checkpoint.

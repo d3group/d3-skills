@@ -2,4 +2,4 @@ model: lstm
 seed: 00
 hidden: 128
 epochs: 60
-data: data/processed/households.parquet
+data: data/processed/series.parquet

@@ -30,7 +30,9 @@ backups, so the S3 bucket is where data, checkpoints, logs and results live.
 
 ## 0. First use (once per user)
 
-Read `<site>` first. Fill in only what is missing and never ask again for what is stored.
+Read `<site>` first. Fill in only what is missing and never ask again for what is stored. Write `<site>` only with
+what the user answered or confirmed, and show the entries before saving them the first time; in a session without
+the user (a test, a plan for later) list the questions instead of writing a site file.
 
 1. **Login name.** Ask once ("What is your login name on the KiRegio server, e.g. abcd?") and store it as `login`.
 2. **ssh: detect before you guide.** Stop at the first check that works:
@@ -52,7 +54,9 @@ Read `<site>` first. Fill in only what is missing and never ask again for what i
      profile name if it is not `default`. Store `bucket`, `endpoint_url`, `aws_profile` in `<site>`. A missing CLI
      or config: set it up with [references/data-and-storage.md](references/data-and-storage.md); the user writes
      the keys themselves. Check access with `aws s3 ls s3://<bucket>/` on the laptop and on the login host and
-     store the date in `access_ok`.
+     store the date in `access_ok`. Once per bucket, check that it keeps objects:
+     `aws s3api get-bucket-lifecycle-configuration --bucket <bucket>` (no rules is good); a rule that expires or
+     deletes objects makes it unfit as the only copy, so tell the user and ask the admin.
    - **Per project:** the folder inside the bucket (`s3_prefix`, default the project name) goes into
      `<site>` under `[projects.<name>]` and into the project's registry with `d3run.py init --s3-uri
      s3://<bucket>/<prefix>` (add `--s3-endpoint`/`--aws-profile` if the server's `~/.aws/config` does not set
@@ -73,6 +77,9 @@ Read `<site>` first. Fill in only what is missing and never ask again for what i
 - **Everything that computes is a Slurm job.** No ssh to the compute node; on the login host only `ls`, `du` of a
   small folder, `git`, `uv sync`, `sq`, `sacct`, `d3run.py`. A data scan with polars on a login node once made the
   whole server unresponsive for everyone: polars, numpy and JAX take every core.
+- **No scans of the whole home, not even in a job.** `du` or `find` over `~` sends the shared NFS server a request
+  for every file and slows everyone. The total is in Grafana, run folders in `d3run.py usage`, a single folder in
+  `du -sh <folder>`.
 - **uv only:** `uv add`, `uv sync`, `uv run`, `uv tool install`. No pip, conda, venv or global installs. Sync once on
   the login host (`uv sync --managed-python`, so the Python sits in the home where the compute node sees it), then
   jobs call `uv run --no-sync`, so a hundred jobs do not sync the shared `.venv` at the same time.
@@ -95,7 +102,8 @@ Read `<site>` first. Fill in only what is missing and never ask again for what i
   uncommitted changes and records the commit.
 - **S3 is the store, the server is scratch.** Upload as you go, verify, then delete the local copy. Without a
   bucket the user's own computer is the store (rsync, then `clean --manifest`). Clean up after every round and
-  whenever `d3run.py usage` passes about 50 GB. Nothing on the server is deleted before a copy is verified.
+  whenever `d3run.py usage` passes about 50 GB. Nothing on the server is deleted before a copy is verified by
+  checksum (MD5 against the bucket's ETag, SHA-256 for other copies; `--size-only` only on the user's request).
 - **No secrets in files you write.** Passwords, access keys and the Grafana login stay in the user's own files
   (`~/.aws/credentials`, password manager) and the admin's mails, never in a repo, a note, a job script or `<site>`.
 - **One writer per file.** Only `d3run.py` on the login host writes the registry; jobs write their own run folder.
@@ -107,13 +115,21 @@ Claude runs on the user's computer and sends commands as `ssh <alias> 'cd <proj>
 (watching a queue) the ControlMaster settings in [references/first-time-setup.md](references/first-time-setup.md)
 reuse one connection.
 
-1. **Project setup (once per project).** `git clone` into `<proj>`, `uv sync --managed-python`, `uv cache prune`.
-   Copy `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`) and the job template
-   `<skill-dir>/assets/job_template.sbatch` (e.g. `jobs/train.sbatch`), add `runs/` and `__pycache__/` to
-   `.gitignore`, commit. Then `uv run tools/d3run.py init --user <login> --s3-uri s3://<bucket>/<prefix>` with the
+1. **Read the project first, then set it up.** The skill is generic; the repository it is used in decides the
+   details. Look before changing anything: project rules (`CLAUDE.md`, `AGENTS.md`, `.agent/`, `README`; where they
+   are stricter, they win), the environment (`pyproject.toml`, `uv.lock`), existing job and submit scripts
+   (`grep -rl '^#SBATCH'`), an existing run database or orchestrator, existing checkpoint code, and where configs,
+   data, logs and results live. Then adapt: a project with its own orchestrator keeps it and is checked against
+   "Fitting an existing orchestrator" in [references/registry.md](references/registry.md); a project without one
+   gets `d3run.py` and `d3job.py`. Keep the project's folder names and conventions instead of inventing new ones.
+   Setup (once per project): `git clone` into `<proj>`, `uv sync --managed-python`, `uv cache prune`. Copy
+   `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`) and the job template
+   `<skill-dir>/assets/job_template.sbatch` (e.g. `jobs/train.sbatch`) yourself, as part of the change you prepare:
+   the delivered project must run as it is, without the user copying files out of the skill folder. Add `runs/` and
+   `__pycache__/` to `.gitignore`, commit. Then `uv run tools/d3run.py init --user <login> --s3-uri s3://<bucket>/<prefix>` with the
    values from `<site>` (or `--no-s3`).
 2. **Plan.** Split the work into units that can resume (epochs, configs, seeds, chunks). Decide CPU or GPU per part:
-   only code that uses the GPU goes to a GPU; XGBoost, linear models, ALE or post-processing run on CPUs
+   only code that uses the GPU goes to a GPU; tree models, linear models, evaluation or post-processing run on CPUs
    (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Estimate the runtime; above about 20 h plan segments.
 3. **Make the code interruptible** with `RunContext` from `d3job.py`
    ([references/interruptible-jobs.md](references/interruptible-jobs.md)). Lint every job script:
@@ -131,9 +147,10 @@ reuse one connection.
 7. **Submit the round.** `d3run.py new --config configs/round/*.yaml --tag <round>` creates one run per config;
    `d3run.py submit <ids…> --script jobs/train.sbatch <flags from size>`. Submit the CPU-only part before the GPU
    part (age is the only priority difference between your own jobs). Never use `--partition`: GPU jobs go to `main`
-   and CPU jobs to `cpu` by themselves. If `submit` reports held jobs (others are waiting), start a feeder for the
-   round: `d3run.py feed --submit` (one CPU, checks every 5 minutes, ends when nothing is held). Write the round
-   (tag, commit, flags) into the project notes.
+   and CPU jobs to `cpu` by themselves. If `submit` reports held jobs (others are waiting), `reconcile` every 15 minutes
+   releases them for free while the computer is on; a feeder job (`d3run.py feed --submit`, one CPU) costs fair
+   share (about 35 GPU-minutes a day) and is for rounds that run while it is off. Write the round (tag, commit,
+   flags) into the project notes.
 8. **Watch.** `d3run.py reconcile` (it also runs one fair-use pass) and `list --tag <round>` every 15 minutes or
    more, not in a tight loop. Queue views: `sq`, `squeue -u $USER -t PD -o "%i %P %Q %r %S"`. Pending although
    resources look free: see [references/cluster.md](references/cluster.md) (one priority list, backfill tests at
@@ -141,7 +158,9 @@ reuse one connection.
 9. **Archive and clean.** With a bucket: `d3run.py archive --finished --clean --submit` uploads each finished
    run folder, checks every file's size in S3, then deletes the server copy (three small JSON files stay). Data:
    `d3run.py push data/processed --clean --submit`, back with `pull`. Without a bucket: the rsync route in
-   [references/data-and-storage.md](references/data-and-storage.md), section 7. Then `d3run.py usage`.
+   [references/data-and-storage.md](references/data-and-storage.md), section 7. The first time a store is used,
+   run a restore drill: bring one cleaned run back (`d3run.py pull runs/<id> --checksum`, or rsync it back) and
+   check it, before the server keeps nothing else. Then `d3run.py usage`.
 
 ## 3. The registry: `d3run.py`
 
@@ -154,8 +173,8 @@ reuse one connection.
 | `feed [--loop \| --submit]` | fair use: release held jobs when nobody else waits, hold back pending ones when others wait |
 | `show <id>`, `list [--tag] [--status]`, `find-job <slurm id>` | what ran where, with which code and logs |
 | `size --tag <pilot>` | `--time`, `--cpus`, `--mem`, segments from measured usage (margin 1.3) |
-| `archive`, `push`, `pull` (`--clean`, `--submit`) | S3 transfers with size verification; large ones run as a Slurm job |
-| `manifest`, `clean --manifest` | without a bucket: list files and sizes of a copy; delete on the server only what it holds |
+| `archive`, `push`, `pull` (`--clean`, `--submit`) | S3 transfers; sizes, and before deleting MD5 against the ETag; large ones run as a Slurm job |
+| `manifest`, `clean --manifest` | without a bucket: files, sizes and SHA-256 of a copy; delete on the server only what it holds |
 | `usage`, `mark <id> <STATUS>` | disk use of run folders; set a status by hand |
 
 Every command is light: a small SQLite file and one `sacct` call per 200 jobs (an ID costs microseconds). Transfers

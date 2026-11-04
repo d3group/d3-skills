@@ -27,7 +27,7 @@ Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abst
 | [d3-explainer](skills/d3-explainer/) | 0.12.0 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](skills/d3-scientific-wording/) | 0.1.0 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet profiles, STE guide, wording lint, corpus profiler |
 | [d3-marimo](skills/d3-marimo/) | 0.1.1 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab/molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet, headless browser check, pitfalls |
-| [d3-server-use](skills/d3-server-use/) | 0.1.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup | Registry and S3 transfer CLI, job-side checkpoint helper, job template, sbatch lint |
+| [d3-server-use](skills/d3-server-use/) | 0.2.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup | Registry and S3 transfer CLI, job-side checkpoint helper, job template, sbatch lint |
 
 ## Design
 
@@ -59,6 +59,9 @@ request ("light review", "I'm short on tokens", "full review"); otherwise the de
 
 A reviewer costs roughly 50k tokens regardless of document size, so `standard` adds about 50 to 150k tokens and `full` a
 multiple of that; `light` adds almost nothing.
+
+`d3-server-use` runs no reviewer agents and has no review depth: its checks are deterministic (the refusals and
+verification in `d3run.py`, the stop logic in `d3job.py`, the `check_sbatch.py` lint) and cost no extra tokens.
 
 ## Running jobs on the group server (d3-server-use)
 
@@ -121,13 +124,17 @@ skills/d3-server-use/
 
 ### A round, step by step
 
+Every use starts by reading the repository the skill is invoked in (project rules, existing job scripts, an
+existing orchestrator, checkpoint code, folder layout) and adapts to it; the skill itself holds nothing
+project-specific.
+
 ```
  ①setup ─▶ ②plan ─▶ ③interruptible ─▶ ④deploy ─▶ ⑤smoke ─▶ ⑥pilot+size ─▶ ⑦submit ─▶ ⑧watch ─▶ ⑨archive+clean
    │          │          │                │          │            │              │           │          │
- clone,     CPU or    d3job +           commit,    tiny job,    full-size     new --tag,  reconcile  verified copy,
- uv sync,   GPU per   check_sbatch      git pull   GPU check,   run, then     CPU part    every 15+  then delete;
- init       part                        (queue     resume       `size`        first;      min        `usage`
-                                        empty)     test                       fair use
+ read repo, CPU or    d3job +           commit,    tiny job,    full-size     new --tag,  reconcile  verified copy,
+ clone,     GPU per   check_sbatch      git pull   GPU check,   run, then     CPU part    every 15+  then delete;
+ uv sync,   part                        (queue     resume       `size`        first;      min        `usage`
+ init                                   empty)     test                       fair use
 ```
 
 ### Run IDs
@@ -190,8 +197,8 @@ skills/d3-server-use/
  data/raw, processed   pulled once per round                  in the store only
  registry.db           server                                 daily snapshot in S3
 
- the store   S3 bucket   archive --clean · push --clean        each file verified by size in S3
-             no bucket   rsync to your computer                manifest of the copy · clean --manifest
+ the store   S3 bucket   archive --clean · push --clean        each file verified by size and MD5 (ETag)
+             no bucket   rsync to your computer                manifest with SHA-256 · clean --manifest
              fallback    university share, NAS, own cloud      same manifest route (unrestricted data only)
              git         small text results for the repo       moves them, does not free server space
 ```
@@ -206,7 +213,7 @@ skills/d3-server-use/
 | ⛔ | the same config and commit twice (except `--allow-duplicate`) | `new` |
 | ⛔ | registry writes from inside a job (one writer) | all writing commands |
 | ⛔ | transfers or deletions above 1 GB or 2,000 files on the login host (asks for `--submit`) | `archive`, `push`, `pull`, `clean` |
-| ⛔ | deleting without a verified copy, while a run is active, or anything git tracks | `--clean`, `clean --manifest` |
+| ⛔ | deleting without a checksum-verified copy (`--size-only` only on request), while a run is active, or anything git tracks | `--clean`, `clean --manifest` |
 | ⛔ | pip / conda / venv, `#SBATCH` after the first command, secrets in scripts | linter |
 | ⚙️ **automatic** | run ID before `sbatch`; commit, config hash and logs per run | `new`, `submit` |
 | ⚙️ | fair-use hold and release | `submit`, `feed`, `reconcile` |
@@ -217,7 +224,8 @@ skills/d3-server-use/
 | 📖 | smoke test and pilot before every round; CPU part first | `SKILL.md` |
 | 📖 | never pull while a round is queued | `SKILL.md` |
 | 📖 | ssh and S3 setup: detect first, the user handles keys | `SKILL.md`, setup guide |
-| 📖 | clean up after each round and above about 50 GB; stop idle JupyterHub servers | `SKILL.md`, references |
+| 📖 | clean up after each round and above about 50 GB; a restore drill and a bucket lifecycle check before the store is the only copy | `SKILL.md`, references |
+| 📖 | no scans of the whole home, not even in a job; stop idle JupyterHub servers | `SKILL.md`, references |
 
 ## Versions and releasing
 

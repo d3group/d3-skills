@@ -351,25 +351,59 @@ def walk(base: Path) -> dict[str, int]:
     return files
 
 
-def remote_sizes(aws: list[str], prefix_uri: str) -> dict[str, int] | None:
-    """Relative key -> size for every object below prefix_uri (a 'folder')."""
+def remote_objects(aws: list[str], prefix_uri: str) -> dict[str, tuple[int, str]] | None:
+    """Relative key -> (size, ETag) for every object below prefix_uri (a 'folder'). One paginated listing."""
     uri = prefix_uri.rstrip("/") + "/"
-    res = subprocess.run(aws + ["s3", "ls", "--recursive", uri], capture_output=True, text=True)
-    if res.returncode not in (0, 1):          # 1 = nothing found
+    bucket, _, prefix = uri[len("s3://"):].partition("/")
+    res = subprocess.run(aws + ["s3api", "list-objects-v2", "--bucket", bucket, "--prefix", prefix, "--output", "json"],
+                         capture_output=True, text=True)
+    if res.returncode != 0:
         info(f"listing {uri} failed: {res.stderr.strip()}")
         return None
-    bucket_key = uri[len("s3://"):].split("/", 1)
-    prefix = bucket_key[1] if len(bucket_key) > 1 else ""
     out = {}
-    for line in res.stdout.splitlines():
-        parts = line.split(None, 3)
-        if len(parts) == 4 and parts[2].isdigit() and parts[3].startswith(prefix):
-            out[parts[3][len(prefix):]] = int(parts[2])
+    for obj in (json.loads(res.stdout) if res.stdout.strip() else {}).get("Contents", []) or []:
+        if obj["Key"].startswith(prefix) and not obj["Key"].endswith("/"):
+            out[obj["Key"][len(prefix):]] = (int(obj["Size"]), str(obj.get("ETag", "")).strip('"'))
     return out
 
 
-def sync_verify(aws: list[str], local: Path, uri: str, direction: str = "up") -> tuple[bool, dict]:
-    """Copy local <-> uri, then compare every file's size. Returns (verified, details)."""
+def remote_sizes(aws: list[str], prefix_uri: str) -> dict[str, int] | None:
+    objs = remote_objects(aws, prefix_uri)
+    return None if objs is None else {k: v[0] for k, v in objs.items()}
+
+
+def s3_etag(path: Path, chunk_mb: int | None = None) -> str:
+    """The ETag the AWS CLI's upload gives a file: MD5, or for files from the multipart threshold on the MD5 of the
+    part MD5s plus "-<parts>". Threshold and part size are the CLI defaults (8 MB) unless D3RUN_S3_CHUNK_MB says
+    otherwise; the CLI doubles the part size while a file would need more than 10,000 parts."""
+    chunk = (chunk_mb or int(os.environ.get("D3RUN_S3_CHUNK_MB") or 8)) * 1024 * 1024
+    size = path.stat().st_size
+    if size < chunk:
+        h = hashlib.md5()
+        with open(path, "rb") as f:
+            for block in iter(lambda: f.read(1 << 20), b""):
+                h.update(block)
+        return h.hexdigest()
+    while math.ceil(size / chunk) > 10000:
+        chunk *= 2
+    digests = []
+    with open(path, "rb") as f:
+        for part in iter(lambda: f.read(chunk), b""):
+            digests.append(hashlib.md5(part).digest())
+    return f"{hashlib.md5(b''.join(digests)).hexdigest()}-{len(digests)}"
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+def sync_verify(aws: list[str], local: Path, uri: str, direction: str = "up",
+                checksum: bool = False) -> tuple[bool, dict]:
+    """Copy local <-> uri, then compare every file's size (and with checksum=True its MD5/ETag)."""
     is_file = local.is_file() if direction == "up" else False
     if direction == "up":
         if is_file:
@@ -390,19 +424,23 @@ def sync_verify(aws: list[str], local: Path, uri: str, direction: str = "up") ->
         return False, {"error": res.stderr.strip() or f"exit {res.returncode}", "files": 0, "bytes": 0,
                        "missing": []}
     if is_file:
-        parent = uri.rsplit("/", 1)[0]
-        remote = remote_sizes(aws, parent) or {}
-        name = uri.rsplit("/", 1)[1]
-        remote = {name: remote[name]} if name in remote else {}
+        parent, name = uri.rsplit("/", 1)
+        objs = remote_objects(aws, parent) or {}
+        objs = {name: objs[name]} if name in objs else {}
         local_files = {name: local.stat().st_size} if local.exists() else {}
+        local_path = {name: local}
     else:
-        remote = remote_sizes(aws, uri) or {}
+        objs = remote_objects(aws, uri) or {}
         local_files = walk(local) if local.exists() else {}
+        local_path = {k: local / k for k in local_files}
+    remote = {k: v[0] for k, v in objs.items()}
     reference = local_files if direction == "up" else remote
     other = remote if direction == "up" else local_files
     missing = sorted(k for k, v in reference.items() if other.get(k) != v)
+    if checksum and not missing:
+        missing = sorted(k for k in reference if s3_etag(local_path[k]) != objs[k][1])
     return not missing and bool(reference), {"files": len(reference), "bytes": sum(reference.values()),
-                                             "missing": missing}
+                                             "missing": missing, "checked": "md5" if checksum else "size"}
 
 
 def guard_login(n_files: int, n_bytes: int, here: bool, what: str) -> None:
@@ -1095,6 +1133,7 @@ def cmd_archive(a) -> None:
         return
     if a.submit:
         job_args = ["archive", "--no-registry", "--s3-uri", s3] + (["--clean"] if a.clean else []) + \
+                   (["--checksum"] if a.checksum else []) + (["--size-only"] if a.size_only else []) + \
                    [rid for rid, _, _, active in targets if not (active and a.clean)]
         submit_self(root, job_args, st, a.job_time)
         return
@@ -1102,8 +1141,9 @@ def cmd_archive(a) -> None:
     guard_login(sum(len(s) for s in sizes), sum(sum(s.values()) for s in sizes), a.here, "archive")
     aws = aws_cmd(st)
     freed_total = 0
+    checksum = a.checksum or (a.clean and not a.size_only)
     for rid, run_dir, uri, active in targets:
-        msg, freed = archive_one(aws, rid, run_dir, uri, a.clean and not active)
+        msg, freed = archive_one(aws, rid, run_dir, uri, a.clean and not active, checksum)
         freed_total += freed
         print(msg)
     if not a.no_registry:
@@ -1114,12 +1154,13 @@ def cmd_archive(a) -> None:
         print(f"freed {freed_total / 2**30:.2f} GB on the server")
 
 
-def archive_one(aws: list[str], rid: str, run_dir: Path, uri: str, clean: bool) -> tuple[str, int]:
+def archive_one(aws: list[str], rid: str, run_dir: Path, uri: str, clean: bool,
+                checksum: bool = False) -> tuple[str, int]:
     if not run_dir.is_dir():
         return f"{rid}: no local folder", 0
-    ok, d = sync_verify(aws, run_dir, uri)
+    ok, d = sync_verify(aws, run_dir, uri, checksum=checksum)
     rec = read_json(run_dir / "archive.json") or {}
-    rec.update({"run_id": rid, "s3_uri": uri, "files": d["files"], "bytes": d["bytes"]})
+    rec.update({"run_id": rid, "s3_uri": uri, "files": d["files"], "bytes": d["bytes"], "checked": d.get("checked")})
     if not ok:
         rec["missing"] = d["missing"][:20]
         write_json(run_dir / "archive.json", rec)
@@ -1138,7 +1179,7 @@ def archive_one(aws: list[str], rid: str, run_dir: Path, uri: str, clean: bool) 
     write_json(run_dir / "archive.json", rec)
     subprocess.run(aws + ["s3", "cp", str(run_dir / "archive.json"), f"{uri}/archive.json", "--only-show-errors"],
                    capture_output=True)
-    return f"{rid}: {d['files']} files, {d['bytes'] / 2**20:.1f} MB verified in {uri}" + \
+    return f"{rid}: {d['files']} files, {d['bytes'] / 2**20:.1f} MB verified ({d['checked']}) in {uri}" + \
         (f"; local copy removed" if clean else ""), freed
 
 
@@ -1180,18 +1221,20 @@ def cmd_push(a) -> None:
             refuse_tracked(root, p)
     if a.submit:
         submit_self(root, ["push", "--s3-uri", s3] + (["--clean"] if a.clean else []) +
+                    (["--checksum"] if a.checksum else []) + (["--size-only"] if a.size_only else []) +
                     [p.relative_to(root).as_posix() for p in paths], st, a.job_time)
         return
     sizes = [walk(p) for p in paths]
     guard_login(sum(len(s) for s in sizes), sum(sum(s.values()) for s in sizes), a.here, "push")
     aws = aws_cmd(st)
+    checksum = a.checksum or (a.clean and not a.size_only)
     for p in paths:
         rel = p.relative_to(root).as_posix()
-        ok, d = sync_verify(aws, p, f"{s3}/{rel}")
+        ok, d = sync_verify(aws, p, f"{s3}/{rel}", checksum=checksum)
         if not ok:
             print(f"{rel}: NOT verified ({d.get('error') or str(len(d['missing'])) + ' files differ'}); kept")
             continue
-        print(f"{rel}: {d['files']} files, {d['bytes'] / 2**20:.1f} MB verified in {s3}/{rel}")
+        print(f"{rel}: {d['files']} files, {d['bytes'] / 2**20:.1f} MB verified ({d['checked']}) in {s3}/{rel}")
         if a.clean:
             shutil.rmtree(p) if p.is_dir() else p.unlink()
             print(f"{rel}: local copy removed")
@@ -1210,8 +1253,8 @@ def cmd_pull(a) -> None:
         rel = p.relative_to(root).as_posix()
         remote = remote_sizes(aws, f"{s3}/{rel}") or {}
         guard_login(len(remote), sum(remote.values()), a.here, f"pull {rel}")
-        ok, d = sync_verify(aws, p, f"{s3}/{rel}", direction="down")
-        print(f"{rel}: " + (f"{d['files']} files, {d['bytes'] / 2**20:.1f} MB verified" if ok else
+        ok, d = sync_verify(aws, p, f"{s3}/{rel}", direction="down", checksum=a.checksum)
+        print(f"{rel}: " + (f"{d['files']} files, {d['bytes'] / 2**20:.1f} MB verified ({d['checked']})" if ok else
                             f"NOT verified ({d.get('error') or str(len(d['missing'])) + ' files differ'})"))
 
 
@@ -1228,11 +1271,17 @@ def cmd_manifest(a) -> None:
     if a.list:
         print("\n".join(paths))
         return
-    out = {"root": str(root), "made_at": now(), "paths": {}}
+    out = {"root": str(root), "made_at": now(), "checksum": None if a.size_only else "sha256", "paths": {}}
     for rel in paths:
         target = root / rel
         if target.exists():
-            out["paths"][rel] = walk(target)
+            files = walk(target)
+            if a.size_only:
+                out["paths"][rel] = files
+            else:
+                base = target if target.is_dir() else target.parent
+                out["paths"][rel] = {k: {"size": v, "sha256": sha256_file(base / k if target.is_dir() else target)}
+                                     for k, v in files.items()}
         else:
             info(f"{rel}: not found below {root}")
     print(json.dumps(out, indent=1, sort_keys=True))
@@ -1269,15 +1318,25 @@ def cmd_clean(a) -> None:
     if a.submit:
         saved = root / "runs" / f"manifest-{time.strftime('%Y%m%d-%H%M%S')}.json"
         saved.write_text(text)
-        submit_self(root, ["clean", "--manifest", str(saved), "--copied-to", a.copied_to], {}, a.job_time,
+        submit_self(root, ["clean", "--manifest", str(saved), "--copied-to", a.copied_to] +
+                    (["--size-only"] if a.size_only else []), {}, a.job_time,
                     name="d3run-clean")
         return
     sizes = [walk(p) for _, p, _ in targets]
-    guard_login(sum(len(x) for x in sizes), 0, a.here, "clean")
+    guard_login(sum(len(x) for x in sizes), sum(sum(x.values()) for x in sizes), a.here, "clean")
     freed_total = 0
     for (rel, p, is_run), local in zip(targets, sizes):
         theirs = copy[rel]
-        missing = sorted(k for k, v in local.items() if theirs.get(k) != v)
+        sized = {k: (v["size"] if isinstance(v, dict) else v) for k, v in theirs.items()}
+        missing = sorted(k for k, v in local.items() if sized.get(k) != v)
+        hashed = all(isinstance(v, dict) and v.get("sha256") for v in theirs.values())
+        if not missing and not a.size_only:
+            if not hashed:
+                print(f"{rel}: NOT cleaned, the manifest has no checksums (make it without --size-only, "
+                      "or pass --size-only to clean by size)")
+                continue
+            base = p if p.is_dir() else p.parent
+            missing = sorted(k for k in local if sha256_file(base / k if p.is_dir() else p) != theirs[k]["sha256"])
         if missing:
             print(f"{rel}: NOT cleaned, {len(missing)} files missing or different in the copy (e.g. {missing[0]})")
             continue
@@ -1290,6 +1349,7 @@ def cmd_clean(a) -> None:
                 shutil.rmtree(child) if child.is_dir() else child.unlink()
             rec = read_json(p / "archive.json") or {}
             rec.update({"run_id": p.name, "copied_to": a.copied_to, "files": len(local), "bytes": sum(local.values()),
+                        "checked": "size" if a.size_only else "sha256",
                         "verified_at": now(), "cleaned_at": now(), "freed_bytes": freed})
             write_json(p / "archive.json", rec)
             if conn is not None and conn.execute("SELECT 1 FROM runs WHERE run_id = ?", (p.name,)).fetchone():
@@ -1298,7 +1358,8 @@ def cmd_clean(a) -> None:
             freed = sum(local.values())
             shutil.rmtree(p) if p.is_dir() else p.unlink()
         freed_total += freed
-        print(f"{rel}: {len(local)} files verified in the copy ({a.copied_to}); removed from the server")
+        print(f"{rel}: {len(local)} files verified ({'size' if a.size_only else 'sha256'}) in the copy "
+              f"({a.copied_to}); removed from the server")
     if conn is not None:
         conn.commit()
     print(f"freed {freed_total / 2**30:.2f} GB on the server")
@@ -1449,7 +1510,10 @@ def build_parser() -> argparse.ArgumentParser:
         else:
             s.add_argument("paths", nargs="+", help="paths inside the project; S3 mirrors the layout")
         if name != "pull":
-            s.add_argument("--clean", action="store_true", help="delete the local copy once verified")
+            s.add_argument("--clean", action="store_true",
+                           help="delete the local copy once verified (checksums by default)")
+            s.add_argument("--size-only", action="store_true", help="verify by size only, also before deleting")
+        s.add_argument("--checksum", action="store_true", help="verify MD5/ETag even without --clean")
         s.add_argument("--submit", action="store_true", help="run the transfer as a Slurm job")
         s.add_argument("--here", action="store_true", help="run on the login host despite the size")
         s.add_argument("--job-time", default="04:00:00", help="time limit of the transfer job")
@@ -1460,12 +1524,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("paths", nargs="*", help="project paths, e.g. runs/<id> data/raw")
     s.add_argument("--finished", action="store_true", help="add all finished runs not yet cleaned (server)")
     s.add_argument("--list", action="store_true", help="print the paths only (for rsync --files-from)")
+    s.add_argument("--size-only", action="store_true", help="sizes only, no SHA-256 (fast, weaker)")
     s.set_defaults(func=cmd_manifest)
 
     s = sub.add_parser("clean", parents=[common], help="delete on the server what a verified copy holds")
     s.add_argument("--manifest", required=True, help="manifest JSON of the copy (`manifest --root <copy>`), or -")
     s.add_argument("--copied-to", required=True, help="where the copy lives, e.g. laptop:~/d3-archive/<project>")
-    s.add_argument("--submit", action="store_true", help="run the deletion as a Slurm job (many files)")
+    s.add_argument("--submit", action="store_true", help="run the deletion as a Slurm job (many files or GB)")
+    s.add_argument("--size-only", action="store_true", help="accept a manifest without checksums; compare sizes")
     s.add_argument("--here", action="store_true", help="run on the login host despite the file count")
     s.add_argument("--job-time", default="02:00:00")
     s.set_defaults(func=cmd_clean)

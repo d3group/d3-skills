@@ -75,7 +75,7 @@
     },
     {
       "name": "d3-server-use",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "description": "Jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry, interruptible jobs within 24 h, smoke test and sizing before a round, S3 as the store and regular cleanup",
       "source": "./",
       "strict": false,

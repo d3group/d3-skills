@@ -82,14 +82,18 @@ s3://<bucket>/<project>/            # mirrors the repository
 
 | Command | Does |
 |---|---|
-| `push data/raw [--clean]` | upload a project path, compare every file's size, optionally delete the local copy |
-| `pull data/raw` | download it again (same layout), compare sizes |
+| `push data/raw [--clean]` | upload a project path, compare every file's size (and with `--clean` its MD5), optionally delete the local copy |
+| `pull data/raw [--checksum]` | download it again (same layout), compare sizes (and MD5) |
 | `archive <ids…> \| --tag T \| --finished [--clean]` | upload run folders; `--clean` keeps only the three JSON files |
 | `--submit` (any of the three) | run the transfer as a 2-CPU Slurm job; required above 1 GB or 2,000 files |
 | `usage` | size of each run folder and of `data/`, `results/`, `logs/` |
 
-Safety rules built in: nothing is deleted before every file is verified in S3; runs that are queued or running are
-uploaded but never cleaned; paths tracked by git and the registry are never cleaned.
+Safety rules built in: nothing is deleted before every file is verified in S3, by size and, with `--clean`, by
+MD5 against the object's ETag (for files from 8 MB on the multipart ETag, computed the way the AWS CLI uploads:
+8 MB parts). `--size-only` skips the checksum and is for when the user asks for it. If `~/.aws/config` sets another
+`multipart_chunksize`, export `D3RUN_S3_CHUNK_MB` with the same value, otherwise the check fails and nothing is
+deleted. Runs that are queued or running are uploaded but never cleaned; paths tracked by git and the registry are
+never cleaned.
 
 Inside jobs, `d3job` uploads each checkpoint and, at `finish()`, the results. Logs are uploaded by `archive` after
 the attempt, because a log is still open while its job runs.
@@ -107,7 +111,11 @@ the attempt, because a log is still open while its job runs.
 
 - After every round, and whenever `usage` passes about 50 GB.
 - `uv cache prune` after environment changes; old `.venv`s of deleted projects go too.
-- Check the home figure in Grafana; `du -sh ~` walks every file over NFS and is slow with many files.
+- Never scan the whole home, not even in a job: `du` or `find` over `~` asks the shared NFS server about every file.
+  The total is in Grafana, run folders in `d3run.py usage`, one folder at a time with `du -sh <folder>`.
+- **Before the store is the only copy:** check once that the bucket keeps objects
+  (`aws s3api get-bucket-lifecycle-configuration --bucket <bucket>`; an expiry rule means ask the admin), and run a
+  restore drill: `d3run.py pull runs/<id> --checksum` for one cleaned run, open its results, clean it again.
 - Cleaning is deleting: before the first `--clean` of a session, show the user what will go (`archive … ` without
   `--clean` prints what is verified) and get a yes.
 
@@ -122,13 +130,16 @@ data folders the next round does not need. Run on the laptop, in a folder of the
 `~/d3-archive/<project>`):
 
 ```bash
-ssh <alias> 'cd <proj> && uv run tools/d3run.py manifest --finished --list' > list.txt   # finished runs
+ssh <alias> 'cd <proj> && uv run tools/d3run.py manifest --finished --list' > list.txt   # finished runs (paths only)
 echo data/processed >> list.txt                                                          # plus data paths
 rsync -a -r --files-from=list.txt <alias>:<proj>/ ~/d3-archive/<project>/                # copy (macOS rsync works)
 uv run <skill-dir>/scripts/d3run.py manifest --root ~/d3-archive/<project> $(cat list.txt) > copy.json
 ssh <alias> 'cd <proj> && uv run tools/d3run.py clean --manifest - --copied-to "laptop:~/d3-archive/<project>"' < copy.json
 ```
 
+- The manifest of the copy holds size and SHA-256 per file; `clean` hashes the server's files (above 1 GB as a
+  Slurm job, `--submit`) and deletes only on a match. A manifest made with `--size-only` is refused unless `clean`
+  also gets `--size-only`.
 - `clean` keeps `run.json`, `status.json` and `archive.json` of each run on the server (the registry and
   `list` show where the copy lives), never touches queued or running runs, and refuses paths tracked by git.
   Above 2,000 files add `--submit`: the deletion runs as a Slurm job.
@@ -159,7 +170,7 @@ Parquet per job, `tar` for log folders that are only archived) before they reach
 
 ## 9. Sensitive data
 
-Household, personal or partner data goes only to storage on university infrastructure (the server, the bucket, the
-work laptop) and wherever the data agreement allows. Never to GitHub, never to personal cloud storage, never into
+Personal data, partner data and anything under a data agreement go only to storage on university infrastructure
+(the server, the bucket, the work laptop) and wherever the agreement allows. Never to GitHub, never to personal cloud storage, never into
 an issue or a chat. Own cloud storage (section 7) is a fallback for everything else. Large files never go into
 git at all (no git-lfs either): they go to S3, and the repository lists them in `.gitignore`.
