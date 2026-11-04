@@ -134,6 +134,8 @@ reuse one connection.
    the delivered project must run as it is, without the user copying files out of the skill folder. Add `runs/` and
    `__pycache__/` to `.gitignore`, commit. Then `uv run tools/d3run.py init --user <login> --s3-uri s3://<bucket>/<prefix>` with the
    values from `<site>` (or `--no-s3`).
+   Record the project in `<site>` under `[projects.<name>]`, with or without a bucket: `server_dir` (the checkout
+   `<proj>`) always, `s3_prefix` when there is a bucket. Later sessions read `<proj>` from there instead of asking.
 2. **Plan.** Split the work into units that can resume (epochs, configs, seeds, chunks). Decide CPU or GPU per part:
    only code that uses the GPU goes to a GPU; tree models, linear models, evaluation or post-processing run on CPUs
    (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Estimate the runtime; above about 20 h plan segments.
