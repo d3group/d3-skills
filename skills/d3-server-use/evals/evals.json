@@ -1,0 +1,34 @@
+{
+  "skill_name": "d3-server-use",
+  "note": "No eval may connect to a real server or bucket. Each prompt says the user is offline; the run writes the changed files, job scripts and the exact commands into its outputs folder. Inputs in evals/files are copied, never edited in place. No eval gets a site file unless its prompt says so (first use).",
+  "evals": [
+    {
+      "id": 1,
+      "name": "long-torch-job",
+      "prompt": "I have a PyTorch training script (src/train.py in <copy of evals/files/torch-train>) that needs about 30 hours on one GPU. Get it ready for the KiRegio server: change what has to change and tell me exactly how to submit it. I'm offline right now, so prepare the files and the commands, don't try to run anything on the server. My login is abcd, ssh already works with the alias kiregio, and I have a bucket.",
+      "expected_output": "train.py made interruptible with d3job.RunContext (full state: model, optimizer, scheduler, epoch, RNG; resume from latest_checkpoint; should_checkpoint once per epoch, then should_stop; finish/fail), so it stops by the measured margin rather than a fixed early cutoff; job script from the template (no --partition, uv run --no-sync, USR1 trap, D3RUN_JOB_START); d3run init/new/submit with --gpus 1 and segments of about 12 h within 24 h; smoke test including a resume test; pilot and `size` before the full run; archive/clean afterwards; no pip/conda.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "cpu-gpu-sweep",
+      "prompt": "In <copy of evals/files/sweep-project> there are 40 XGBoost configs (configs/xgb/seed00..seed39.yaml, two are there as examples) and 40 LSTM configs (configs/lstm/...). I want all 80 on the KiRegio server, as fast as possible without hogging the GPUs, and afterwards I need to know which log and which result belongs to which config. Prepare the job script(s) and the exact sequence of commands. I'm not connected right now. Login abcd, alias kiregio, bucket yes.",
+      "expected_output": "XGBoost on CPUs (no GPU, about 4 CPUs), LSTM one GPU each; no --partition; CPU part submitted before the GPU part; run IDs via `d3run.py new --config ... --tag`; one pilot per class then `size`; realistic --time; job script passes check_sbatch; mapping config to logs and results via the registry (list/show by tag), not via Slurm IDs; archive with --clean --submit afterwards.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "pending-cpu-jobs",
+      "prompt": "why are my cpu jobs not starting?? they've been pending for 3 hours and there are like 90 free CPUs. here's what I see:\n\n$ squeue -u abcd -t PD -o \"%i %P %Q %r\" | head\nJOBID PARTITION PRIORITY REASON\n3912 main 10421 Resources\n3913 main 10421 Priority\n3914 main 10420 Priority\n...\n4031 main 10302 Priority\n4040 cpu 10205 Priority\n4041 cpu 10205 Priority\n...\n4079 cpu 10204 Priority\n\n(120 of my GPU jobs pending, 40 CPU jobs pending, all 4 GPUs busy). Can I fix this without cancelling everything?",
+      "expected_output": "Explains one priority list for both partitions (top GPU job holds the node), backfill testing only 100 jobs per user so the CPU jobs at ranks 121-160 are never tried, and that age is the only difference among own jobs; fix: measure the priority gap and set nice above it on the pending GPU jobs with scontrol, set it back to 0 afterwards; side effect on other users; next time submit CPU jobs first. Does not claim per-user limits or recommend cancelling.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "home-cleanup-first-use",
+      "prompt": "Grafana says my home on the KiRegio server is at 140 GB. Most of it should be old runs, checkpoints and the data from my last project (~/loadproj, it already uses the d3run registry, runs/ and data/raw, data/processed). I do have an S3 bucket. Help me clean this up properly, I don't want to lose anything. I'm not connected right now, give me the plan and the commands.",
+      "expected_output": "First use: asks for or records the login and ssh alias (detects an existing alias before guiding); bucket is yes, so it detects the AWS CLI config on laptop and server without opening ~/.aws/credentials, asks only for missing bucket name, endpoint and profile, stores them in the site file and checks access; `d3run.py settings`/`usage`; `archive --finished --clean --submit` and `push data/... --clean --submit` as Slurm jobs, not on the login host; verification before deletion, active runs not cleaned; asks for a yes before deleting; `uv cache prune`; avoids `du -sh ~` and rm -rf before verification.",
+      "files": []
+    }
+  ]
+}

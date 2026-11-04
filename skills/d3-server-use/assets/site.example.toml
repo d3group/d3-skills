@@ -1,0 +1,26 @@
+# Site file of the d3-server-use skill. It lives on YOUR computer, never in a repository:
+#   macOS/Linux: ~/.config/d3-server/site.toml      Windows: %USERPROFILE%\.config\d3-server\site.toml
+# The skill creates it on first use and fills it in with you. The values come from the admin's mails.
+# Passwords, keys and the Grafana login never go into this file.
+
+[server]
+login = ""                  # your login name on the server (asked once), e.g. "abcd"
+ssh_alias = "kiregio"       # Host alias in ~/.ssh/config; every command uses `ssh <alias>`
+host = ""                   # server address from the admin's mail (goes into the Host block)
+ssh_ok = ""                 # date of the last successful `ssh -o BatchMode=yes <alias> hostname`
+jupyterhub_url = ""         # https://<host name>:8000 (https only)
+grafana_url = ""            # https://<host name>/grafana (the login stays in the admin's mail)
+ca_cert_url = ""            # https://<host name>/ca.crt, imported once per computer
+
+[s3]
+has_bucket = ""             # "yes" or "no", asked once; "yes" makes S3 the home of data, checkpoints, logs, results
+asked_on = ""               # date of the answer; ask again only if it was "no" and the user says they got one
+endpoint_url = ""           # S3 API endpoint from the admin (not the web console)
+bucket = ""                 # your bucket; one folder per project inside it, never create buckets
+aws_profile = ""            # profile in ~/.aws/config if not "default"; the keys sit in ~/.aws/credentials, written by you
+access_ok = ""              # date of the last working `aws s3 ls s3://<bucket>/` (laptop and login host)
+
+# One table per project on the server
+[projects.example]
+server_dir = "~/example"    # checkout on the server (git clone there)
+s3_prefix = "example"       # s3://<bucket>/<s3_prefix>/, laid out like the repository
