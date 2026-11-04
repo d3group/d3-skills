@@ -6,16 +6,30 @@ Claude Code skills of the Data Driven Decisions (D3) group for research communic
 
 ## Installation
 
-1. Add marketplace (run in Claude Code):
+In Claude Code 2.1.275 or later, one line installs a skill together with the marketplace:
+
+```
+/plugin install d3-abstract --marketplace d3group/d3-skills
+/plugin install d3-poster --marketplace d3group/d3-skills
+/plugin install d3-presentation --marketplace d3group/d3-skills
+/plugin install d3-explainer --marketplace d3group/d3-skills
+/plugin install d3-scientific-wording --marketplace d3group/d3-skills
+/plugin install d3-marimo --marketplace d3group/d3-skills
+/plugin install d3-server-use --marketplace d3group/d3-skills
+```
+
+In older versions, or to browse the skills first:
+
+1. Add the marketplace (run in Claude Code):
    ```
    /plugin marketplace add d3group/d3-skills
    ```
 2. Run `/plugin` in Claude Code
 3. Go to **Discover** tab, find the skill
-4. Select **Install for you (user scope)**
+4. Select **Install for you (user scope)**, or install it by name: `/plugin install d3-explainer@d3-skills`
 5. Restart Claude Code
 
-Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abstract`, `d3-poster`, `d3-presentation`, `d3-scientific-wording`, `d3-marimo`, `d3-server-use`). Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Update later with `/plugin marketplace update d3-skills`.
+Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Update later with `/plugin marketplace update d3-skills`.
 
 ## Available Skills
 
