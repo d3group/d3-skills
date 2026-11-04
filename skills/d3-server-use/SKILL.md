@@ -166,7 +166,10 @@ reuse one connection.
    read `<proj>` from there instead of asking.
 2. **Plan.** Split the work into units that can resume (epochs, configs, seeds, chunks). Decide CPU or GPU per part:
    only code that uses the GPU goes to a GPU; tree models, linear models, evaluation or post-processing run on CPUs
-   (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Estimate the runtime; above about 20 h plan segments.
+   (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Estimate the runtime; above about 20 h plan segments. Code without
+   state it can save (one long solver call, a `fit()` without partial state) cannot resume: say so, never chain it
+   into segments, and choose a way with the user ([references/interruptible-jobs.md](references/interruptible-jobs.md),
+   section 6).
 3. **Make the code interruptible** with `RunContext` from `d3job.py`
    ([references/interruptible-jobs.md](references/interruptible-jobs.md)). If the project tracks experiments,
    `ctx.mlflow()` after `from_env()` and metrics with the global step, so a resumed run continues the same curve
@@ -178,7 +181,7 @@ reuse one connection.
    `d3run.py pull … --checksum` to run in `<proj>` (`--submit` above 1 GB or 2,000 files); without one it rsyncs them
    into `<proj>`.
 5. **Smoke test.** Parse every config of the round once locally and check the types (YAML reads `seed: 08` as
-   text). Run the local resume test (references/interruptible-jobs.md, section 7). Then one tiny config per resource class, `--time 00:10:00`, with `--allow-dirty` only if needed:
+   text). Run the local resume test (references/interruptible-jobs.md, section 8). Then one tiny config per resource class, `--time 00:10:00`, with `--allow-dirty` only if needed:
    imports, GPU visible from inside the job (print `jax.devices()` or `torch.cuda.is_available()`), data paths,
    output written. Test the resume too: `--segments 2 --time 00:05:00` on a config that needs about 8 minutes;
    the second attempt must log that it started from a checkpoint. The login host has no GPU, so GPU checks only

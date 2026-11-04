@@ -10,9 +10,10 @@ segments. `d3job.py` (stdlib, copied into the project next to `d3run.py`) does t
 3. PyTorch
 4. JAX / Flax with Orbax
 5. Work lists (configs, seeds, chunks)
-6. Segments and chains
-7. Testing the resume
-8. What not to rely on
+6. When the code cannot resume
+7. Segments and chains
+8. Testing the resume
+9. What not to rely on
 
 ## 1. The mechanisms
 
@@ -121,7 +122,28 @@ Many short units inside one job (evaluation metrics, post-processing, a seed swe
   jobs, and a failure costs one unit.
 - Many tiny result files are slow on NFS and in S3; collect them in one SQLite or Parquet file per job.
 
-## 6. Segments and chains
+## 6. When the code cannot resume
+
+Resume needs state that the code can save and load again. Some work has none: one long call into a solver or a
+library (a MILP solve, a `fit()` without partial state, a simulation that cannot export its state). `d3job` cannot
+change that: it decides when to stop and keeps the checkpoints, but the code decides what goes into them. Say so
+before the round, never chain such a job into segments (every segment would start again from the beginning), and
+choose with the user:
+
+- **Fit one run into 24 h.** A pilot and `d3run.py size` show the time; a smaller instance, a looser tolerance, or
+  more CPUs for code that uses them may bring it under the limit, with a margin.
+- **Stop the tool in time and continue from its best result.** Many solvers take a time limit, return the best
+  solution found so far and accept a start solution. Set the limit from `ctx.time_left()` minus the save time, save
+  that solution as the checkpoint, and pass it as the start in the next segment. The next segment repeats part of
+  the search (bounds and search tree are lost), so results can differ from one long run; tell the user.
+- **Use a library that can continue.** Estimators with `partial_fit` or `warm_start`, boosting that continues from a
+  saved model (XGBoost `xgb_model=`, LightGBM `init_model=`), simulations that write a restart file.
+- **Split the problem itself** into independent units (time windows, scenarios, regions, seeds) that run as a work
+  list (section 5) or as one job each. This can change the method and the results: it is the user's decision.
+- **None fits:** a single job cannot run longer than 24 h on this server. Tell the user and the admin before
+  anything else; requeueing or resubmitting from inside the job loses the state just the same.
+
+## 7. Segments and chains
 
 `d3run.py submit <id> --segments 3 --time 12:00:00` submits three attempts, each depending on the previous one with
 `afterany` (it starts whatever the previous one's end state). Each attempt resumes from the newest checkpoint. When
@@ -135,7 +157,7 @@ run failed, so a chain does not repeat the same crash on every GPU slot. A clean
 Twelve-hour segments are a good default for long runs: they find gaps in the schedule more easily than 24 h ones and
 lose at most one checkpoint interval when something fails.
 
-## 7. Testing the resume (part of the smoke test)
+## 8. Testing the resume (part of the smoke test)
 
 Locally first, without Slurm (local mode works in `runs/local/`): give the run less time than it needs and start it
 twice, e.g. `rm -rf runs/local; D3RUN_TIME_LIMIT_S=120 uv run python src/train.py --small` two times. The first run
@@ -152,7 +174,7 @@ grep -h "start\|checkpoint" runs/$RID/logs/attempt-0*
 Pass: attempt 1 ends `interrupted` with a checkpoint, attempt 2 logs that it started from it and ends `done`. With
 S3, also delete `runs/$RID/checkpoints/` between the attempts once: attempt 2 must fetch the checkpoint from S3.
 
-## 8. What not to rely on
+## 9. What not to rely on
 
 - `--requeue` and `scontrol requeue`: allowed (`JobRequeue=1`) but not tested here; the chain needs neither.
 - `sbatch` from inside a job (self-resubmission): not tested; the chain above needs none.
