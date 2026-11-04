@@ -53,7 +53,7 @@ Classify each piece of information and map it to a construct:
 3. **Benchmark Comparison** (or "Experimental Results"): `booktabs` table
 4. `\keypoint{}`: one-sentence takeaway
 
-**Right column** (about 40 units)
+**Right column** (about 45 units)
 1. **Paper Progress**: `booktabs` table with section, proof, and experiment status
 2. **Figures Needed**: `card gray` placeholders for planned figures
 3. **Open Questions**: see `references/questions.md`

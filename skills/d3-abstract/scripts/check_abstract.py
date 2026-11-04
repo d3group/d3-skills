@@ -270,10 +270,17 @@ def check_colors(text: str, rep: Report) -> None:
     for m in re.finditer(r"\\(?:text|page)?color\[[^\]]*\]\{[^}]*\}", text):
         clean = False
         rep.add("E", f"L{line_of(text, m.start()):<4} color given by value, use the named D3 colors")
-    for m in re.finditer(r"\\(?:text)?color\{([^}]*)\}", text):
+    for m in re.finditer(r"\\(?:text|page)?color\{([^}]*)\}", text):
         if not ALLOWED_COLOR.match(m.group(1).strip()):
             clean = False
             rep.add("E", f"L{line_of(text, m.start()):<4} color \"{m.group(1)}\" is outside the D3 palette")
+    # TikZ and pgfplots keys (fill=red, draw=blue!50, top color=green); a bare option such as \draw[red] is not seen
+    for m in re.finditer(r"(?<![\w-])(fill|draw|color|text|(?:top|bottom|left|right|middle|inner|outer|ball) color)"
+                         r"\s*=\s*([^,\]}\s]+)", text):
+        value = m.group(2).strip()
+        if value != "none" and not ALLOWED_COLOR.match(value):
+            clean = False
+            rep.add("E", f"L{line_of(text, m.start()):<4} {m.group(1)}={value} is outside the D3 palette")
     if clean:
         rep.lines.append("  ok")
 

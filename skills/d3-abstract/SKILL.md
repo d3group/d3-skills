@@ -26,7 +26,7 @@ Create A4 abstracts with D3 (Data Driven Decisions) and University of Würzburg 
 ├── assets/                           # copied into every project
 │   ├── d3-abstract.sty               # colors, macros, slots, footer
 │   ├── d3-abstract-template.tex      # page layout, one \input per page
-│   ├── logos/                        # uw-logo-navy.pdf, logo-d3.pdf (header), DataDrivenDecisions.png
+│   ├── logos/                        # uw-logo-navy.pdf, logo-d3.pdf (header); DataDrivenDecisions.png (raster logo, not loaded by the style)
 │   └── fonts/                        # Inclusive Sans UW .ttf files, OFL-InclusiveSansUW.txt
 ├── scripts/
 │   └── check_abstract.py             # uv-run checker: pages, fill, wording, emphasis
@@ -406,7 +406,7 @@ Work page by page:
    | COLUMN FILL | Fill per column, column balance, fill of the last page |
    | WORDING | Dashes, contrast constructions, tone toward related work, stock phrases |
    | EMPHASIS | `\highlight`, infobox, and `card alert` counts per page, `\keypoint` per column, a number emphasized in two places, lead paragraph length |
-   | COLORS | Only named D3 colors, no `\definecolor`, no color values |
+   | COLORS | Only named D3 colors in `\color`, `\textcolor`, `\pagecolor` and TikZ keys (`fill=`, `draw=`, `color=`, `text=`), no `\definecolor`, no color values |
    | SUBMISSION ABSTRACT (with `--submission`) | No placeholders, no internal sections, reference list present |
    | TODO MARKERS | Leftover `% TODO:` placeholders and `% TODO verify` items |
    | LOG | Every TeX error, overfull boxes, characters missing from the font |

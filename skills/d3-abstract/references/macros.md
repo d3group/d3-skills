@@ -257,7 +257,7 @@ Reference list for submission abstracts. Cite in the text as `[1]`, `[2]`:
 \end{reflist}
 ```
 
-Format: authors, year in parentheses, title, venue in italics, volume(issue), pages as a number range. One entry costs about 2 line units.
+Format: authors, year in parentheses, title, venue in italics, volume(issue), pages as a number range. One entry costs about 3 line units.
 
 ## 9. Color Palette
 

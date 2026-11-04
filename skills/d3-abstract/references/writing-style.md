@@ -117,7 +117,7 @@ Submission abstracts cite their sources. Internal documents cite when they compa
 **Submission Abstract**
 - Complete and self-standing: motivation, approach, results, conclusion
 - Every figure and table is final. No placeholders, no question section, no progress table
-- Related work in 2 to 4 sentences, reported as in 4.3
+- Related work in 2 to 4 sentences, reported as in 4.2
 - Claims match the evidence shown. Report the evaluation protocol and the comparison conditions
 - A "Scope" section or sentence states the assumptions
 - Authors and affiliation in the page 1 subtitle, references at the end of the last page
