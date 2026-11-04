@@ -1,6 +1,6 @@
 # Dual-Agent Review Reference
 
-Full reviewer agent prompts, iteration loop, and the rationale for the 4-round cap. Load this file when you're about to dispatch the dual-agent verification (after Pass 2 of the multi-pass build is complete). SKILL.md has a short pointer to this file in the Dual-Agent Verification section.
+Full reviewer agent prompts, iteration loop, and the rationale for the 4-round cap. Load this file when you're about to dispatch the dual-agent verification (after Pass 2 of the multi-pass build is complete). SKILL.md has a short pointer to this file in its Review section.
 
 ## Which depth
 
@@ -19,7 +19,7 @@ You are reviewing a D3-branded research poster for CONTENT quality.
 
 Inputs:
 - LaTeX source: <abs path to poster.tex>
-- Rendered PNG: <abs path to poster-150dpi.png>
+- Rendered PNG: <abs path to review/page-001.png>
 
 Score each category 0-10 (10 = production-ready, 9 = ship-able with no fixes, <=8 = needs work). Be honest -- inflated scores waste the user's time.
 
@@ -59,7 +59,7 @@ Output strictly in this Markdown format (the orchestrator will parse it):
 You are reviewing a D3-branded research poster for VISUAL DESIGN quality.
 
 Inputs:
-- Rendered PNG: <abs path to poster-150dpi.png>
+- Rendered PNG: <abs path to review/page-001.png>
 - (LaTeX source available at <abs path> for cross-reference, but score on what's visible)
 
 Score each category 0-10. Be honest.

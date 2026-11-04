@@ -38,13 +38,13 @@ An older `assets/` folder that still holds `Inter_18pt-*.ttf` is outdated: recop
 
 **Fix:** `d3-poster.sty` already does `\let\d\relax` before loading siunitx. If you see this, your `d3-poster.sty` is outdated — recopy from the skill.
 
-## 4. Header backgrounds rendered without fill (baposter `headershade` case bug)
+## 4. Box headers with a gradient instead of the solid fill
 
-**Symptom:** Box headers appear as plain white (or transparent) bars instead of the `#ECECEC` fill we set via `headerColorOne=d3-headergray`. The log may contain `Package baposter Warning: Unknown headershade style 'shadeLR'`.
+**Symptom:** Box headers show a colour gradient instead of the solid `#ECECEC` fill of `headerColorOne=d3-headergray`.
 
-**Cause:** baposter.cls defines `headershade` as a `\define@choicekey` with the lowercase choice list `{shadelr, shadetb, shadetbinverse, plain}`. But the .cls's built-in default for the `poster` style (around line 524) is `headershade=shadeLR` — mixed case. Choice keys do exact string matching, so `shadeLR` doesn't match `shadelr`, the unknown branch fires, and the headershade handler is reset to "none" — which is why the fill disappears.
+**Cause:** baposter's own default (baposter.cls, around line 524) is `headershade=shadeLR`, a left-to-right gradient from `headerColorOne` to `headerColorTwo` (baposter's default: brown). `d3-poster.sty` sets `headershade=plain` and both header colours to `d3-headergray`, so the gradient appears when an options block sets another `headershade` or `headerColorTwo`, or when an outdated `d3-poster.sty` is loaded. The choice key is case-insensitive (`\define@choicekey*`), so `shadeLR` and `shadelr` name the same gradient.
 
-**Fix:** Always set `headershade=plain` explicitly in the `\begin{poster}{...}` options. The Document Skeleton and `example-poster.tex` include it; copy them rather than rolling your own option block.
+**Fix:** Keep `headershade=plain` in the `\begin{poster}{...}` options, as the Document Skeleton and `example-poster.tex` do, and leave the header colours at the template values. Recopy `d3-poster.sty` from the skill if it is outdated.
 
 ```latex
 \begin{poster}{

@@ -8,8 +8,8 @@ Detailed extraction commands for each input tier. Load this file when you've ide
 2. Tier C (PDF only) — text extraction
 3. Tier C — figure extraction (vector-first, with raster fallbacks)
 4. Tier C — low-resolution raster warning protocol
-5. Tier D (Word .docx) — text and image extraction
-6. Tier D' (notes / topic only) — interactive prompt template
+5. Tier C (Word .docx) — text and image extraction
+6. Tier D (notes / topic only) — interactive prompt template
 7. On-disk figure format priority (PDF > EPS > SVG > PNG > JPG)
 8. Architecture-figure interview (when to use as-is, simplify, replace, skip)
 
@@ -172,7 +172,7 @@ Want me to sketch a clean 3-block version based on the figure description in the
 
 If the user agrees to redraw, go to `references/tikz-recipes.md`. If they decline, place the extracted PNG anyway — their call.
 
-## 5. Tier D — Word .docx extraction
+## 5. Tier C — Word .docx extraction
 
 Text extraction (preserves style tags so headings can be detected):
 
@@ -203,7 +203,7 @@ with zipfile.ZipFile('paper.docx') as z:
 
 Section headers in Word are usually `Heading 1` / `Heading 2`; map to poster sections the same way as Tier A/B (§1).
 
-## 6. Tier D' — no file, topic only
+## 6. Tier D — no file, topic only
 
 Skip extraction and interview the user directly. Use this prompt template:
 

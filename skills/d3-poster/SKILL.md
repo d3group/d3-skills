@@ -27,7 +27,7 @@ The skill body below is the workflow; long reference material lives in `referenc
 |---|---|
 | `references/extraction.md` | About to extract content from a paper (any tier). Has the tier-by-tier extraction commands, PDF figure extraction (vector-first), low-res raster protocol, on-disk format priority, architecture-figure interview. |
 | `references/tikz-recipes.md` | About to draw a figure from scratch in TikZ. Has 4 verified-compiling recipes (block diagram, pipeline, layered architecture, comparison) plus general TikZ rules. |
-| `references/error-handling.md` | Compile errors or visible rendering bugs. Has the 8 known issues (missing class, missing fonts, siunitx `\d` conflict, headershade case bug, Calibri error, silent clipping, vanished Greek letters or symbols, title block set smaller). |
+| `references/error-handling.md` | Compile errors or visible rendering bugs. Has the 8 known issues (missing class, missing fonts, siunitx `\d` conflict, header gradient instead of the solid fill, Calibri error, silent clipping, vanished Greek letters or symbols, title block set smaller). |
 | `references/dual-agent-review.md` | Review depth is `standard` or `full` (see Review). Has the reviewer prompts, the iteration loop for `full` (capped at 4 rounds), score-to-README protocol. |
 | `references/macros-and-styling.md` | Writing the poster body and need to confirm macro names, color values, font sizes, table conventions. |
 
@@ -153,8 +153,8 @@ Every poster MUST start with this structure:
   headerFontColor=d3-navy,
   headerfont=\dthreesectionfont,
   headershape=rectangle,
-  headershade=plain,             % REQUIRED: baposter's default `shadeLR` is case-incorrect and leaves
-                                 % header backgrounds unfilled. See references/error-handling.md #4.
+  headershade=plain,             % solid headerColorOne fill; baposter's default `shadeLR` is a
+                                 % gradient. See references/error-handling.md #4.
   headerborder=none,
   boxColorOne=white,
   boxshade=plain,
@@ -167,7 +167,7 @@ Every poster MUST start with this structure:
 {Your Poster Title}
 %%% Authors -- one line, white, below the title.
 {Author Name, Data Driven Decisions Group\enspace|\enspace author@uni-wuerzburg.de}
-%%% Footer logo row: D3 logo in the first cell
+%%% Footer logo row: D3 logo across the first two cells
 {\dthreelogos}
 
 %%% Motivation (column 0, row 0)
@@ -293,9 +293,9 @@ Print `[HH:MM:SS] INPUT TIER: <X> -- <one-line description>` so the user can con
 Load `references/extraction.md` for the tier-specific commands. Summary:
 
 - **Tier A/B:** parse the .tex source — the extraction-mapping table maps `\section{...}` → poster boxes, `\begin{table}` → booktabs tables, `\includegraphics{...}` → figure inventory, `references.bib` → footer References slot.
-- **Tier C:** dump PDF text via `uv run --with pymupdf`; for figures, prefer the **PDF-page-crop approach** (vector-preserving) before falling back to raster embedding extraction or full-page high-DPI render.
-- **Tier D (.docx):** dump text and images via `uv run --with python-docx`.
-- **Tier D' (no file):** skip extraction; interview the user with the structured prompt template in `references/extraction.md`.
+- **Tier C (.pdf):** dump PDF text via `uv run --with pymupdf`; for figures, prefer the **PDF-page-crop approach** (vector-preserving) before falling back to raster embedding extraction or full-page high-DPI render.
+- **Tier C (.docx):** dump text and images via `uv run --with python-docx`.
+- **Tier D (no file):** skip extraction; interview the user with the structured prompt template in `references/extraction.md`.
 
 ### Step 3: Scan for figures, results, code
 
@@ -309,7 +309,7 @@ Load `references/extraction.md` for the tier-specific commands. Summary:
 Quick survey:
 
 ```bash
-for d in figures figs plots images results output experiments code src notebooks; do
+for d in figures figs plots images results output experiments runs code src notebooks scripts; do
   [ -d "$d" ] && echo "Found: $d/ ($(ls $d | wc -l | tr -d ' ') items)" && ls "$d" | head -5
 done
 ```
@@ -639,7 +639,7 @@ Load `references/error-handling.md` when a compile error or rendering issue appe
 1. **Class file not found** — `baposter.cls` must sit next to `poster.tex`, not under `assets/`.
 2. **Font not found (Inclusive Sans UW)** — use XeLaTeX, verify `assets/fonts/` exists.
 3. **`\d` already defined (siunitx conflict)** — d3-poster.sty does `\let\d\relax` before loading siunitx; outdated .sty means recopy.
-4. **Header backgrounds rendered without fill** — the baposter `headershade` case bug. Set `headershade=plain` explicitly (already in Document Skeleton).
+4. **Box headers with a gradient instead of the solid fill**: baposter's default `headershade=shadeLR` is a gradient. Keep `headershade=plain` (already in Document Skeleton).
 5. **Calibri font error** — using unpatched upstream baposter.cls. Use the vendored copy at the skill root.
 6. **Box content clipped (no LaTeX error)** — baposter silently clips overflow. See Overflow & clipping above.
 7. **Greek letters or symbols vanish** — Inclusive Sans UW has no Greek and lacks ≤ ≥ ≈ ≠ ∞ √ ∈ ∑ ∫ ∂ ⇒ ′ ″ ✓; `d3-poster.sty` maps these to math mode. Other missing glyphs: write them in math mode.
