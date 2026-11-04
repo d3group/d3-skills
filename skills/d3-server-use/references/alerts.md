@@ -1,0 +1,62 @@
+# Alerts from the admin's monitoring
+
+The admin's monitoring posts alerts to a Slack channel of the group (its name goes into `<site>` as
+`alerts_channel`); the bot is called "Server Police". Categories: storage, ops, updates, jobs. An alert names the
+user's login, the job and the numbers, sometimes mentions the whole channel, and is followed by a "Resolved" message
+once the condition is gone. German messages say "Meldung" (alert), "Entwarnung" and "Behoben" (resolved). The admin
+adds users to the channel when their jobs first trigger an alert. The alerts are notices, not blame: they point to
+jobs that hold resources they do not use, often because something hangs. Thresholds below are as observed in October
+and November 2026 and have changed before (the CPU window was one hour at first); the admin may change them again.
+
+## The alerts
+
+| Alert | Fires when | What it means |
+|---|---|---|
+| `HomeQuotaWarning` | the user's `/home` is above 100 GB (the hard limit is 200 GB) | at the hard limit jobs can no longer write: logs, checkpoints and results fail |
+| `JobGpuIdle` | a job has held a GPU for over 1 h and used less than about 10 % of it in the last hour | nobody else can use that GPU meanwhile (no GPU sharing on this cluster) |
+| `JobCpuUnderused` | jobs with more than one CPU that have run for over 30 min each use less than 60 % of their CPUs | the requested CPUs sit idle and are missing for other jobs |
+| `NasUnreachable` | the storage (NAS) has not answered the monitoring for 10 min | an admin matter: disk and volume alerts are blind meanwhile; jobs that fail with I/O errors in that window are resubmitted after "Resolved" |
+| ops, updates | maintenance, updates, outages | follow the message; do not start long rounds right before announced maintenance |
+
+## What to do
+
+**`HomeQuotaWarning`**
+1. `d3run.py usage` (run folders, `data/`, `results/`, `logs/`); the whole-home figure is in Grafana. Never scan the
+   whole home with `du` or `find`.
+2. Archive and clean: `d3run.py archive --finished --clean --submit`, `d3run.py push data/<folder> --clean
+   --submit`; without a bucket the rsync route (data-and-storage.md, section 7).
+3. `uv cache prune`; old `.venv`s and old checkouts of finished projects.
+4. The alert resolves itself once the home is below 100 GB.
+
+**`JobGpuIdle`**
+1. Is the job alive? `sq -u $USER`, the job's `.out`/`.err` (`d3run.py show <run_id>` lists the log paths), and the
+   GPU load in `/home/.cluster-status/nvidia-smi.txt`.
+2. It hangs (no new output, waiting on input, a deadlock in data loading, a solver stuck on a bad case):
+   `scancel <jobid>`, fix, resubmit; the run resumes from its checkpoint. Give every unit of work a timeout (the
+   solver's own time limit, or a watchdog around each unit) so a bad case fails fast and is recorded, instead of
+   holding the job's resources until the time limit.
+3. It works but keeps the GPU mostly idle: the GPU waits for data. Typical causes are too few data-loader workers
+   (`num_workers`, prefetching, pinned memory), preprocessing on the CPU inside the loop, a batch too small for the
+   GPU, or a model too small to need one. Fix the input pipeline, raise the batch size, or run it on CPUs.
+4. An open JupyterHub notebook holding a GPU counts too: stop the server when you are not computing.
+
+**`JobCpuUnderused`**
+1. `seff <jobid>` shows how many of the requested CPUs the job used. A job that suddenly drops to a fraction of its
+   CPUs often hangs (see `JobGpuIdle`, step 2): look at its output first.
+2. Request what the job uses: `d3run.py size` suggests `--cpus` from the measured use.
+3. Or make the code use the CPUs it asked for: set the thread count from `SLURM_CPUS_PER_TASK` (e.g.
+   `n_jobs=int(os.environ["SLURM_CPUS_PER_TASK"])` for XGBoost and scikit-learn, `torch.set_num_threads(...)`).
+   Libraries that ignore it either leave CPUs idle or start more threads than the job owns, which slows it down.
+4. A job that needs more memory asks for it with `--mem`, not with more CPUs.
+
+## Catching it before the alert
+
+- The pilot of a round runs with the job template, which logs GPU memory and utilization once a minute.
+- `d3run.py reconcile` and `d3run.py size` flag attempts that would trigger these alerts: more than one CPU below
+  60 % after 30 minutes, or a GPU below 15 % on average after an hour. Fix the requests before the full round.
+- `d3run.py usage` after every round keeps the home well below 100 GB.
+
+## Reading the alerts
+
+If the user asks about an alert and Claude has a Slack connector, search the alerts channel for the user's login to
+get the exact message and job IDs (read only). Never post in the channel or reply to the alerts.

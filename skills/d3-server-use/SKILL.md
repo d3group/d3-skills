@@ -11,9 +11,12 @@ description: |
   (4) Finding which code, config, logs and results belong to a run or to a Slurm job ID
   (5) Moving data, checkpoints, logs or results between server, S3 bucket and laptop; cleaning up the home
   (6) Diagnosing pending, failed or slow jobs, an unresponsive login host, or a full home
+  (7) Understanding and fixing alerts from the admin's monitoring ("Server Police" in Slack, also in German:
+      "Meldung"): home above 100 GB, an idle GPU, unused CPUs
   MANDATORY TRIGGERS: KiRegio, Slurm, sbatch, srun, squeue, sq, sacct, seff, sprio, job pending, GPU server,
   compute server, run on the server, submit jobs, cluster, checkpoint, 24 hours, time limit, JupyterHub, MinIO,
-  S3 bucket, home quota, d3run, run registry
+  S3 bucket, home quota, d3run, run registry, server alert, alerts channel, Server Police, HomeQuotaWarning,
+  JobGpuIdle, JobCpuUnderused, NasUnreachable
 ---
 
 # Jobs on the KiRegio server
@@ -136,7 +139,8 @@ reuse one connection.
    `uv run <skill-dir>/scripts/check_sbatch.py jobs/*.sbatch`.
 4. **Deploy.** Commit and push on the laptop, `git pull` in `<proj>` (nothing of the project queued), `uv sync`
    if `pyproject.toml` or `uv.lock` changed.
-5. **Smoke test.** One tiny config per resource class, `--time 00:10:00`, with `--allow-dirty` only if needed:
+5. **Smoke test.** Parse every config of the round once locally and check the types (YAML reads `seed: 08` as
+   text). Run the local resume test (references/interruptible-jobs.md, section 7). Then one tiny config per resource class, `--time 00:10:00`, with `--allow-dirty` only if needed:
    imports, GPU visible from inside the job (print `jax.devices()` or `torch.cuda.is_available()`), data paths,
    output written. Test the resume too: `--segments 2 --time 00:05:00` on a config that needs about 8 minutes;
    the second attempt must log that it started from a checkpoint. The login host has no GPU, so GPU checks only
@@ -151,8 +155,8 @@ reuse one connection.
    releases them for free while the computer is on; a feeder job (`d3run.py feed --submit`, one CPU) costs fair
    share (about 35 GPU-minutes a day) and is for rounds that run while it is off. Write the round (tag, commit,
    flags) into the project notes.
-8. **Watch.** `d3run.py reconcile` (it also runs one fair-use pass) and `list --tag <round>` every 15 minutes or
-   more, not in a tight loop. Queue views: `sq`, `squeue -u $USER -t PD -o "%i %P %Q %r %S"`. Pending although
+8. **Watch.** `d3run.py reconcile` (it also runs one fair-use pass, and flags finished jobs that would trigger the
+   admin's alerts) and `list --tag <round>` every 15 minutes or more, not in a tight loop. Queue views: `sq`, `squeue -u $USER -t PD -o "%i %P %Q %r %S"`. Pending although
    resources look free: see [references/cluster.md](references/cluster.md) (one priority list, backfill tests at
    most 100 jobs per user, the `nice` fix).
 9. **Archive and clean.** With a bucket: `d3run.py archive --finished --clean --submit` uploads each finished
@@ -161,6 +165,15 @@ reuse one connection.
    [references/data-and-storage.md](references/data-and-storage.md), section 7. The first time a store is used,
    run a restore drill: bring one cleaned run back (`d3run.py pull runs/<id> --checksum`, or rsync it back) and
    check it, before the server keeps nothing else. Then `d3run.py usage`.
+
+## When an alert arrives
+
+The admin's monitoring ("Server Police") posts alerts to a Slack channel (`alerts_channel` in `<site>`), in English
+or German: `HomeQuotaWarning` (home above 100 GB), `JobGpuIdle` (a GPU held over an hour at under about 10 % use),
+`JobCpuUnderused` (jobs with more than one CPU below 60 % of their CPUs), `NasUnreachable` (storage monitoring
+blind, an admin matter), plus maintenance notices. They are notices, not blame. Find the job, say
+what the alert means, and fix the cause with [references/alerts.md](references/alerts.md); with a Slack connector,
+read the alert itself (search the channel for the user's login), but never post there.
 
 ## 3. The registry: `d3run.py`
 
@@ -177,7 +190,10 @@ reuse one connection.
 | `manifest`, `clean --manifest` | without a bucket: files, sizes and SHA-256 of a copy; delete on the server only what it holds |
 | `usage`, `mark <id> <STATUS>` | disk use of run folders; set a status by hand |
 
-Every command is light: a small SQLite file and one `sacct` call per 200 jobs (an ID costs microseconds). Transfers
+Use the scripts through their help, not their source: `uv run <skill-dir>/scripts/d3run.py --help` and
+`d3run.py <command> --help` list every option, and the docstring at the top of `d3job.py` shows the job side; reading
+the full source is not needed. Every command is light: a small SQLite file and one `sacct` call per 200 jobs (an ID
+costs microseconds). Transfers
 above 1 GB or 2,000 files refuse to run on the login host and ask for `--submit`. Schema, statuses and how to fit an
 existing orchestrator: [references/registry.md](references/registry.md).
 
@@ -195,4 +211,5 @@ existing orchestrator: [references/registry.md](references/registry.md).
 | `references/interruptible-jobs.md` | checkpoint and resume patterns (PyTorch, JAX/Orbax, work lists), segments |
 | `references/data-and-storage.md` | quota and NFS, S3 with the AWS CLI, layout, cleanup, the interim route |
 | `references/registry.md` | schema, statuses, run files, fitting an existing orchestrator |
+| `references/alerts.md` | the admin's monitoring alerts: what each means, what to do, how to avoid it |
 | `references/pitfalls.md` | symptoms, causes and fixes seen on this server |

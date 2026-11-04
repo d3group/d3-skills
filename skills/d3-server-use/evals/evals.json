@@ -9,12 +9,12 @@
       "expected_output": "train.py made interruptible with d3job.RunContext (full state: model, optimizer, scheduler, epoch, RNG; resume from latest_checkpoint; should_checkpoint once per epoch, then should_stop; finish/fail), so it stops by the measured margin rather than a fixed early cutoff; job script from the template (no --partition, uv run --no-sync, USR1 trap, D3RUN_JOB_START); d3run init/new/submit with --gpus 1 and segments of about 12 h within 24 h; smoke test including a resume test; pilot and `size` before the full run; archive/clean afterwards; no pip/conda.",
       "files": [],
       "assertions": [
-        "The 30 h run is split into segments of at most 24 h chained by a dependency, and a run that keeps failing stops the chain instead of retrying in every segment",
+        "The 30 h run is split into segments of at most 24 h chained by a dependency, and a run that keeps failing, also by a hard kill such as out of memory, stops the chain instead of retrying in every segment",
         "The checkpoint holds model, optimizer and scheduler state, epoch and RNG state in a form that restores on the GPU (RNG tensors on the CPU), and the script resumes from the newest checkpoint",
         "The job stops on its own before the time limit, timed from the job's end time or measured step/save durations (not only a SIGTERM handler)",
         "The job script runs the code with `uv run` (no pip, conda or venv activation) and sets no --partition",
         "Every file the delivered code needs is among the delivered files (no helper the user must still copy from elsewhere)",
-        "The resume was tested by running it: the delivered code ran locally (CPU, small settings) through an interrupted and a resumed segment, and the answer shows that test's result",
+        "Gives a local resume test the user can run (small settings, CPU) with the result to expect: an interrupted segment, then one that resumes from its checkpoint",
         "Checkpoints and results end up in the S3 bucket, and server copies are deleted only after a checksum comparison",
         "Each run gets an ID before submission that names its log, checkpoint and result paths"
       ]
@@ -26,14 +26,14 @@
       "expected_output": "XGBoost on CPUs (no GPU, about 4 CPUs), LSTM one GPU each; no --partition; CPU part submitted before the GPU part; run IDs via `d3run.py new --config ... --tag`; one pilot per class then `size`; realistic --time; job script passes check_sbatch; mapping config to logs and results via the registry (list/show by tag), not via Slurm IDs; archive with --clean --submit afterwards.",
       "files": [],
       "assertions": [
-        "XGBoost runs are CPU-only jobs (no GPU request) and each LSTM run requests one GPU",
-        "No submission sets --partition",
+        "XGBoost runs are CPU-only jobs and each LSTM run requests one GPU, and no submission sets --partition",
         "The XGBoost jobs are submitted before the LSTM jobs on purpose, with the reason (priority by submission age), not only by line order",
         "Every run gets an ID before submission that names its log and result paths, so config, log and result match without Slurm job IDs",
         "Result paths cannot collide between the two model classes (e.g. xgb/seed00 and lstm/seed00 write to different places)",
         "A pilot run per model class is measured (sacct/seff/size) before --time and --mem of the full round are set",
         "While other users wait, the user's GPU jobs stay below the number of GPUs (a cap below 4, or hold and release); an array throttle equal to all GPUs does not count",
-        "Results and logs go to the S3 bucket and server copies are deleted only after a checksum comparison"
+        "Results and logs are uploaded to the S3 bucket",
+        "Server copies are deleted only after a checksum comparison with the bucket (not size only)"
       ]
     },
     {
@@ -46,7 +46,7 @@
         "Explains that both partitions share one node and one priority list, so the top pending GPU job holds the node and lower-priority jobs cannot start",
         "Names backfill's per-user limit (bf_max_job_user = 100) as the reason CPU jobs ranked behind 120 GPU jobs are never tried",
         "Computes the priority gap from the shown priorities and sets nice on the pending GPU jobs above it (`scontrol update ... nice=`), with the reset to 0 afterwards",
-        "Advises submitting the CPU jobs before the GPU jobs next time",
+        "Gives a way to keep CPU jobs from waiting behind the user's own GPU jobs next time (submit them first, keep fewer than 100 GPU jobs pending, or set nice right after submitting)",
         "Does not cancel jobs and does not blame QOS or association limits (MaxJobsPerUser, MaxSubmitJobs, MaxTRESPerUser)",
         "Gives no advice the user cannot undo or that cannot work on this single-node cluster (excluding the node, shortening time limits, `scontrol top` across partitions)"
       ]
@@ -63,7 +63,7 @@
         "Every deletion on the server comes after a checksum comparison with the copy in S3 (not size only)",
         "Large uploads, checksums and deletions run as Slurm jobs (sbatch or --submit), not on the login host",
         "Queued or running runs are excluded from the cleanup",
-        "Includes a restore drill: one archived item is brought back and checked before the bucket is relied on",
+        "Uses the project's existing d3run registry (archive, usage, list) for the runs, so the registry records what went where",
         "Checks whether the bucket expires or deletes objects (lifecycle rules) before it becomes the only copy",
         "No scan of the whole home, not even inside a job (Grafana, `d3run.py usage`, per-folder checks)"
       ]

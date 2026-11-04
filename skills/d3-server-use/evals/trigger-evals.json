@@ -1,0 +1,98 @@
+[
+  {
+    "query": "my sbatch job has been sitting in PD with reason PartitionTimeLimit since yesterday, I asked for --time=48:00:00 for the transformer training on the kiregio box. what do I do",
+    "should_trigger": true
+  },
+  {
+    "query": "can you set up the slurm job for train_tft.py so it runs on one of the 4090s on our group server and survives the 24h cutoff? it needs like 40 hours in total",
+    "should_trigger": true
+  },
+  {
+    "query": "my home on the GPU server is at 160 GB and grafana keeps warning me. how do I get my old runs and checkpoints into my minio bucket and clean up without losing anything",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to run 120 xgboost configs and 30 lstm configs on the cluster this weekend. how should I submit them so I don't block all the GPUs for the others, and I need to know afterwards which log belongs to which config",
+    "should_trigger": true
+  },
+  {
+    "query": "first time on the rebuilt KiRegio server, I got my login (abcd) from the admin's mail. can you help me get ssh working and set up my project there with uv",
+    "should_trigger": true
+  },
+  {
+    "query": "squeue shows my cpu jobs pending with reason Priority for 2 hours although sinfo says 80 cores are idle. my gpu jobs are also queued. why??",
+    "should_trigger": true
+  },
+  {
+    "query": "write me checkpoint and resume for this JAX training loop (src/train.py) so it stops cleanly before the slurm time limit on our server and the next job continues where it left off",
+    "should_trigger": true
+  },
+  {
+    "query": "which of my server runs produced results/forecast_v3.parquet? I only have slurm job id 3127 in my notes and the server was rebuilt last month",
+    "should_trigger": true
+  },
+  {
+    "query": "before I submit the full sweep I want to check that my code actually sees the GPU on the compute node and that the memory request is right. how do I do that on our slurm server",
+    "should_trigger": true
+  },
+  {
+    "query": "I don't have an s3 bucket yet but my home on the group server is full of checkpoints. how do I move everything to my laptop safely and only then delete it on the server",
+    "should_trigger": true
+  },
+  {
+    "query": "write an sbatch script for the LRZ SuperMUC-NG cluster, partition test, 2 nodes with 48 MPI tasks each, for my OpenFOAM case",
+    "should_trigger": false
+  },
+  {
+    "query": "explain how slurm's fair-tree fair-share algorithm works in general, I need two slides on it for my HPC lecture next week",
+    "should_trigger": false
+  },
+  {
+    "query": "set up a github actions workflow that runs my pytest suite with uv on every push and caches the uv environment",
+    "should_trigger": false
+  },
+  {
+    "query": "my pytorch training on my MacBook M3 is really slow, how do I use the mps backend and what batch size makes sense",
+    "should_trigger": false
+  },
+  {
+    "query": "upload results/summary.csv to our shared google drive folder and send my coauthor the link",
+    "should_trigger": false
+  },
+  {
+    "query": "configure an S3 lifecycle rule for our company bucket in eu-central-1 that moves logs to glacier after 30 days and deletes them after a year",
+    "should_trigger": false
+  },
+  {
+    "query": "my docker build keeps getting OOM killed on my laptop when it installs torch, how do I give docker desktop more memory",
+    "should_trigger": false
+  },
+  {
+    "query": "make me a D3 poster about our load forecasting results, the numbers are in results/server_runs/summary.csv",
+    "should_trigger": false
+  },
+  {
+    "query": "write a python function that retries a flaky HTTP request with exponential backoff and saves its progress to a json checkpoint file so it can resume",
+    "should_trigger": false
+  },
+  {
+    "query": "how do I install the CUDA 12.4 drivers and cuDNN on my own Ubuntu 24.04 workstation with an RTX 4090",
+    "should_trigger": false
+  },
+  {
+    "query": "got a JobGpuIdle alert in the slack alerts channel: my job held GPU 2 for over 1 h but used only 7 % of it. the training is still running though, what is going on and what should I do",
+    "should_trigger": true
+  },
+  {
+    "query": "the server alerts bot pinged the whole channel that I'm above 100 GB in /home. how do I fix this quickly without losing my results",
+    "should_trigger": true
+  },
+  {
+    "query": "set up a slack bot that posts our github actions test failures to a channel and mentions whoever pushed the commit",
+    "should_trigger": false
+  },
+  {
+    "query": "die Server Police hat mich in Slack wegen JobCpuUnderused gemeldet, 11 angeforderte CPUs ungenutzt. Was heißt das und was muss ich an meinem Job ändern?",
+    "should_trigger": true
+  }
+]

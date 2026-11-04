@@ -35,6 +35,11 @@ so with 2 s steps and a 10 s save the job stops about 48 s before the limit. Unt
 uses guesses (step 60 s, save 120 s), capped at a quarter of the limit, and it takes the first checkpoint
 after 5 minutes so the save time is known early. margin_s=... fixes the margin instead.
 
+Hard deaths: a segment killed without a clean status (out of memory, a segfault, an exit without ctx.fail)
+leaves status.json at "running". The next segment counts that; after `max_hard_failures` (2) such ends in a
+row it marks the run failed, so the remaining segments exit instead of failing the same way. A clean
+"interrupted" or "done" resets the count.
+
 Signals: the USR1 that Slurm sends before the limit (job template, --signal=B:USR1@600) only confirms the
 end time; the trap writes it into runs/<id>/STOP. SIGTERM (Slurm's kill) stops at once. Checkpoints every
 `every_s` seconds (default 30 min) bound the loss when a job dies without any warning.
@@ -117,8 +122,10 @@ def job_deadline(env=os.environ) -> tuple[float | None, str]:
                 return time.time() + left, "squeue"
         except (OSError, subprocess.SubprocessError):
             pass
-    if limit:
-        return time.time() + limit - 60, "process start + limit - 60 s"
+    if limit and not env.get("SLURM_JOB_ID"):
+        return time.time() + limit, "local run: process start + limit"
+    if limit:   # in a job without a start time: allow for the job's startup before Python, at most 1 min
+        return time.time() + limit - min(60.0, 0.1 * limit), "process start + limit - startup allowance"
     return None, "none"
 
 
@@ -127,7 +134,8 @@ class RunContext:
                  limit_s: float | None = None, s3_uri: str = "", aws: list[str] | None = None,
                  every_s: float = 1800, first_ckpt_s: float = 300, keep_local: int = 1, keep_remote: int = 2,
                  margin_s: float | None = None, safety_s: float = 30, step_guess_s: float = 60,
-                 save_guess_s: float = 120, signal_lead_s: float = 600, stop_check_s: float = 30):
+                 save_guess_s: float = 120, signal_lead_s: float = 600, stop_check_s: float = 30,
+                 max_hard_failures: int = 2):
         self.run_id = run_id
         self.run_dir = Path(run_dir)
         self.attempt = attempt
@@ -145,6 +153,7 @@ class RunContext:
         self.save_guess_s = save_guess_s
         self.signal_lead_s = signal_lead_s
         self.stop_check_s = stop_check_s
+        self.max_hard_failures = max_hard_failures
         self.checkpoints_dir = self.run_dir / "checkpoints"
         self.results_dir = self.run_dir / "results"
         for d in (self.checkpoints_dir, self.results_dir, self.run_dir / "logs"):
@@ -165,6 +174,22 @@ class RunContext:
         for sig in (signal.SIGTERM, signal.SIGUSR1):
             with contextlib.suppress(ValueError):   # not in the main thread
                 signal.signal(sig, self._on_signal)
+        self._count_hard_failure()
+
+    def _count_hard_failure(self) -> None:
+        """An earlier attempt that left status 'running' died without a clean end (killed, out of memory, crash)."""
+        st = self.status()
+        if st.get("state") != "running" or int(st.get("attempt") or 0) >= self.attempt:
+            return
+        n = int(st.get("hard_failures") or 0) + 1
+        if n >= self.max_hard_failures:
+            self.mark("failed", hard_failures=n, error=f"{n} attempts in a row ended without a clean status "
+                      "(killed, out of memory or crashed); see the logs of the last attempts")
+            _log(f"{n} attempts in a row died without a clean end: run marked failed, later segments exit")
+        else:
+            st.update({"hard_failures": n, "attempt": self.attempt})
+            _write_json(self.run_dir / STATUS, st)
+            _log(f"attempt {self.attempt - 1} ended without a clean status ({n} in a row); trying once more")
 
     # ------------------------------------------------------------ construction
     @classmethod
@@ -196,6 +221,8 @@ class RunContext:
     def mark(self, state: str, **info) -> None:
         """Write status.json (merged with what is there). States: running, interrupted, done, failed."""
         data = self.status()
+        if state in ("interrupted", "done"):
+            data["hard_failures"] = 0         # a clean end resets the count
         data.update(info)
         data.update({"run_id": self.run_id, "attempt": self.attempt, "state": state,
                      "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "host": socket.gethostname(),

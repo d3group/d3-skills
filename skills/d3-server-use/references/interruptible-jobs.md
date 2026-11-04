@@ -112,6 +112,9 @@ Many short units inside one job (evaluation metrics, post-processing, a seed swe
 - One result file per unit, written atomically (temp name, then `os.replace`). On start, skip the units whose result
   exists: the result files are the checkpoint.
 - Check `ctx.should_stop()` between units; mark `interrupted` with `progress = done / total`.
+- Give every unit a timeout (a solver's time limit, or a watchdog per unit) and record a unit that runs out as
+  failed, then go on. One bad case should not hold the job's CPUs or GPU until the time limit; the admin's
+  monitoring flags such jobs (references/alerts.md).
 - Prefer one job per unit through `d3run.py new --config …` when a unit takes minutes or more: Slurm then packs the
   jobs, and a failure costs one unit.
 - Many tiny result files are slow on NFS and in S3; collect them in one SQLite or Parquet file per job.
@@ -120,7 +123,10 @@ Many short units inside one job (evaluation metrics, post-processing, a seed swe
 
 `d3run.py submit <id> --segments 3 --time 12:00:00` submits three attempts, each depending on the previous one with
 `afterany` (it starts whatever the previous one's end state). Each attempt resumes from the newest checkpoint. When
-the run is done (or failed), the remaining segments start, see it in `status.json`, and exit within seconds;
+the run is done (or failed), the remaining segments start, see it in `status.json`, and exit within seconds. A
+segment that dies without a clean status (out of memory, a segfault, an exit without `ctx.fail`) leaves `running`
+in `status.json`; the next segment counts that, and after two such ends in a row (`max_hard_failures=2`) it marks the
+run failed, so a chain does not repeat the same crash on every GPU slot. A clean `interrupted` resets the count;
 `reconcile` lists them so you can `scancel` them instead. Choose segments from the pilot: `d3run.py size` prints
 `--time` and `--segments`. A segment that runs out of work early just ends: nothing is wasted but its queue slot.
 
@@ -128,6 +134,10 @@ Twelve-hour segments are a good default for long runs: they find gaps in the sch
 lose at most one checkpoint interval when something fails.
 
 ## 7. Testing the resume (part of the smoke test)
+
+Locally first, without Slurm (local mode works in `runs/local/`): give the run less time than it needs and start it
+twice, e.g. `rm -rf runs/local; D3RUN_TIME_LIMIT_S=120 uv run python src/train.py --small` two times. The first run
+must end `interrupted` with a checkpoint, the second must log that it resumed from it.
 
 ```bash
 RID=$(uv run tools/d3run.py new --name resume-smoke --config configs/smoke.yaml --tag smoke)

@@ -11,6 +11,7 @@ ssh_ok = ""                 # date of the last successful `ssh -o BatchMode=yes 
 jupyterhub_url = ""         # https://<host name>:8000 (https only)
 grafana_url = ""            # https://<host name>/grafana (the login stays in the admin's mail)
 ca_cert_url = ""            # https://<host name>/ca.crt, imported once per computer
+alerts_channel = ""         # Slack channel of the admin's monitoring (home quota, idle GPU, unused CPUs)
 
 [s3]
 has_bucket = ""             # "yes" or "no", asked once; "yes" makes S3 the home of data, checkpoints, logs, results

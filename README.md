@@ -27,7 +27,7 @@ Or install directly: `/plugin install d3-explainer@d3-skills` (likewise `d3-abst
 | [d3-explainer](skills/d3-explainer/) | 0.12.0 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](skills/d3-scientific-wording/) | 0.1.0 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet profiles, STE guide, wording lint, corpus profiler |
 | [d3-marimo](skills/d3-marimo/) | 0.1.1 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab/molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet, headless browser check, pitfalls |
-| [d3-server-use](skills/d3-server-use/) | 0.2.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup | Registry and S3 transfer CLI, job-side checkpoint helper, job template, sbatch lint |
+| [d3-server-use](skills/d3-server-use/) | 0.3.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, help with the admin's monitoring alerts | Registry and S3 transfer CLI, job-side checkpoint helper, job template, sbatch lint |
 
 ## Design
 
@@ -217,13 +217,15 @@ project-specific.
 | ⛔ | pip / conda / venv, `#SBATCH` after the first command, secrets in scripts | linter |
 | ⚙️ **automatic** | run ID before `sbatch`; commit, config hash and logs per run | `new`, `submit` |
 | ⚙️ | fair-use hold and release | `submit`, `feed`, `reconcile` |
-| ⚙️ | chained segments; later segments exit if the run is done or failed | `submit`, `d3job` |
+| ⚙️ | chained segments; later segments exit if the run is done or failed, also after two hard crashes in a row | `submit`, `d3job` |
 | ⚙️ | measured stop margin, deferred uploads, resume from the server or S3 | `d3job` |
 | ⚙️ | `--time` / `--mem` / `--cpus` / segments from measured usage | `size` |
+| ⚙️ | flags finished jobs that would trigger the admin's alerts (CPUs below 60 %, GPU below 15 %) | `reconcile`, `size` |
 | 📖 **guides** | light commands only on the login host | `SKILL.md` |
 | 📖 | smoke test and pilot before every round; CPU part first | `SKILL.md` |
 | 📖 | never pull while a round is queued | `SKILL.md` |
 | 📖 | ssh and S3 setup: detect first, the user handles keys | `SKILL.md`, setup guide |
+| 📖 | explains alerts from the monitoring channel (home quota, idle GPU, unused CPUs) and fixes the cause | `references/alerts.md` |
 | 📖 | clean up after each round and above about 50 GB; a restore drill and a bucket lifecycle check before the store is the only copy | `SKILL.md`, references |
 | 📖 | no scans of the whole home, not even in a job; stop idle JupyterHub servers | `SKILL.md`, references |
 

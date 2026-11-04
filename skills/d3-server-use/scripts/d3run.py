@@ -71,6 +71,10 @@ GPUS_TOTAL, CPU_CAP = 4, 150    # the node's GPUs; CPUs the cpu partition may us
 SHARE_GPUS, SHARE_CPUS = 3, 112  # one user's share while others wait (settings share_gpus, share_cpus)
 WAIT_REASONS = ("Resources", "Priority", "ReqNodeNotAvail", "Nodes required")
 HOLD_REASONS = ("JobHeldUser", "JobHeldAdmin")
+# The admin's monitoring (alerts in a Slack channel): JobCpuUnderused for jobs with more than one CPU that run
+# over 30 min below 60 % of their CPUs; JobGpuIdle for a GPU held over 1 h at under about 10 % use.
+CPU_ALERT_EFF, CPU_ALERT_MIN_S = 0.60, 1800
+GPU_ALERT_UTIL, GPU_ALERT_MIN_S = 15.0, 3600     # warn a little above the alert's ~10 %
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
@@ -266,6 +270,8 @@ def open_registry(root: Path, create: bool = False) -> sqlite3.Connection:
     conn.executescript(SCHEMA)
     if "copied_to" not in {r[1] for r in conn.execute("PRAGMA table_info(runs)")}:
         conn.execute("ALTER TABLE runs ADD COLUMN copied_to TEXT")    # registries made before this column
+    if "gpu_util" not in {r[1] for r in conn.execute("PRAGMA table_info(attempts)")}:
+        conn.execute("ALTER TABLE attempts ADD COLUMN gpu_util REAL")  # mean GPU utilization in %
     return conn
 
 
@@ -871,20 +877,38 @@ def pick_record(recs: list[dict], submitted_at: str) -> dict:
     return min(recs, key=lambda r: abs((ts(r["submit"]) or 0) - ref))
 
 
-def gpu_peak(csv_path: Path) -> float | None:
+def gpu_stats(csv_path: Path) -> tuple[float | None, float | None]:
+    """Peak GPU memory (MiB) and mean utilization (%) from the job template's per-minute nvidia-smi log."""
     try:
         lines = csv_path.read_text().splitlines()
     except OSError:
-        return None
-    peaks = []
+        return None, None
+    mem, util = [], []
     for line in lines:
         parts = [p.strip() for p in line.split(",")]
-        if len(parts) >= 2:
-            try:
-                peaks.append(float(parts[1]))
-            except ValueError:
-                pass
-    return max(peaks) if peaks else None
+        try:
+            mem.append(float(parts[1]))
+            util.append(float(parts[2]))
+        except (IndexError, ValueError):
+            pass
+    return (max(mem) if mem else None), (sum(util) / len(util) if util else None)
+
+
+def usage_warnings(a) -> list[str]:
+    """What the admin's monitoring would flag for one finished attempt (sqlite Row)."""
+    out = []
+    el, cpus = a["elapsed_s"] or 0, a["req_cpus"] or 1
+    if cpus > 1 and el >= CPU_ALERT_MIN_S and a["total_cpu_s"] is not None:
+        eff = a["total_cpu_s"] / (el * cpus)
+        if eff < CPU_ALERT_EFF:
+            used = max(1, math.ceil(a["total_cpu_s"] / el - 0.05))
+            out.append(f"job {a['slurm_job_id']}: used {eff:.0%} of {cpus} CPUs (alert JobCpuUnderused below 60 %); "
+                       f"request --cpus {used}")
+    if (a["req_gpus"] or 0) >= 1 and el >= GPU_ALERT_MIN_S and a["gpu_util"] is not None \
+            and a["gpu_util"] < GPU_ALERT_UTIL:
+        out.append(f"job {a['slurm_job_id']}: GPU busy {a['gpu_util']:.0f} % on average (alert JobGpuIdle under ~10 %); "
+                   "check data loading and CPU threads, or run it on CPUs")
+    return out
 
 
 def derive_status(prev: str, attempts, sj: dict | None) -> str:
@@ -952,10 +976,10 @@ def cmd_reconcile(a) -> None:
     for r in conn.execute("SELECT a.run_id, a.attempt, a.slurm_job_id, r.run_dir FROM attempts a "
                           "JOIN runs r USING (run_id) WHERE a.gpu_mem_mb IS NULL AND a.slurm_job_id IS NOT NULL "
                           "AND a.elapsed_s IS NOT NULL").fetchall():
-        peak = gpu_peak(Path(r["run_dir"]) / "logs" / f"gpu-{r['slurm_job_id']}.csv")
+        peak, util = gpu_stats(Path(r["run_dir"]) / "logs" / f"gpu-{r['slurm_job_id']}.csv")
         if peak is not None:
-            conn.execute("UPDATE attempts SET gpu_mem_mb = ? WHERE run_id = ? AND attempt = ?",
-                         (peak, r["run_id"], r["attempt"]))
+            conn.execute("UPDATE attempts SET gpu_mem_mb = ?, gpu_util = ? WHERE run_id = ? AND attempt = ?",
+                         (peak, util, r["run_id"], r["attempt"]))
     query = "SELECT * FROM runs" if a.all else (
         "SELECT * FROM runs WHERE status NOT IN ('DONE','FAILED','CANCELLED') OR archived_at IS NULL "
         "OR cleaned_at IS NULL")
@@ -968,11 +992,16 @@ def cmd_reconcile(a) -> None:
             pending_after_done += [x["slurm_job_id"] for x in attempts_of(conn, run["run_id"])
                                    if x["state"] == "PENDING"]
     conn.commit()
+    checked = {(r["run_id"], r["attempt"]) for r in rows}
+    warn = [w for x in conn.execute("SELECT * FROM attempts WHERE elapsed_s IS NOT NULL").fetchall()
+            if (x["run_id"], x["attempt"]) in checked for w in usage_warnings(x)]
     print(f"updated {len(rows)} attempts; runs checked: " +
           (", ".join(f"{k} {v}" for k, v in sorted(counts.items())) or "none"))
     if pending_after_done:
         print("finished runs still have queued segments (they exit at once, or cancel them): scancel "
               + " ".join(pending_after_done))
+    for w in warn:
+        print("would trigger the admin's monitoring: " + w)
     if not a.no_feed:
         print("fair use: " + feed_pass(get_settings(conn), getpass.getuser())[0])
 
@@ -991,7 +1020,8 @@ def cmd_show(a) -> None:
             el = f"{r['elapsed_s'] / 3600:.2f} h" if r["elapsed_s"] else "-"
             cpu = f"{r['total_cpu_s'] / r['elapsed_s']:.1f}" if r["total_cpu_s"] and r["elapsed_s"] else "-"
             rss = f"{r['max_rss_mb'] / 1024:.1f} G" if r["max_rss_mb"] else "-"
-            gpu = f"{r['gpu_mem_mb'] / 1024:.1f} G" if r["gpu_mem_mb"] else "-"
+            gpu = (f"{r['gpu_mem_mb'] / 1024:.1f} G" + (f" {r['gpu_util']:.0f}%" if r["gpu_util"] is not None else "")) \
+                if r["gpu_mem_mb"] else "-"
             req = f"{fmt_time(r['req_time_s'] or 0)} {r['req_cpus']}c {r['req_mem']} {r['req_gpus'] or 0}g"
             print(f"{r['attempt']:>7} {r['slurm_job_id'] or '-':10} {r['state']:13} {el:>8} {cpu:>9} {rss:>8} "
                   f"{gpu:>8}  {req}")
@@ -1066,6 +1096,10 @@ def cmd_size(a) -> None:
         cores += [x["total_cpu_s"] / x["elapsed_s"] for x in att if x["total_cpu_s"] and x["elapsed_s"] >= 60]
         gpu += [x["gpu_mem_mb"] for x in att if x["gpu_mem_mb"]]
         req_cpus += [x["req_cpus"] for x in att if x["req_cpus"]]
+        gpu_util = [x["gpu_util"] for x in att if x["gpu_util"] is not None]
+        if gpu_util:
+            notes.append(f"{run['run_id']}: GPU busy {sum(gpu_util) / len(gpu_util):.0f} % on average")
+        notes += [f"{run['run_id']}: {w}" for x in att for w in usage_warnings(x)]
     if not totals:
         die("no attempts with accounting data yet: run `reconcile` after the pilot jobs have ended")
     m = a.margin
