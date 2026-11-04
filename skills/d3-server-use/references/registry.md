@@ -67,6 +67,7 @@ Finished states stick; `submit --force` starts a run again.
 | `logs/gpu-<jobid>.csv` | job template | GPU memory per minute (read by `size`) |
 | `checkpoints/` | `d3job` | `step-…`, `LATEST.json`, `uploaded.json` |
 | `results/` | the job | metrics, predictions, figures |
+| `mlflow/` | the job (`ctx.mlflow()`) | the run's own MLflow store `mlflow.db`, `run_id`, `artifacts/` ([tracking.md](tracking.md)) |
 
 ## Fitting an existing orchestrator
 
@@ -85,3 +86,6 @@ to `d3run.py`. Check these points instead:
 5. **Commit per experiment**, and refuse submissions from a dirty tree.
 6. **Jobs that rewrite shared outputs from all runs** (summary tables, figures) do not belong in an automatic
    round: run them on purpose, on a chosen set of runs.
+7. **Experiment tracking with the same rule:** MLflow or W&B logs into a store per run (or the W&B service), named
+   by the experiment ID, and resumes that run in every segment; no store that all jobs write
+   ([tracking.md](tracking.md)).

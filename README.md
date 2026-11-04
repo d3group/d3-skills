@@ -41,7 +41,7 @@ Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Up
 | [d3-explainer](#explaining-a-project-to-its-own-authors-d3-explainer) | 0.12.1 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](#wording-of-research-texts-d3-scientific-wording) | 0.1.1 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet guides, STE guide, wording lint, corpus profiler |
 | [d3-marimo](#teaching-apps-in-the-browser-d3-marimo) | 0.1.2 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab, Jupyter or molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet and style-cell generator, headless browser check, pitfalls |
-| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.4.1 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts | Registry and S3 transfer CLI, job-side checkpoint helper, job template, laptop input script, sbatch lint |
+| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.5.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow (default) or W&B | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
 
 Each skill has a section below: what its folder contains, how a run goes from the first question to the delivery, and
 what it checks. The folders are under [`skills/`](skills/). Design and review depth apply to several skills and come
@@ -1553,7 +1553,7 @@ outside the small server home through which data travels between laptop and serv
 answers live in a local site file (`~/.config/d3-server/site.toml`), never in this repository.
 
 <details>
-<summary><b>In detail:</b> What the skill contains · Where things run, and who writes what · First use · A round, step by step · Run IDs · One run as a chain of segments · Fair use · Storage · What is enforced, and how</summary>
+<summary><b>In detail:</b> What the skill contains · Where things run, and who writes what · First use · A round, step by step · Run IDs · One run as a chain of segments · Fair use · Storage · Experiment tracking · What is enforced, and how</summary>
 
 ### What the skill contains
 
@@ -1562,14 +1562,15 @@ skills/d3-server-use/
 ├── SKILL.md                 first use · rules · a round in 9 steps
 ├── scripts/
 │   ├── d3run.py             login host: run IDs, registry, submit, fair use, sizing, S3, verified cleanup
-│   ├── d3job.py             inside the job: end time, stop margin, checkpoints, resume
+│   ├── d3job.py             inside the job: end time, stop margin, checkpoints, resume, MLflow/W&B run
+│   ├── d3track.py           login host: the runs' MLflow stores into the project's store, upload
 │   └── check_sbatch.py      lint for hand-written job scripts
 ├── assets/
 │   ├── job_template.sbatch  job clock, USR1 trap, GPU memory log, uv run --no-sync
 │   ├── push_inputs.sh       the server's inputs from the laptop: into the bucket, or by rsync without one
 │   └── site.example.toml    template of the user's local site file (no secrets)
-├── references/              first-time setup · cluster · interruptible jobs
-│                            data and storage · registry · pitfalls
+├── references/              first-time setup · cluster · interruptible jobs · data and storage
+│                            registry · tracking · alerts · pitfalls
 └── evals/                   test prompts and two toy projects
 ```
 
@@ -1699,6 +1700,23 @@ project-specific.
              git         small text results for the repo       moves them, does not free server space
 ```
 
+### Experiment tracking: one MLflow store per run
+
+MLflow is the default and keeps everything on university infrastructure; Weights & Biases is the alternative for
+data without restrictions. A training run spans several 24 h jobs, and many jobs must not write one SQLite file on
+NFS, so every run logs into its own store and only the login host writes the project's store.
+
+```
+ job, segment 1 ─┐                                     login host                      laptop
+ job, segment 2 ─┼─▶ runs/<id>/mlflow/mlflow.db ─────▶ d3track.py sync ───────────▶  MLflow UI
+ job, segment 3 ─┘   one MLflow run, one writer        snapshot · new points only     uvx --from mlflow==<v>
+                     SCHEDULED between segments,       runs/mlflow.db (one writer)      mlflow ui
+                     FINISHED or FAILED at the end     ─▶ s3://<bucket>/<project>/mlflow/mlflow.db
+
+ in the code:  ctx = RunContext.from_env(); ctx.mlflow(); mlflow.log_metric("loss", value, step=epoch)
+ W&B instead:  ctx.wandb()   id = run ID, resume="allow"; compute nodes reach W&B (tested); unrestricted data only
+```
+
 ### What is enforced, and how
 
 | | Rule | Where |
@@ -1712,16 +1730,20 @@ project-specific.
 | ⛔ | deleting without a checksum-verified copy (`--size-only` only on request), while a run is active, or anything git tracks | `--clean`, `clean --manifest` |
 | ⛔ | pip / conda / venv, `#SBATCH` after the first command, secrets in scripts | linter |
 | ⛔ | sending an input outside the project's allowed folders (into the bucket or by rsync), a path with `..` or a symbolic link (data an agreement keeps on the laptop never matches) | `push_inputs.sh` |
+| ⛔ | `d3track.py sync` inside a job (one writer for the project's MLflow store) | `d3track.py` |
 | ⚙️ **automatic** | run ID before `sbatch`; commit, config hash and logs per run | `new`, `submit` |
 | ⚙️ | fair-use hold and release | `submit`, `feed`, `reconcile` |
 | ⚙️ | chained segments; later segments exit if the run is done or failed, also after two hard crashes in a row | `submit`, `d3job` |
 | ⚙️ | measured stop margin, deferred uploads, resume from the server or S3 | `d3job` |
 | ⚙️ | `--time` / `--mem` / `--cpus` / segments from measured usage | `size` |
 | ⚙️ | flags finished jobs that would trigger the admin's alerts (CPUs below 60 %, GPU below 15 %) | `reconcile`, `size` |
+| ⚙️ | one MLflow run across all segments, tags from `run.json`, status SCHEDULED, FINISHED or FAILED from the run's state | `d3job` (`ctx.mlflow()`) |
+| ⚙️ | the project's MLflow store from snapshots of the runs' stores, only new points, uploaded to the bucket | `d3track.py sync` |
 | 📖 **guides** | light commands only on the login host | `SKILL.md` |
 | 📖 | smoke test and pilot before every round; CPU part first | `SKILL.md` |
 | 📖 | never pull while a round is queued | `SKILL.md` |
 | 📖 | one data route per project: with a bucket through it (inputs laptop → bucket → server, results job → bucket → laptop), without one by rsync; git carries code | `SKILL.md`, data and storage |
+| 📖 | no `mlflow.db` that all jobs write, no `mlflow server` on the login host, no checkpoints as artifacts; sync before `archive --clean` | `SKILL.md`, tracking |
 | 📖 | ssh and S3 setup: detect first, the user handles keys | `SKILL.md`, setup guide |
 | 📖 | explains alerts from the monitoring channel (home quota, idle GPU, unused CPUs) and fixes the cause | `references/alerts.md` |
 | 📖 | clean up after each round and above about 50 GB; a restore drill and a bucket lifecycle check before the store is the only copy | `SKILL.md`, references |

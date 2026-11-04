@@ -13,10 +13,13 @@ description: |
   (6) Diagnosing pending, failed or slow jobs, an unresponsive login host, or a full home
   (7) Understanding and fixing alerts from the admin's monitoring ("Server Police" in Slack, also in German:
       "Meldung"): home above 100 GB, an idle GPU, unused CPUs
+  (8) Tracking experiments of server runs with MLflow (default) or Weights & Biases: metrics across segments,
+      comparing runs, the MLflow UI
   MANDATORY TRIGGERS: KiRegio, Slurm, sbatch, srun, squeue, sq, sacct, seff, sprio, job pending, GPU server,
   compute server, run on the server, submit jobs, cluster, checkpoint, 24 hours, time limit, JupyterHub, MinIO,
   S3 bucket, home quota, d3run, run registry, server alert, alerts channel, Server Police, HomeQuotaWarning,
-  HomeQuotaReached, JobGpuIdle, JobCpuUnderused, NasUnreachable
+  HomeQuotaReached, JobGpuIdle, JobCpuUnderused, NasUnreachable, MLflow, mlflow ui, experiment tracking,
+  Weights & Biases, wandb
 ---
 
 # Jobs on the KiRegio server
@@ -118,6 +121,11 @@ the user (a test, a plan for later) list the questions instead of writing a site
 - **No secrets in files you write.** Passwords, access keys and the Grafana login stay in the user's own files
   (`~/.aws/credentials`, password manager) and the admin's mails, never in a repo, a note, a job script or `<site>`.
 - **One writer per file.** Only `d3run.py` on the login host writes the registry; jobs write their own run folder.
+- **Experiment tracking: MLflow by default, one store per run.** A job logs into its run's own store
+  (`ctx.mlflow()` from `d3job`: `runs/<id>/mlflow/mlflow.db`, the same MLflow run in every segment); only
+  `d3track.py sync` on the login host writes the project's store `runs/mlflow.db` and uploads it to the bucket. Never
+  one shared `mlflow.db` written by jobs, never `mlflow server` on the login host. Weights & Biases (`ctx.wandb()`)
+  only for data without restrictions ([references/tracking.md](references/tracking.md)).
   SQLite over NFS written from two hosts can corrupt the database.
 
 ## 2. A round, step by step
@@ -134,7 +142,8 @@ reuse one connection.
    "Fitting an existing orchestrator" in [references/registry.md](references/registry.md); a project without one
    gets `d3run.py` and `d3job.py`. Keep the project's folder names and conventions instead of inventing new ones.
    Setup (once per project): `git clone` into `<proj>`, `uv sync --managed-python`, `uv cache prune`. Copy
-   `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`) and the job template
+   `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`), with MLflow tracking also
+   `d3track.py` and `uv add mlflow` (the project's environment is what jobs and `d3track.py` use), and the job template
    `<skill-dir>/assets/job_template.sbatch` (e.g. `jobs/train.sbatch`) yourself, as part of the change you prepare:
    the delivered project must run as it is, without the user copying files out of the skill folder.
    `<skill-dir>/assets/push_inputs.sh` goes to `jobs/` too, set from `<site>`: `S3_URI_DEFAULT` and
@@ -149,7 +158,9 @@ reuse one connection.
    only code that uses the GPU goes to a GPU; tree models, linear models, evaluation or post-processing run on CPUs
    (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Estimate the runtime; above about 20 h plan segments.
 3. **Make the code interruptible** with `RunContext` from `d3job.py`
-   ([references/interruptible-jobs.md](references/interruptible-jobs.md)). Lint every job script:
+   ([references/interruptible-jobs.md](references/interruptible-jobs.md)). If the project tracks experiments,
+   `ctx.mlflow()` after `from_env()` and metrics with the global step, so a resumed run continues the same curve
+   ([references/tracking.md](references/tracking.md)). Lint every job script:
    `uv run <skill-dir>/scripts/check_sbatch.py jobs/*.sbatch`.
 4. **Deploy.** Commit and push on the laptop, `git pull` in `<proj>` (nothing of the project queued), `uv sync`
    if `pyproject.toml` or `uv.lock` changed. Inputs the round needs: on the laptop
@@ -175,8 +186,10 @@ reuse one connection.
 8. **Watch.** `d3run.py reconcile` (it also runs one fair-use pass, and flags finished jobs that would trigger the
    admin's alerts) and `list --tag <round>` every 15 minutes or more, not in a tight loop. Queue views: `sq`, `squeue -u $USER -t PD -o "%i %P %Q %r %S"`. Pending although
    resources look free: see [references/cluster.md](references/cluster.md) (one priority list, backfill tests at
-   most 100 jobs per user, the `nice` fix).
-9. **Archive and clean.** With a bucket: `d3run.py archive --finished --clean --submit` uploads each finished
+   most 100 jobs per user, the `nice` fix). With MLflow, `uv run tools/d3track.py sync` after each `reconcile`
+   updates the project's store; `d3track.py where` prints how to open it on the laptop.
+9. **Archive and clean.** With MLflow, `d3track.py sync` first: a cleaned run folder keeps no store on the server.
+   With a bucket: `d3run.py archive --finished --clean --submit` uploads each finished
    run folder, checks every file's size in S3, then deletes the server copy (three small JSON files stay). Data:
    `d3run.py push data/processed --clean --submit`, back with `pull`. Without a bucket: the rsync route in
    [references/data-and-storage.md](references/data-and-storage.md), section 7. The first time a store is used,
@@ -222,7 +235,8 @@ existing orchestrator: [references/registry.md](references/registry.md).
 | File | Purpose |
 |---|---|
 | `scripts/d3run.py` | run IDs, registry, submit, reconcile, sizing, S3 archive/push/pull (stdlib, `uv run`) |
-| `scripts/d3job.py` | job side: exact end time, measured stop margin, checkpoints with S3 upload, resume, `status.json` |
+| `scripts/d3job.py` | job side: exact end time, measured stop margin, checkpoints with S3 upload, resume, `status.json`, `mlflow()`/`wandb()` |
+| `scripts/d3track.py` | login host: copies the runs' MLflow stores into the project's store, uploads it; `where` for the UI |
 | `scripts/check_sbatch.py` | lint job scripts: 24 h, partition and GPU, ignored `#SBATCH` lines, pip/conda, secrets |
 | `assets/job_template.sbatch` | job script with run-ID logs, USR1 trap, GPU memory log, `uv run --no-sync` |
 | `assets/push_inputs.sh` | sends the server's inputs from the laptop: into the bucket (prints the server's `pull`), or by rsync without one; allowed folders only, dry run first |
@@ -232,5 +246,6 @@ existing orchestrator: [references/registry.md](references/registry.md).
 | `references/interruptible-jobs.md` | checkpoint and resume patterns (PyTorch, JAX/Orbax, work lists), segments |
 | `references/data-and-storage.md` | quota and NFS, S3 with the AWS CLI, layout, cleanup, the interim route |
 | `references/registry.md` | schema, statuses, run files, fitting an existing orchestrator |
+| `references/tracking.md` | MLflow (default) and W&B: one store per run, segments, sync, viewing, what not to track |
 | `references/alerts.md` | the admin's monitoring alerts: what each means, what to do, how to avoid it |
 | `references/pitfalls.md` | symptoms, causes and fixes seen on this server |

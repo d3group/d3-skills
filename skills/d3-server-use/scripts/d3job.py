@@ -50,6 +50,13 @@ uploaded only after the checkpoint itself.
 
 Without the D3RUN_* variables (a local test run) the context works in runs/local/ without S3 and without
 a time limit, so the same code runs on the laptop.
+
+Experiment tracking (references/tracking.md): ctx.mlflow() starts or resumes this run's MLflow run in the run
+folder's own store, runs/<id>/mlflow/mlflow.db, so every segment logs into the same MLflow run and every store has
+one writer; d3track.py copies the stores into the project's store on the login host. ctx.wandb(**init_kwargs) does
+the same for Weights & Biases (run ID as W&B id, resume="allow"). mark(), finish() and fail() close the tracked run:
+SCHEDULED when a segment stops to resume later, FINISHED when done, FAILED when failed. Both import their package
+only when called; add it to the project (`uv add mlflow`).
 """
 from __future__ import annotations
 
@@ -66,6 +73,8 @@ import time
 from pathlib import Path
 
 STATUS = "status.json"
+# The MLflow status of a run after each d3job state; SCHEDULED means "continues in the next segment".
+MLFLOW_STATUS = {"interrupted": "SCHEDULED", "done": "FINISHED", "failed": "FAILED"}
 
 
 def _log(msg: str) -> None:
@@ -169,6 +178,8 @@ class RunContext:
         self._stop_logged = False
         self._stop_checked = 0.0
         self._stop_file = self.run_dir / "STOP"
+        self._mlflow = None                   # the mlflow module while this segment has an active MLflow run
+        self._wandb = None                    # the W&B run while this segment has one
         with contextlib.suppress(FileNotFoundError):
             self._stop_file.unlink()          # a STOP left by the previous segment
         for sig in (signal.SIGTERM, signal.SIGUSR1):
@@ -228,6 +239,7 @@ class RunContext:
                      "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S"), "host": socket.gethostname(),
                      "slurm_job_id": os.environ.get("SLURM_JOB_ID")})
         _write_json(self.run_dir / STATUS, data)
+        self._end_tracking(state)
 
     def finished(self) -> bool:
         state = self.status().get("state")
@@ -243,10 +255,108 @@ class RunContext:
         self.push(self.results_dir)
         self.mark("done", progress=1.0, **info)
         self.push(self.run_dir / STATUS)
+        if (self.run_dir / "mlflow").is_dir():
+            self.push(self.run_dir / "mlflow")
 
     def fail(self, exc: BaseException | str) -> None:
         self.mark("failed", error=repr(exc) if not isinstance(exc, str) else exc)
         self.push(self.run_dir / STATUS)
+        if (self.run_dir / "mlflow").is_dir():
+            self.push(self.run_dir / "mlflow")
+
+    # ------------------------------------------------------------ experiment tracking
+    def mlflow_uri(self) -> str:
+        """Tracking URI of this run's own MLflow store (one writer: this run's jobs, one after another)."""
+        return f"sqlite:///{(self.run_dir / 'mlflow' / 'mlflow.db').resolve()}"
+
+    def mlflow(self, experiment: str | None = None, tags: dict | None = None) -> str:
+        """Start this run's MLflow run, or resume it in a later segment, and return its MLflow run ID.
+
+        The store is runs/<id>/mlflow/mlflow.db (artifacts in runs/<id>/mlflow/artifacts); the experiment is the
+        project. The first segment creates the run (name = run ID, tags from run.json, its params as MLflow
+        params); later segments reopen it. Afterwards log with the usual API (mlflow.log_metric(...)), or pass the
+        returned ID to a framework logger (Lightning: MLFlowLogger(tracking_uri=ctx.mlflow_uri(), run_id=...)).
+        MLFLOW_TRACKING_URI and MLFLOW_EXPERIMENT_NAME are set for libraries that read them."""
+        import mlflow
+        from mlflow import MlflowClient
+        from mlflow.entities import Param
+        folder = self.run_dir / "mlflow"
+        folder.mkdir(parents=True, exist_ok=True)
+        uri = self.mlflow_uri()
+        meta = _read_json(self.run_dir / "run.json", {})
+        name = experiment or meta.get("project") or "d3run"
+        client = MlflowClient(uri)
+        id_file = folder / "run_id"
+        rid = id_file.read_text().strip() if id_file.exists() else ""
+        if not rid:
+            exp = client.get_experiment_by_name(name)
+            exp_id = exp.experiment_id if exp else client.create_experiment(
+                name, artifact_location=(folder / "artifacts").resolve().as_uri())
+            run_tags = {"d3.run_id": self.run_id, "mlflow.source.git.commit": meta.get("git_commit") or "",
+                        "d3.project": meta.get("project") or "", "d3.user": meta.get("user") or "",
+                        "d3.tag": meta.get("tag") or "", "d3.config_path": meta.get("config_path") or "",
+                        "d3.config_hash": meta.get("config_hash") or "", "d3.s3_uri": meta.get("s3_uri") or ""}
+            run = client.create_run(exp_id, run_name=self.run_id,
+                                    tags={k: str(v) for k, v in run_tags.items() if v != ""})
+            rid = run.info.run_id
+            params = [Param(str(k)[:250], str(v)[:6000]) for k, v in sorted((meta.get("params") or {}).items())]
+            for i in range(0, len(params), 100):
+                client.log_batch(rid, params=params[i:i + 100])
+            tmp = id_file.with_name(".run_id.d3tmp")
+            tmp.write_text(rid + "\n")
+            os.replace(tmp, id_file)
+        mlflow.set_tracking_uri(uri)
+        mlflow.start_run(run_id=rid)
+        mlflow.set_tags({"d3.attempt": str(self.attempt), "d3.slurm_job_id": os.environ.get("SLURM_JOB_ID") or "",
+                         "d3.host": socket.gethostname(), **{k: str(v) for k, v in (tags or {}).items()}})
+        os.environ["MLFLOW_TRACKING_URI"] = uri
+        os.environ["MLFLOW_EXPERIMENT_NAME"] = name
+        self._mlflow = mlflow
+        _log(f"mlflow: run {rid} in {uri} (attempt {self.attempt})")
+        return rid
+
+    def wandb(self, **init_kwargs):
+        """Start or resume this run's Weights & Biases run and return it: id and name are the run ID, group the
+        round tag, resume="allow", files under the run folder, config the run's params. Arguments override these.
+        Compute nodes reach W&B (tested 2026-11-04); WANDB_MODE=offline keeps a run local for `wandb sync`.
+        Only for data without restrictions (references/data-and-storage.md, section 9)."""
+        import wandb
+        meta = _read_json(self.run_dir / "run.json", {})
+        config = dict(meta.get("params") or {})
+        config["d3"] = {k: meta.get(k) for k in ("run_id", "tag", "git_commit", "config_path", "config_hash")}
+        kw = {"id": self.run_id, "name": self.run_id, "resume": "allow", "dir": str(self.run_dir),
+              "project": meta.get("project") or None, "group": meta.get("tag") or None, "config": config}
+        kw.update(init_kwargs)
+        self._wandb = wandb.init(**kw)
+        return self._wandb
+
+    def _end_tracking(self, state: str) -> None:
+        """Close the tracked run after a state change; tracking problems never stop the training."""
+        status = MLFLOW_STATUS.get(state)
+        if status is None:
+            return
+        if self._mlflow is not None:
+            try:
+                self._mlflow.end_run(status=status)
+            except Exception as exc:          # noqa: BLE001
+                _log(f"mlflow: could not end the run ({exc})")
+            self._mlflow = None
+        elif state == "failed" and (self.run_dir / "mlflow" / "run_id").exists():
+            # given up after hard deaths: the MLflow run still says RUNNING
+            try:
+                from mlflow import MlflowClient
+                rid = (self.run_dir / "mlflow" / "run_id").read_text().strip()
+                MlflowClient(self.mlflow_uri()).set_terminated(rid, "FAILED")
+            except Exception as exc:          # noqa: BLE001
+                _log(f"mlflow: could not mark the run failed ({exc})")
+        if self._wandb is not None:
+            try:
+                if state == "interrupted":
+                    self._wandb.mark_preempting()
+                self._wandb.finish(exit_code=1 if state == "failed" else 0)
+            except Exception as exc:          # noqa: BLE001
+                _log(f"wandb: could not finish the run ({exc})")
+            self._wandb = None
 
     # ------------------------------------------------------------ time and stop
     def _on_signal(self, signum, frame) -> None:

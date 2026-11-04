@@ -67,6 +67,21 @@
         "Checks whether the bucket expires or deletes objects (lifecycle rules) before it becomes the only copy",
         "No scan of the whole home, not even inside a job (Grafana, `d3run.py usage`, per-folder checks)"
       ]
+    },
+    {
+      "id": 5,
+      "name": "mlflow-tracking",
+      "prompt": "I want to compare my training runs in MLflow. Add experiment tracking to src/train.py (in <copy of evals/files/torch-train>): loss and validation accuracy per epoch, the hyperparameters, and I want to see all runs of a round side by side in the MLflow UI on my laptop. The full run takes about 30 hours on one GPU on the KiRegio server. I'm offline right now: prepare the files and the commands, don't run anything on the server. Login abcd, ssh alias kiregio, I have a bucket.",
+      "expected_output": "train.py uses d3job.RunContext and calls ctx.mlflow() after from_env(), logs params once (first segment) and metrics with the global epoch as step; mark/finish/fail close the MLflow run (SCHEDULED/FINISHED/FAILED); mlflow added to the project with uv; d3track.py copied next to d3run.py; `uv run tools/d3track.py sync` after reconcile and before archive --clean; the laptop opens the project's store from the bucket with `d3track.py where` (same MLflow version); no shared mlflow.db written by jobs, no mlflow server on the login host, checkpoints not logged as MLflow artifacts.",
+      "files": [],
+      "assertions": [
+        "MLflow logs into the run's own store through ctx.mlflow() (runs/<id>/mlflow/mlflow.db), not into one store that every job writes, and not through a tracking server on the login host",
+        "All segments of the 30 h run continue the same MLflow run, and metrics use the global epoch as step",
+        "Hyperparameters are logged once, not again in every segment with possibly different values",
+        "The project gets mlflow through uv (uv add mlflow); no pip, no conda, no system install",
+        "The plan runs `d3track.py sync` on the login host after reconcile and before `archive --clean`, and opens the project's store on the laptop with the same MLflow version (from the bucket)",
+        "Checkpoints stay with d3job and are not logged as MLflow artifacts"
+      ]
     }
   ]
 }

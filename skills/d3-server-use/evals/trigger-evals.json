@@ -94,5 +94,17 @@
   {
     "query": "die Server Police hat mich in Slack wegen JobCpuUnderused gemeldet, 11 angeforderte CPUs ungenutzt. Was heißt das und was muss ich an meinem Job ändern?",
     "should_trigger": true
+  },
+  {
+    "query": "how do I get my training runs on the kiregio server into mlflow so i can compare them in the UI? the jobs get split into 24h segments and I want one curve per run",
+    "should_trigger": true
+  },
+  {
+    "query": "we log to wandb on our group's slurm box, every resubmitted segment shows up as a new run in the dashboard, can you fix that",
+    "should_trigger": true
+  },
+  {
+    "query": "explain the difference between mlflow's model registry and its tracking server for a blog post",
+    "should_trigger": false
   }
 ]

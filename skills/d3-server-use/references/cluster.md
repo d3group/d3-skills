@@ -25,7 +25,9 @@ before relying on a number.
   Creating many small files from a job is slow (about 30 files per second).
 - **Tools:** `uv` system-wide, `sq` (queue sorted by priority), `seff` (what a finished job used), `gpu-status`
   (needs `ssh -t`), `rsync`. Missing: `sqlite3` (read databases with Python), `nvidia-smi` on the login host,
-  git-lfs. The AWS CLI is installed per user (`uv tool install awscli`).
+  git-lfs, MLflow (a project adds it: `uv add mlflow`). The AWS CLI is installed per user (`uv tool install awscli`).
+- **Network** (tested 2026-11-04 from a compute node): the internet without a proxy (pypi.org, github.com,
+  api.wandb.ai), the bucket, and the login host's ssh port. No tracking server runs on either host.
 
 ## 2. Partitions, submit filter, limits
 

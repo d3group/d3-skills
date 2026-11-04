@@ -81,7 +81,9 @@ s3://<bucket>/<project>/            # mirrors the repository
         logs/attempt-01-<jobid>.out|err  gpu-<jobid>.csv
         checkpoints/step-…/  LATEST.json
         results/ …
+        mlflow/mlflow.db  artifacts/  # the run's own MLflow store (ctx.mlflow())
     registry/registry-YYYYMMDD.db   # daily snapshot of runs/registry.db
+    mlflow/mlflow.db                # the project's MLflow store (d3track.py sync)
 ```
 
 ## 4. Moving data with d3run

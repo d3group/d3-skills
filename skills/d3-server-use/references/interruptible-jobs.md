@@ -75,6 +75,8 @@ except Exception as exc:
 - Steps of very different length (a validation epoch every tenth epoch): the margin uses the longest of the last 20
   steps, so it adapts after the first long one. To be safe from the first step on, pass `step_guess_s=`.
 - Results go to `ctx.results_dir`; everything under the run folder reaches S3 with `finish()` or `archive`.
+- Experiment tracking: `ctx.mlflow()` (or `ctx.wandb()`) right after `from_env()` keeps one tracked run across all
+  segments, and `mark`/`finish`/`fail` set its status ([tracking.md](tracking.md)).
 
 ## 3. PyTorch
 
