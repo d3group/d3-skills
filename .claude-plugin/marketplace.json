@@ -4,7 +4,7 @@
     "name": "Data Driven Decisions (D3) Group, University of Würzburg",
     "url": "https://github.com/d3group"
   },
-  "description": "Claude Code skills of the D3 group for research communication: abstracts, posters, presentations, and interactive project explainers in the D3 corporate design, with a shared scientific wording layer",
+  "description": "Claude Code skills of the D3 group for research communication: abstracts, posters, presentations, and interactive project explainers in the D3 corporate design, with a shared scientific wording layer, and a guide with tools for running jobs on the group's compute server",
   "version": "1.0.0",
   "renames": {
     "d3-abstract-skill": "d3-abstract",
@@ -71,6 +71,16 @@
       "strict": false,
       "skills": [
         "./skills/d3-marimo"
+      ]
+    },
+    {
+      "name": "d3-server-use",
+      "version": "0.3.1",
+      "description": "Jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry, interruptible jobs within 24 h, smoke test and sizing before a round, S3 as the store with verified cleanup, help with the admin's monitoring alerts",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/d3-server-use"
       ]
     }
   ]

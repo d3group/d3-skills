@@ -1,0 +1,5 @@
+model: lstm
+seed: 01
+hidden: 128
+epochs: 60
+data: data/processed/series.parquet
