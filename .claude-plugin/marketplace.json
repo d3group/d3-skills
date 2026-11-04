@@ -45,7 +45,7 @@
     },
     {
       "name": "d3-explainer",
-      "version": "0.12.0",
+      "version": "0.12.1",
       "description": "Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors",
       "source": "./",
       "strict": false,

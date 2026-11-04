@@ -13,7 +13,7 @@
       "id": 2,
       "name": "fixture-one-derivation-light",
       "prompt": "explain just the derivation of the optimal cutoff from the paper in <copy of <skill>/assets/example> as an interactive page, step by step, with one figure where I can drag the cutoff. keep it short, no review agents",
-      "expected_output": "A scoped overview explainer (3 to 4 sections), one step-through derivation with reasons, one figure with a draggable handle, light review only (automated checks plus a numbers pass).",
+      "expected_output": "A focus explainer (1 to 3 sections), one step-through derivation with reasons, one figure with a draggable handle, light review only (automated checks plus a numbers pass).",
       "files": []
     },
     {
