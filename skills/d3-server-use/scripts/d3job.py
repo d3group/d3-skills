@@ -51,12 +51,12 @@ uploaded only after the checkpoint itself.
 Without the D3RUN_* variables (a local test run) the context works in runs/local/ without S3 and without
 a time limit, so the same code runs on the laptop.
 
-Experiment tracking (references/tracking.md): ctx.mlflow() starts or resumes this run's MLflow run in the run
-folder's own store, runs/<id>/mlflow/mlflow.db, so every segment logs into the same MLflow run and every store has
-one writer; d3track.py copies the stores into the project's store on the login host. ctx.wandb(**init_kwargs) does
-the same for Weights & Biases (run ID as W&B id, resume="allow"). mark(), finish() and fail() close the tracked run:
-SCHEDULED when a segment stops to resume later, FINISHED when done, FAILED when failed. Both import their package
-only when called; add it to the project (`uv add mlflow`).
+Experiment tracking, for projects that use it (references/tracking.md): ctx.mlflow() starts or resumes this run's
+MLflow run in the run folder's own store, runs/<id>/mlflow/mlflow.db, so every segment logs into the same MLflow
+run and every store has one writer; d3track.py copies the stores into the project's store on the login host.
+ctx.wandb(**init_kwargs) does the same for Weights & Biases (run ID as W&B id, resume="allow"). mark(), finish()
+and fail() close the tracked run: SCHEDULED when a segment stops to resume later, FINISHED when done, FAILED when
+failed. Both import their package only when called; add it to the project (`uv add mlflow`).
 """
 from __future__ import annotations
 

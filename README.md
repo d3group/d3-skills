@@ -41,7 +41,7 @@ Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Up
 | [d3-explainer](#explaining-a-project-to-its-own-authors-d3-explainer) | 0.12.1 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](#wording-of-research-texts-d3-scientific-wording) | 0.1.1 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet guides, STE guide, wording lint, corpus profiler |
 | [d3-marimo](#teaching-apps-in-the-browser-d3-marimo) | 0.1.2 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab, Jupyter or molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet and style-cell generator, headless browser check, pitfalls |
-| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.5.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow (default) or W&B | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
+| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.5.1 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
 
 Each skill has a section below: what its folder contains, how a run goes from the first question to the delivery, and
 what it checks. The folders are under [`skills/`](skills/). Design and review depth apply to several skills and come
@@ -1553,7 +1553,7 @@ outside the small server home through which data travels between laptop and serv
 answers live in a local site file (`~/.config/d3-server/site.toml`), never in this repository.
 
 <details>
-<summary><b>In detail:</b> What the skill contains · Where things run, and who writes what · First use · A round, step by step · Run IDs · One run as a chain of segments · Fair use · Storage · Experiment tracking · What is enforced, and how</summary>
+<summary><b>In detail:</b> What the skill contains · Where things run, and who writes what · First use · A round, step by step · Run IDs · One run as a chain of segments · Fair use · Storage · Experiment tracking, where a project uses it · What is enforced, and how</summary>
 
 ### What the skill contains
 
@@ -1612,6 +1612,7 @@ skills/d3-server-use/
  BUCKET   ask once ──┬── yes ─▶ look at the AWS CLI + ~/.aws/config (laptop, server)
                      │          ─▶ ask only for bucket / endpoint / profile ─▶ aws s3 ls ─▶ save
                      └── no ──▶ ask the admin for one; meanwhile your computer is the store (rsync)
+ TRACKING per project: MLflow or W&B in the project? ──yes──▶ fit it · no ─▶ ask once: MLflow · W&B · none ─▶ save
 ```
 
 ### A round, step by step
@@ -1700,11 +1701,14 @@ project-specific.
              git         small text results for the repo       moves them, does not free server space
 ```
 
-### Experiment tracking: one MLflow store per run
+### Experiment tracking, where a project uses it: one MLflow store per run
 
-MLflow is the default and keeps everything on university infrastructure; Weights & Biases is the alternative for
-data without restrictions. A training run spans several 24 h jobs, and many jobs must not write one SQLite file on
-NFS, so every run logs into its own store and only the login host writes the project's store.
+Tracking is optional. The skill looks for MLflow or W&B in the project (dependencies, imports, existing stores) and
+otherwise asks once whether the user wants it; the answer is kept per project in the site file, and nothing is
+added without a yes. For a new setup MLflow is the recommendation, since it keeps everything on university
+infrastructure; Weights & Biases suits users who already work with it, for data without restrictions. A training
+run spans several 24 h jobs, and many jobs must not write one SQLite file on NFS, so every run logs into its own
+store and only the login host writes the project's store.
 
 ```
  job, segment 1 ─┐                                     login host                      laptop
@@ -1743,6 +1747,7 @@ NFS, so every run logs into its own store and only the login host writes the pro
 | 📖 | smoke test and pilot before every round; CPU part first | `SKILL.md` |
 | 📖 | never pull while a round is queued | `SKILL.md` |
 | 📖 | one data route per project: with a bucket through it (inputs laptop → bucket → server, results job → bucket → laptop), without one by rsync; git carries code | `SKILL.md`, data and storage |
+| 📖 | tracking only where the project uses it or the user says yes: detect in the project, else ask once; the answer is kept per project | `SKILL.md`, tracking |
 | 📖 | no `mlflow.db` that all jobs write, no `mlflow server` on the login host, no checkpoints as artifacts; sync before `archive --clean` | `SKILL.md`, tracking |
 | 📖 | ssh and S3 setup: detect first, the user handles keys | `SKILL.md`, setup guide |
 | 📖 | explains alerts from the monitoring channel (home quota, idle GPU, unused CPUs) and fixes the cause | `references/alerts.md` |

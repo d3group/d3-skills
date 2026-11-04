@@ -1,20 +1,53 @@
-# Experiment tracking: MLflow (default) and Weights & Biases
+# Experiment tracking: MLflow and Weights & Biases, where a project uses them
 
 The registry (`d3run.py`) books what ran where: run ID, commit, config, Slurm attempts, status. A tracking tool
 books what the training saw: parameters, metrics per step, small artifacts, and a UI to compare runs. The two fit
-together through the run ID. MLflow is the default because it keeps everything on university infrastructure
-(the server and the bucket); Weights & Biases is the alternative for data without restrictions.
+together through the run ID. Tracking is optional: the skill supports it where a project already uses it or the
+user wants it, and never adds it on its own (section 1). For a new setup MLflow is the recommendation because it
+keeps everything on university infrastructure (the server and the bucket); Weights & Biases suits users who already
+work with it, for data without restrictions.
 
 ## Contents
-1. What goes wrong without care
-2. MLflow: one store per run, one project store
-3. In the training code
-4. On the login host: sync and view
-5. Weights & Biases
-6. What not to track
-7. Tested
+1. Whether to track: detect, then ask
+2. What goes wrong without care
+3. MLflow: one store per run, one project store
+4. In the training code
+5. On the login host: sync and view
+6. Weights & Biases
+7. What not to track
+8. Tested
 
-## 1. What goes wrong without care
+## 1. Whether to track: detect, then ask
+
+Look in the project first (on the laptop, in the repository):
+
+```bash
+grep -n -i -E '\b(mlflow|wandb)\b' pyproject.toml uv.lock requirements*.txt setup.cfg 2>/dev/null | head
+grep -rlE '^\s*(import|from) (mlflow|wandb)\b|MLflowLogger|WandbLogger|report_to|MLFLOW_|WANDB_' \
+     --include='*.py' --include='*.sh' --include='*.sbatch' --include='*.yaml' --include='*.toml' \
+     --exclude=d3job.py --exclude=d3track.py --exclude-dir=.venv . | head
+ls -d mlruns mlflow.db wandb 2>/dev/null
+```
+
+`d3job.py` and `d3track.py` are excluded: the skill's own helpers mention both tools in every project.
+
+- **Found:** the project tracks. Keep its tool and fit it: one store per run and one run per run ID across
+  segments (sections 2 to 6). An existing `mlruns/` or `mlflow.db` that jobs wrote together is moved to the
+  per-run layout only with the user's yes; until then nothing changes.
+- **Training frameworks report on their own:** Lightning loggers (`MLFlowLogger`, `WandbLogger`) and Hugging Face's
+  `report_to=` (older versions report to every installed tool by default). Set `report_to` explicitly, so a
+  package that happens to be installed does not start logging, or asking for a W&B login, inside a job.
+- **A `WANDB_API_KEY` in a file** is a secret in the repository: tell the user (the key belongs in `~/.netrc`
+  through `wandb login`).
+- **Not found, and the work trains or compares runs:** ask once, with the other open questions: "Do you want to
+  track these experiments (metrics per step, runs side by side in a UI)? MLflow (recommended, stays on university
+  storage), Weights & Biases (if you already use it; data without restrictions only), or none (the run registry
+  still records every run)." None is the default; a one-off job, a data conversion or a sweep the user evaluates
+  from `results/` needs no tracking.
+- **Remember the answer** as `tracking = "mlflow" | "wandb" | "none"` under `[projects.<name>]` in the site file and
+  do not ask again. Without a user to ask (a batch run), add nothing and list the question.
+
+## 2. What goes wrong without care
 
 - **One SQLite file, many writers.** MLflow's default store is an SQLite file (`mlflow.db`; the folder store
   `./mlruns` is in maintenance mode). Many jobs on different nodes writing one SQLite file in the NFS home can
@@ -27,7 +60,7 @@ together through the run ID. MLflow is the default because it keeps everything o
 - **MLflow is not installed system-wide** (checked 2026-11-04 on the login host and a compute node). It comes from
   the project: `uv add mlflow`, which jobs then use through `uv run --no-sync`.
 
-## 2. MLflow: one store per run, one project store
+## 3. MLflow: one store per run, one project store
 
 ```
  job (any node)                                    login host                        laptop
@@ -50,7 +83,7 @@ together through the run ID. MLflow is the default because it keeps everything o
   skipped until the next sync. Metrics are appended (only new points), params copied once, tags and status
   updated; artifacts stay in the run folder (tag `d3.artifact_uri`).
 
-## 3. In the training code
+## 4. In the training code
 
 ```python
 import mlflow
@@ -93,7 +126,7 @@ except Exception as exc:
   the job pauses or ends.
 - **Local runs** (no `D3RUN_*` variables) log into `runs/local/mlflow/`; the same code runs on the laptop.
 
-## 4. On the login host: sync and view
+## 5. On the login host: sync and view
 
 ```bash
 uv run tools/d3track.py sync          # all run folders with a store; or: sync <run_id> …
@@ -110,7 +143,7 @@ uv run tools/d3track.py where         # the commands to open the project's store
   there (`aws s3 cp … --profile <laptop profile>`). Without one: `rsync -a <alias>:<proj>/runs/mlflow.db .`
 - Never run `mlflow ui` or `mlflow server` as a lasting process on the login host.
 
-## 5. Weights & Biases
+## 6. Weights & Biases
 
 ```python
 run = ctx.wandb()                              # id and name = run ID, group = round tag, resume="allow"
@@ -126,14 +159,14 @@ run.log({"train_loss": loss}, step=epoch)
 - W&B's service is outside university infrastructure: only data without restrictions, never artifacts from data
   under an agreement (references/data-and-storage.md, section 9).
 
-## 6. What not to track
+## 7. What not to track
 
 - Checkpoints stay with d3job (server and bucket, pruned); logging them as MLflow or W&B artifacts doubles the
   storage and the quota.
 - Large outputs go to `results/` (uploaded at `finish()`); log their location or a small summary instead.
 - No personal or agreement data in params, tags or artifacts: the stores travel to the bucket and the laptop.
 
-## 7. Tested
+## 8. Tested
 
 On 2026-11-04 with MLflow 3.18 and wandb 0.31 on a laptop, with the skill's own scripts: a run interrupted and
 resumed in a second segment (one MLflow run, steps 0 to 9 without gaps, SCHEDULED, then FINISHED), a failed run, a

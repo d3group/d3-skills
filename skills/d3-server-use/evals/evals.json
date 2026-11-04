@@ -16,7 +16,8 @@
         "Every file the delivered code needs is among the delivered files (no helper the user must still copy from elsewhere)",
         "Gives a local resume test the user can run (small settings, CPU) with the result to expect: an interrupted segment, then one that resumes from its checkpoint",
         "Checkpoints and results end up in the S3 bucket, and server copies are deleted only after a checksum comparison",
-        "Each run gets an ID before submission that names its log, checkpoint and result paths"
+        "Each run gets an ID before submission that names its log, checkpoint and result paths",
+        "No experiment tracking is added unasked: the project uses none, so MLflow or W&B appear at most as one question (MLflow, W&B or none), never as code or a dependency"
       ]
     },
     {

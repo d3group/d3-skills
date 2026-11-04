@@ -13,8 +13,8 @@ description: |
   (6) Diagnosing pending, failed or slow jobs, an unresponsive login host, or a full home
   (7) Understanding and fixing alerts from the admin's monitoring ("Server Police" in Slack, also in German:
       "Meldung"): home above 100 GB, an idle GPU, unused CPUs
-  (8) Tracking experiments of server runs with MLflow (default) or Weights & Biases: metrics across segments,
-      comparing runs, the MLflow UI
+  (8) Tracking experiments of server runs with MLflow or Weights & Biases, when the project uses or wants them:
+      metrics across segments, comparing runs, the MLflow UI
   MANDATORY TRIGGERS: KiRegio, Slurm, sbatch, srun, squeue, sq, sacct, seff, sprio, job pending, GPU server,
   compute server, run on the server, submit jobs, cluster, checkpoint, 24 hours, time limit, JupyterHub, MinIO,
   S3 bucket, home quota, d3run, run registry, server alert, alerts channel, Server Police, HomeQuotaWarning,
@@ -121,11 +121,13 @@ the user (a test, a plan for later) list the questions instead of writing a site
 - **No secrets in files you write.** Passwords, access keys and the Grafana login stay in the user's own files
   (`~/.aws/credentials`, password manager) and the admin's mails, never in a repo, a note, a job script or `<site>`.
 - **One writer per file.** Only `d3run.py` on the login host writes the registry; jobs write their own run folder.
-- **Experiment tracking: MLflow by default, one store per run.** A job logs into its run's own store
-  (`ctx.mlflow()` from `d3job`: `runs/<id>/mlflow/mlflow.db`, the same MLflow run in every segment); only
-  `d3track.py sync` on the login host writes the project's store `runs/mlflow.db` and uploads it to the bucket. Never
-  one shared `mlflow.db` written by jobs, never `mlflow server` on the login host. Weights & Biases (`ctx.wandb()`)
-  only for data without restrictions ([references/tracking.md](references/tracking.md)).
+- **Experiment tracking only where the project uses it or the user wants it.** Detect it in the project (step 1),
+  otherwise ask once; never add MLflow or W&B unasked (the registry books every run without them). When a project
+  tracks, each run logs into its own store (`ctx.mlflow()` from `d3job`: `runs/<id>/mlflow/mlflow.db`, the same
+  MLflow run in every segment); only `d3track.py sync` on the login host writes the project's store `runs/mlflow.db`
+  and uploads it to the bucket. Never one shared `mlflow.db` written by jobs, never `mlflow server` on the login
+  host. For a new setup MLflow is the recommendation (it stays on university infrastructure); Weights & Biases
+  (`ctx.wandb()`) only for data without restrictions ([references/tracking.md](references/tracking.md)).
   SQLite over NFS written from two hosts can corrupt the database.
 
 ## 2. A round, step by step
@@ -137,13 +139,20 @@ reuse one connection.
 1. **Read the project first, then set it up.** The skill is generic; the repository it is used in decides the
    details. Look before changing anything: project rules (`CLAUDE.md`, `AGENTS.md`, `.agent/`, `README`; where they
    are stricter, they win), the environment (`pyproject.toml`, `uv.lock`), existing job and submit scripts
-   (`grep -rl '^#SBATCH'`), an existing run database or orchestrator, existing checkpoint code, and where configs,
-   data, logs and results live. Then adapt: a project with its own orchestrator keeps it and is checked against
+   (`grep -rl '^#SBATCH'`), an existing run database or orchestrator, existing checkpoint code, experiment tracking
+   (MLflow or W&B in the dependencies or the code, an `mlruns/`, `mlflow.db` or `wandb/` folder; commands in
+   [references/tracking.md](references/tracking.md)), and where configs, data, logs and results live. Then adapt: a
+   project with its own orchestrator keeps it and is checked against
    "Fitting an existing orchestrator" in [references/registry.md](references/registry.md); a project without one
    gets `d3run.py` and `d3job.py`. Keep the project's folder names and conventions instead of inventing new ones.
+   Tracking found: keep the tool and fit it to segments and one writer per store. None found, and the work trains or
+   compares runs: ask once whether the user wants it (MLflow recommended, W&B if they already use it, or none, the
+   default). Store the answer as `tracking` under `[projects.<name>]` in `<site>` and do not ask again; without a
+   user to ask (a batch run), add nothing and list the question.
    Setup (once per project): `git clone` into `<proj>`, `uv sync --managed-python`, `uv cache prune`. Copy
-   `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`), with MLflow tracking also
-   `d3track.py` and `uv add mlflow` (the project's environment is what jobs and `d3track.py` use), and the job template
+   `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`), if the project tracks with
+   MLflow also `d3track.py` (and `uv add mlflow` unless the project has it; jobs and `d3track.py` use the project's
+   environment), and the job template
    `<skill-dir>/assets/job_template.sbatch` (e.g. `jobs/train.sbatch`) yourself, as part of the change you prepare:
    the delivered project must run as it is, without the user copying files out of the skill folder.
    `<skill-dir>/assets/push_inputs.sh` goes to `jobs/` too, set from `<site>`: `S3_URI_DEFAULT` and
@@ -153,7 +162,8 @@ reuse one connection.
    `__pycache__/` to `.gitignore`, commit. Then `uv run tools/d3run.py init --user <login> --s3-uri s3://<bucket>/<prefix>` with the
    values from `<site>` (or `--no-s3`).
    Record the project in `<site>` under `[projects.<name>]`, with or without a bucket: `server_dir` (the checkout
-   `<proj>`) always, `s3_prefix` when there is a bucket. Later sessions read `<proj>` from there instead of asking.
+   `<proj>`) always, `s3_prefix` when there is a bucket, `tracking` (`mlflow`, `wandb` or `none`). Later sessions
+   read `<proj>` from there instead of asking.
 2. **Plan.** Split the work into units that can resume (epochs, configs, seeds, chunks). Decide CPU or GPU per part:
    only code that uses the GPU goes to a GPU; tree models, linear models, evaluation or post-processing run on CPUs
    (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Estimate the runtime; above about 20 h plan segments.
@@ -186,9 +196,10 @@ reuse one connection.
 8. **Watch.** `d3run.py reconcile` (it also runs one fair-use pass, and flags finished jobs that would trigger the
    admin's alerts) and `list --tag <round>` every 15 minutes or more, not in a tight loop. Queue views: `sq`, `squeue -u $USER -t PD -o "%i %P %Q %r %S"`. Pending although
    resources look free: see [references/cluster.md](references/cluster.md) (one priority list, backfill tests at
-   most 100 jobs per user, the `nice` fix). With MLflow, `uv run tools/d3track.py sync` after each `reconcile`
+   most 100 jobs per user, the `nice` fix). If the project tracks with MLflow, `uv run tools/d3track.py sync` after
+   each `reconcile`
    updates the project's store; `d3track.py where` prints how to open it on the laptop.
-9. **Archive and clean.** With MLflow, `d3track.py sync` first: a cleaned run folder keeps no store on the server.
+9. **Archive and clean.** With MLflow tracking, `d3track.py sync` first (a cleaned run folder keeps no store).
    With a bucket: `d3run.py archive --finished --clean --submit` uploads each finished
    run folder, checks every file's size in S3, then deletes the server copy (three small JSON files stay). Data:
    `d3run.py push data/processed --clean --submit`, back with `pull`. Without a bucket: the rsync route in
@@ -246,6 +257,6 @@ existing orchestrator: [references/registry.md](references/registry.md).
 | `references/interruptible-jobs.md` | checkpoint and resume patterns (PyTorch, JAX/Orbax, work lists), segments |
 | `references/data-and-storage.md` | quota and NFS, S3 with the AWS CLI, layout, cleanup, the interim route |
 | `references/registry.md` | schema, statuses, run files, fitting an existing orchestrator |
-| `references/tracking.md` | MLflow (default) and W&B: one store per run, segments, sync, viewing, what not to track |
+| `references/tracking.md` | MLflow and W&B where a project uses them: detect or ask, one store per run, segments, sync, viewing |
 | `references/alerts.md` | the admin's monitoring alerts: what each means, what to do, how to avoid it |
 | `references/pitfalls.md` | symptoms, causes and fixes seen on this server |
