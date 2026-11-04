@@ -18,7 +18,8 @@ has_bucket = ""             # "yes" or "no", asked once; "yes" makes S3 the home
 asked_on = ""               # date of the answer; ask again only if it was "no" and the user says they got one
 endpoint_url = ""           # S3 API endpoint from the admin (not the web console)
 bucket = ""                 # your bucket; one folder per project inside it, never create buckets
-aws_profile = ""            # profile in ~/.aws/config if not "default"; the keys sit in ~/.aws/credentials, written by you
+aws_profile = ""            # the laptop's profile in ~/.aws/config if not "default" (push_inputs.sh, result
+                            # downloads); keys in ~/.aws/credentials, written by you; the server's: `init --aws-profile`
 access_ok = ""              # date of the last working `aws s3 ls s3://<bucket>/` (laptop and login host)
 
 # One table per project on the server

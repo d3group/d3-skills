@@ -27,6 +27,9 @@ it and backs it up themselves.
 | Logs, results | until `archive --clean` | all of it |
 | Registry `runs/registry.db` | the working copy | a daily snapshot (`registry/`) |
 
+With a bucket, data travels through it in both directions and git carries code only: inputs go laptop → bucket →
+server, results go job → bucket → laptop (section 5), and nothing is rsynced to or from the server.
+
 ## 2. Setting up the AWS CLI
 
 Look first, set up only what is missing (SKILL.md, step 0.3): `aws --version`, `aws configure list` and the
@@ -70,7 +73,7 @@ aws_secret_access_key = …
 
 ```
 s3://<bucket>/<project>/            # mirrors the repository
-    data/raw/ …                     # d3run.py push data/raw
+    data/raw/ …                     # from the laptop: jobs/push_inputs.sh; from the server: d3run.py push
     data/processed/ …
     runs/<run_id>/                  # one folder per run, same as on the server
         run.json  status.json  archive.json  config.yaml
@@ -102,12 +105,18 @@ the attempt, because a log is still open while its job runs.
 
 ## 5. A round's data cycle
 
-1. `pull` the datasets the round needs into `data/` once (as a `--submit` job if large). All jobs read that one copy;
-   never let a hundred jobs download the same file.
+1. Inputs that exist only on the laptop go into the bucket first: `bash jobs/push_inputs.sh` (dry run), then
+   `--go`. The script uploads the paths of `jobs/server_inputs.txt` with the laptop's profile and refuses any path
+   outside its `ALLOWED` folders (section 9). Then `pull` the datasets the round needs into `data/` once, with
+   `--checksum` (as a `--submit` job if large); the script prints that command. All jobs read that one copy; never
+   let a hundred jobs download the same file.
 2. Preprocessing jobs write to `data/processed/`; `push` it when done.
 3. Run the round; jobs upload checkpoints and results themselves.
 4. After the round: `archive --finished --clean --submit`, then `push data/… --clean` for what the next round does
    not need, then `usage`.
+5. Results to the laptop, from the bucket: `aws s3 sync s3://<bucket>/<prefix>/runs/<id>/results/ <folder>
+   --profile <profile>` (add `--exclude "*" --include "<pattern>"` for a part). `d3run.py pull runs/<id>` is the
+   same on the server, for resuming or post-processing there.
 
 ## 6. Cleaning up
 
@@ -176,5 +185,8 @@ read the round's copy in the home (section 5), not their data straight from S3.
 
 Personal data, partner data and anything under a data agreement go only to storage on university infrastructure
 (the server, the bucket, the work laptop) and wherever the agreement allows. Never to GitHub, never to personal cloud storage, never into
-an issue or a chat. Own cloud storage (section 7) is a fallback for everything else. Large files never go into
+an issue or a chat. Own cloud storage (section 7) is a fallback for everything else. When an agreement keeps data on
+the laptop, it stays out of `jobs/server_inputs.txt` and out of the `ALLOWED` pattern of `jobs/push_inputs.sh`: the
+script refuses such paths, `..` and symbolic links before anything is uploaded, and skips links inside
+folders. Large files never go into
 git at all (no git-lfs either): they go to S3, and the repository lists them in `.gitignore`.

@@ -41,7 +41,7 @@ Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Up
 | [d3-explainer](#explaining-a-project-to-its-own-authors-d3-explainer) | 0.12.1 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](#wording-of-research-texts-d3-scientific-wording) | 0.1.1 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet guides, STE guide, wording lint, corpus profiler |
 | [d3-marimo](#teaching-apps-in-the-browser-d3-marimo) | 0.1.2 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab, Jupyter or molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet and style-cell generator, headless browser check, pitfalls |
-| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.3.2 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, help with the admin's monitoring alerts | Registry and S3 transfer CLI, job-side checkpoint helper, job template, sbatch lint |
+| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.4.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket, help with the admin's monitoring alerts | Registry and S3 transfer CLI, job-side checkpoint helper, job template, laptop upload script, sbatch lint |
 
 Each skill has a section below: what its folder contains, how a run goes from the first question to the delivery, and
 what it checks. The folders are under [`skills/`](skills/). Design and review depth apply to several skills and come
@@ -1549,8 +1549,8 @@ in `SKILL.md` and `references/pitfalls.md`.
 
 `d3-server-use` is the group's way of running compute jobs on the KiRegio Slurm server: Slurm for everything that
 computes, uv only, jobs that survive the 24 h limit, a run ID for every run, fair use of the 4 GPUs, and a store
-outside the small server home. Server addresses and the user's answers live in a local site file
-(`~/.config/d3-server/site.toml`), never in this repository.
+outside the small server home through which data travels between laptop and server. Server addresses and the user's
+answers live in a local site file (`~/.config/d3-server/site.toml`), never in this repository.
 
 <details>
 <summary><b>In detail:</b> What the skill contains · Where things run, and who writes what · First use · A round, step by step · Run IDs · One run as a chain of segments · Fair use · Storage · What is enforced, and how</summary>
@@ -1566,6 +1566,7 @@ skills/d3-server-use/
 │   └── check_sbatch.py      lint for hand-written job scripts
 ├── assets/
 │   ├── job_template.sbatch  job clock, USR1 trap, GPU memory log, uv run --no-sync
+│   ├── push_inputs.sh       laptop → bucket: the server's inputs, from allowed folders only
 │   └── site.example.toml    template of the user's local site file (no secrets)
 ├── references/              first-time setup · cluster · interruptible jobs
 │                            data and storage · registry · pitfalls
@@ -1581,13 +1582,17 @@ skills/d3-server-use/
  │ site.toml        │──────────▶│ git pull, uv sync    │───────▶│ job_template.sbatch  │
  │ ~/.ssh/config    │  <alias>  │ d3run.py             │        │  uv run --no-sync    │
  │ ~/.aws (yours)   │           │  └ registry.db       │◀───────│  your code + d3job   │
- └──────────────────┘           │    (only writer)     │ status │  └ runs/<id>/...     │
-                                └──────────┬───────────┘  .json └──────────┬───────────┘
-                                           │ archive · push · pull         │ checkpoints, results
-                                           ▼ (verified by size)            ▼ (uploaded by d3job)
-                                ┌──────────────────────────────────────────────────────┐
-                                │ the store: S3 bucket, or without one your computer   │
-                                └──────────────────────────────────────────────────────┘
+ │ push_inputs.sh   │           │    (only writer)     │ status │  └ runs/<id>/...     │
+ └───┬──────────▲───┘           └──────────┬───────────┘  .json └──────────┬───────────┘
+     │ inputs   │ results                  │ archive · push · pull         │ checkpoints, results
+     │          │                          │ (verified)                    │ (uploaded by d3job)
+     ▼          │                          ▼                               ▼
+ ┌─────────────────────────────────────────────────────────────────────────────────────┐
+ │ the store: the S3 bucket; data travels through it, git carries code only            │
+ │ without a bucket: your computer (rsync, then a verified manifest)                   │
+ └─────────────────────────────────────────────────────────────────────────────────────┘
+   inputs: jobs/push_inputs.sh (allowed folders only), then `d3run.py pull … --checksum` on the server
+   results: from the bucket to the laptop with `aws s3 sync`
 ```
 
 ### First use: detect, then ask only what is missing
@@ -1620,6 +1625,8 @@ project-specific.
  clone,     GPU per   check_sbatch      git pull   GPU check,   run, then     CPU part    every 15+  then delete;
  uv sync,   part                        (queue     resume       `size`        first;      min        `usage`
  init                                   empty)     test                       fair use
+
+ data: ④ inputs laptop ─▶ bucket ─▶ server (push_inputs.sh, pull --checksum) · ⑨ results bucket ─▶ laptop (aws s3 sync)
 ```
 
 ### Run IDs
@@ -1679,10 +1686,11 @@ project-specific.
    checkpoints/        server: newest 1 (2 without a bucket)   in the store only
                        S3: newest 2
    results/, logs/     server (results to S3 at finish)        in the store only
- data/raw, processed   pulled once per round                  in the store only
+ data/raw, processed   pulled from S3 once per round          in the store only
  registry.db           server                                 daily snapshot in S3
 
  the store   S3 bucket   archive --clean · push --clean        each file verified by size and MD5 (ETag)
+                         laptop: push_inputs.sh · aws s3 sync   inputs from allowed folders only
              no bucket   rsync to your computer                manifest with SHA-256 · clean --manifest
              fallback    university share, NAS, own cloud      same manifest route (unrestricted data only)
              git         small text results for the repo       moves them, does not free server space
@@ -1700,6 +1708,7 @@ project-specific.
 | ⛔ | transfers or deletions above 1 GB or 2,000 files on the login host (asks for `--submit`) | `archive`, `push`, `pull`, `clean` |
 | ⛔ | deleting without a checksum-verified copy (`--size-only` only on request), while a run is active, or anything git tracks | `--clean`, `clean --manifest` |
 | ⛔ | pip / conda / venv, `#SBATCH` after the first command, secrets in scripts | linter |
+| ⛔ | uploading an input outside the project's allowed folders, a path with `..` or a symbolic link (data an agreement keeps on the laptop never matches) | `push_inputs.sh` |
 | ⚙️ **automatic** | run ID before `sbatch`; commit, config hash and logs per run | `new`, `submit` |
 | ⚙️ | fair-use hold and release | `submit`, `feed`, `reconcile` |
 | ⚙️ | chained segments; later segments exit if the run is done or failed, also after two hard crashes in a row | `submit`, `d3job` |
@@ -1709,6 +1718,7 @@ project-specific.
 | 📖 **guides** | light commands only on the login host | `SKILL.md` |
 | 📖 | smoke test and pilot before every round; CPU part first | `SKILL.md` |
 | 📖 | never pull while a round is queued | `SKILL.md` |
+| 📖 | with a bucket, data travels through it: inputs laptop → bucket → server, results job → bucket → laptop; git carries code only | `SKILL.md`, data and storage |
 | 📖 | ssh and S3 setup: detect first, the user handles keys | `SKILL.md`, setup guide |
 | 📖 | explains alerts from the monitoring channel (home quota, idle GPU, unused CPUs) and fixes the cause | `references/alerts.md` |
 | 📖 | clean up after each round and above about 50 GB; a restore drill and a bucket lifecycle check before the store is the only copy | `SKILL.md`, references |
