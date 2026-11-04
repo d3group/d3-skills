@@ -575,7 +575,7 @@ def find_master(path=None, deck=None):
     for c in cands:
         if c and os.path.exists(c):
             return c
-    sys.exit(f'{UNI_MASTER} not found. The uni look exports onto the university PowerPoint master: put the .potx into the '
+    sys.exit(f'{UNI_MASTER} not found. The export rebuilds the deck on the university PowerPoint master: put the .potx into the '
              f'talk folder or a parent folder, set D3_UNI_MASTER, or pass --master <path>')
 
 

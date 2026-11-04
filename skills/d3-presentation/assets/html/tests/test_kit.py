@@ -187,6 +187,15 @@ class Build(unittest.TestCase):
         with self.assertRaises(ValueError):
             B.meta(title='T', feel='wild')
 
+    def test_interactive_feel_warns_without_an_interaction(self):
+        for body, expect in ((K.tile('x'), True), (K.tile('x') + K.cite('Smith 2020', 'Smith (2020)'), False)):
+            B.meta(title='T', feel='interactive')
+            B.onecol('S', body)
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                self.build()
+            self.assertEqual(any('no content slide has an interaction' in str(x.message) for x in w), expect, body)
+
     def test_time_provenance_js_and_kit_assets(self):
         B.meta(title='T', sections=['A'])
         B.section(1)

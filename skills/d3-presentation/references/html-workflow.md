@@ -63,7 +63,7 @@ Every look is built on the University of Würzburg PowerPoint master (`PPT-Maste
 
 `meta(look='beamer')` is the same D3 frame with the conventions of the LaTeX theme: no tracker unless `tracker=True` (then it takes the footer band), dividers without the slide list, body text at Beamer sizes. Choose it when the HTML deck must match a PDF deck slide for slide.
 
-`meta(look='uni')` drops the D3 branding, for teaching and other university decks (for example a dean's office talk). Coral `#ED6A5B` is the accent for graphic marks (accented numbers, the seal on navy). Berry `#821044` takes the role of D3 orange for text accents (kickers, `<b>` in takeaways and statements), because coral is too light for small text on white. Light blue `#5E8AC7` marks bullets and rules, and `takeaway=` is the sand bar with the master's arrow. The kit colours map onto the palette: `orange` becomes berry. The kit objects are toned down to the master's plain style (no cards, no icons, sans-serif labels).
+`meta(look='uni')` drops the D3 branding, for teaching and other university decks (for example a dean's office talk). Coral `#ED6A5B` is the accent for graphic marks (accented numbers, the seal on navy). Berry `#821044` takes the role of D3 orange for text accents (kickers, `<b>` in takeaways and statements), because coral is too light for small text on white. Blue `#5E8AC7` (cornflower) marks bullets and rules, and `takeaway=` is the sand bar with the master's arrow. The kit colours map onto the palette: `orange` becomes berry. The kit objects are toned down to the master's plain style (no cards, no icons, sans-serif labels).
 
 `meta(dividers='agenda')` replaces the section dividers with the agenda: every `section()` shows the full agenda on navy, the current section highlighted with its question beneath it and the earlier sections muted, and `agenda()` turns navy to match. Teaching decks use it so the room always sees where the session stands. The default `dividers='section'` keeps the divider with the big part number.
 
@@ -225,7 +225,7 @@ uv run --with playwright --with python-pptx d3deck/pptx_export.py dist/my_talk.h
 uv run --with playwright --with python-pptx d3deck/pptx_export.py dist/my_talk.html --no-notes
 ```
 
-It needs `PPT-Master-Universitaet-Wuerzburg.potx`, the university PowerPoint master. The repository is public, so the master is not part of the skill: put it into the talk folder or any parent folder (for example the folder that holds all lectures), set `D3_UNI_MASTER=/path/to/master.potx`, or pass `--master`.
+It needs `PPT-Master-Universitaet-Wuerzburg.potx`, the university PowerPoint master. The repository is public, so the master is not part of the skill: put it into the talk folder or any parent folder (for example the folder that holds all lectures), or into `d3deck/office/`, set `D3_UNI_MASTER=/path/to/master.potx`, or pass `--master`. The search order is `--master`, `D3_UNI_MASTER`, the folder of the built deck and its parents, then `d3deck/office/`.
 
 The script measures every slide in its final step in the browser and rebuilds it from native PowerPoint objects:
 

@@ -3,8 +3,8 @@
 exported build() function does not shadow it on the package).
 
 Slides are appended in call order, like frames in a .tex file. build() renders
-every slide inside the D3 frame, resolves jump marks, embeds the Inter fonts and
-writes one self-contained HTML file.
+every slide inside the D3 frame, resolves jump marks, embeds the fonts (Inclusive Sans UW, D3 Symbols)
+and writes one self-contained HTML file.
 """
 import base64
 import html as _html
@@ -40,6 +40,10 @@ def parse_time(t):
     if not m:
         raise ValueError(f'time={t!r}: write minutes:seconds, e.g. time="0:45"')
     return int(m.group(1)) * 60 + int(m.group(2))
+
+
+# What counts as an interaction for feel='interactive': the same markers shoot.py's signature counts.
+INTERACTIVE = re.compile(r'data-k=|data-pop=|<button\b|<input\b|<select\b|class="[^"]*\bcite\b')
 
 
 class Slide:
@@ -607,5 +611,9 @@ def build(name, out=None, embed_fonts=True, notes=True):
     built = [x for x in content if x.steps > 1]
     if m.get('feel', 'calm') == 'calm' and len(content) >= 6 and len(built) > 0.4 * len(content):
         warnings.warn(f'{len(built)} of {len(content)} content slides use step builds. Builds are for the few slides whose argument needs sequencing; a deck where most slides build feels restless (or agree on meta(feel="rich") with the presenter)')
+    if m.get('feel') == 'interactive' and content and not any(INTERACTIVE.search(x.inner or '') for x in content):
+        warnings.warn('feel="interactive" was agreed, but no content slide has an interaction: add hover-lit relations '
+                      '(k=), a click-for-detail badge, a cite(), a preset chip or a live instrument (html-components.md), '
+                      'or agree on meta(feel="rich") with the presenter')
     print(f'{len(D.slides)} slides · {total_steps} steps · {len(doc) / 1e6:.2f} MB' + (' (MathJax embedded)' if math_js else '') + f' → {out}')
     return out
