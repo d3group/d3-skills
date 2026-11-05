@@ -27,3 +27,4 @@ access_ok = ""              # date of the last working `aws s3 ls s3://<bucket>/
 server_dir = "~/example"    # checkout on the server (git clone there)
 s3_prefix = "example"       # s3://<bucket>/<s3_prefix>/, laid out like the repository
 tracking = ""               # "mlflow", "wandb" or "none": found in the project, or the user's answer (asked once)
+mlflow_store = ""           # with tracking = "mlflow": "server" (the group's MLflow server) or "run" (the run's own store)
