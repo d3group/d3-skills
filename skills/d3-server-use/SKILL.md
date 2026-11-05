@@ -2,10 +2,11 @@
 name: d3-server-use
 description: |
   Run compute jobs on the D3 group's KiRegio Slurm server the way the group agreed: Slurm for everything that
-  computes, uv only, jobs of at most 24 h that checkpoint and resume, a smoke test and a pilot before every round,
-  run IDs and a registry that tie code, config, logs, checkpoints and results together, and the S3 bucket as the
-  store so the small server home stays clean. Use this skill when:
-  (1) Running anything on the server: sbatch or srun jobs, GPU or CPU, JupyterHub, the first login and ssh setup
+  computes, uv only, jobs of at most 24 h that checkpoint and resume, a quick submit for projects that are set up
+  and a smoke test and a pilot for new ones, run IDs and a registry that tie code, config, logs, checkpoints and
+  results together, and the S3 bucket as the store so the small server home stays clean. Use this skill when:
+  (1) Running anything on the server: just submitting a project that is set up, sbatch or srun jobs, GPU or CPU,
+      JupyterHub, the first login and ssh setup
   (2) Preparing or submitting a round of experiments: splitting a long script into phases and units, how many CPUs
       and GPUs per job, smoke tests, sizing --time/--mem/--cpus/GPUs, many configs
   (3) Making long jobs survive the 24 h limit: checkpoints, resume, chained segments
@@ -16,12 +17,12 @@ description: |
       "Meldung"): home above 100 GB, an idle GPU, unused CPUs
   (8) Tracking experiments of server runs with MLflow or Weights & Biases, when the project uses or wants them:
       metrics across segments, comparing runs, the MLflow UI
-  MANDATORY TRIGGERS: KiRegio, Slurm, sbatch, srun, squeue, sq, sacct, seff, sprio, job pending, GPU server,
-  compute server, run on the server, submit jobs, cluster, checkpoint, 24 hours, time limit, split the job,
-  parallelize, how many CPUs, n_jobs, joblib, multiprocessing, job dependencies, JupyterHub, MinIO,
-  S3 bucket, home quota, d3run, run registry, server alert, alerts channel, Server Police, HomeQuotaWarning,
-  HomeQuotaReached, JobGpuIdle, JobCpuUnderused, NasUnreachable, MLflow, mlflow ui, experiment tracking,
-  Weights & Biases, wandb
+  MANDATORY TRIGGERS: KiRegio, Slurm, sbatch, srun, squeue, sq, sacct, seff, sprio, job pending, GPU server, just
+  submit, submit like last time, compute server, run on the server, submit jobs, cluster, checkpoint, 24 hours, time
+  limit, split the job, parallelize, how many CPUs, n_jobs, joblib, multiprocessing, job dependencies, JupyterHub,
+  MinIO, S3 bucket, home quota, d3run, run registry, server alert, alerts channel, Server Police, HomeQuotaWarning,
+  HomeQuotaReached, JobGpuIdle, JobCpuUnderused, NasUnreachable, MLflow, mlflow ui, experiment tracking, Weights &
+  Biases, wandb
 ---
 
 # Jobs on the KiRegio server
@@ -35,6 +36,35 @@ backups, so the S3 bucket is where data, checkpoints, logs and results live.
 > (template `assets/site.example.toml`): login name, ssh alias, server addresses, the S3 answer. It stays on the
 > user's computer because this skill is public. **`<alias>`** is the ssh alias from `<site>`, **`<proj>`** the
 > project's checkout on the server.
+
+## Quick submit or full setup
+
+A request to run work on the server takes one of two paths. Choose before reading the project:
+
+- **Quick submit:** the code and job scripts are ready and the user wants them run. The project points here when it
+  has `tools/d3run.py` (or its own submit scripts) and job scripts, and `<site>` lists it under `[projects.<name>]`.
+- **Full setup:** new code, a project not yet set up on the server, a job that must survive the 24 h limit, or a
+  round to split and size: sections 0 to 2.
+
+When the message says which ("just submit", "like last time", "same as before": quick; "get it ready", "set it up",
+"make it survive the 24 h limit": full), take it. Otherwise ask once, recommending the path the project points to:
+"Quick submit (the code is ready: I check the group's rules and submit, a few minutes) or full setup (I read the
+project, make it interruptible, plan how to split it and how wide each job is, smoke test and pilot)?" Without a
+user to ask, take the recommendation and say so. Alerts, cleanup, pending jobs and transfers need neither path.
+
+**Quick submit** uses only these steps:
+1. Alias and `<proj>` from `<site>`; section 0 only for what it lacks.
+2. Lint the job scripts: `uv run <skill-dir>/scripts/check_sbatch.py jobs/*.sbatch`.
+3. Commit and push; in `<proj>`, `git pull` only while nothing of the project is queued, and
+   `uv sync --managed-python` if `pyproject.toml` or `uv.lock` changed.
+4. `d3run.py new --config <configs> --tag <round>`, then `d3run.py submit <ids…> --script <job script> <flags>`.
+   Flags: the user's; else `d3run.py size --tag <last round>`; else ask. A project with its own submit scripts runs
+   them as they are.
+5. Give the run IDs and how to watch: `d3run.py reconcile && d3run.py list --tag <round>` every 15 minutes or more.
+
+The smoke test, pilot, `scale` and code changes belong to the full setup; the quick path skips them. Switch to the
+full setup for the part that needs it, and say so, when the lint reports an error, a job needs more than 24 h and
+the code has no checkpoints, or the round would queue more than about 500 jobs.
 
 ## 0. First use (once per user)
 
@@ -138,7 +168,7 @@ the user (a test, a plan for later) list the questions instead of writing a site
   (`ctx.wandb()`) only for data without restrictions ([references/tracking.md](references/tracking.md)).
   SQLite over NFS written from two hosts can corrupt the database.
 
-## 2. A round, step by step
+## 2. Full setup: a round, step by step
 
 Claude runs on the user's computer and sends commands as `ssh <alias> 'cd <proj> && …'`. For many short commands
 (watching a queue) the ControlMaster settings in [references/first-time-setup.md](references/first-time-setup.md)

@@ -1,0 +1,15 @@
+login = "abcd"
+ssh_alias = "kiregio"
+host = "10.0.0.1"
+ssh_ok = "2026-10-28"
+has_bucket = "yes"
+asked_on = "2026-10-28"
+bucket = "abcd-bucket"
+endpoint_url = "https://s3.example.invalid"
+aws_profile = "default"
+access_ok = "2026-10-28"
+
+[projects.grid-sweep]
+server_dir = "~/grid-sweep"
+s3_prefix = "grid-sweep"
+tracking = "none"

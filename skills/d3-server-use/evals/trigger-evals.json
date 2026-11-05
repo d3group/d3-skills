@@ -114,5 +114,9 @@
   {
     "query": "how many cpus should I request for my xgboost cross-validation jobs on our group's slurm server? last time I asked for 2 and it took forever",
     "should_trigger": true
+  },
+  {
+    "query": "just submit the new configs to the kiregio server like last time, the code is already set up",
+    "should_trigger": true
   }
 ]

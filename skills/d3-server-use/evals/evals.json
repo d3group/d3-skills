@@ -154,6 +154,45 @@
         "The first chunks of the round are submitted at the measured width with a generous --time, and `size` on them sets --time, --cpus and --mem for the rest",
         "Nothing heavy runs on the login host"
       ]
+    },
+    {
+      "id": 11,
+      "name": "quick-submit-like-last-time",
+      "prompt": "Project is <copy of evals/files/ready-sweep as a git repository with everything committed, with scripts/d3run.py and scripts/d3job.py copied into its tools/; evals/files/site-ready.toml as ~/.config/d3-server/site.toml in the sandbox HOME> (on the server it's ~/grid-sweep). We ran the sweep there last week, round tag sweep1-train, all done and archived. I added 16 configs for two higher learning rates in configs/sweep2/ and committed them, nothing else changed. Just submit them like last time. I'm offline right now, so give me the exact commands, don't run anything on the server.",
+      "expected_output": "Quick submit without asking (the message says so): lint the job script, push, pull on the server only with nothing of the project queued, `d3run.py new --config configs/sweep2/*.json --tag <round>`, `submit` with last round's flags (`size --tag sweep1-train` or the user's), how to watch. No smoke test, no pilot, no `scale`, no code changes.",
+      "files": [],
+      "assertions": [
+        "Takes the quick path without asking which path (the message says 'just submit ... like last time')",
+        "Submits no smoke-test, pilot or other test job, and runs no `scale` measurement",
+        "Changes no code and writes no new job script",
+        "Lints the job script with check_sbatch.py before submitting",
+        "Pulls on the server only after checking that nothing of the project is queued",
+        "Books the 16 configs with `d3run.py new --config configs/sweep2/*.json` and submits them with flags from the user, from the last round (`size --tag sweep1-train` or its recorded flags), or asks for them"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "ask-path-set-up-project",
+      "prompt": "Run the 16 new configs in configs/sweep2 of <copy of evals/files/ready-sweep as a git repository with everything committed, with scripts/d3run.py and scripts/d3job.py copied into its tools/; evals/files/site-ready.toml as ~/.config/d3-server/site.toml in the sandbox HOME> on the server. I'm offline, so give me the commands.",
+      "expected_output": "The message does not say which path: one question (quick submit or full setup) with quick recommended, because the project has tools/d3run.py, job scripts and a site entry; then the quick path.",
+      "files": [],
+      "assertions": [
+        "Asks once whether to quick-submit or do the full setup, or (without a user) states that it would ask and which answer it takes",
+        "Recommends the quick submit and names what shows that the project is set up (tools/d3run.py or job scripts, the project's entry in the site file)",
+        "On the quick path, submits no smoke-test or pilot job"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "ask-path-new-project",
+      "prompt": "Run src/pipeline.py from <copy of evals/files/predict-optimize> on KiRegio for me. I'm offline, so give me the commands. (Sandbox HOME with evals/files/site-ready.toml as the site file, without the [projects.grid-sweep] block.)",
+      "expected_output": "One question (quick submit or full setup) with the full setup recommended: no d3run tools, no job scripts, no site entry, a four-day script without checkpoints. Explains why submitting it as it is would fail (24 h limit, a GPU idle in the solver), then plans the full setup.",
+      "files": [],
+      "assertions": [
+        "Recommends or takes the full setup, and names what the project lacks (d3run tools, job scripts, a site entry, checkpoints)",
+        "Does not submit pipeline.py as one job",
+        "Its plan splits the study at the hardware phases (GPU training and prediction, CPU solves and evaluation)"
+      ]
     }
   ]
 }

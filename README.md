@@ -41,7 +41,7 @@ Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Up
 | [d3-explainer](#explaining-a-project-to-its-own-authors-d3-explainer) | 0.12.1 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](#wording-of-research-texts-d3-scientific-wording) | 0.1.1 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet guides, STE guide, wording lint, corpus profiler |
 | [d3-marimo](#teaching-apps-in-the-browser-d3-marimo) | 0.1.2 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab, Jupyter or molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet and style-cell generator, headless browser check, pitfalls |
-| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.6.2 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, rounds split at their phases and units with each job as wide as it keeps busy and fitted to the queue, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
+| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.7.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, a quick submit for projects that are set up, run IDs and a registry that tie code, config, logs, checkpoints and results together, rounds split at their phases and units with each job as wide as it keeps busy and fitted to the queue, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
 
 Each skill has a section below: what its folder contains, how a run goes from the first question to the delivery, and
 what it checks. The folders are under [`skills/`](skills/). Design and review depth apply to several skills and come
@@ -1617,7 +1617,18 @@ skills/d3-server-use/
 
 ### A round, step by step
 
-Every use starts by reading the repository the skill is invoked in (project rules, existing job scripts, an
+A request to run work first picks one of two paths, from the message ("just submit", "like last time" or "get it
+ready", "set it up") or by asking once, with a recommendation from what the project already has:
+
+```
+ quick submit   project set up (tools/d3run.py, job scripts, entry in the site file), code ready
+                lint ─▶ commit, pull (nothing queued) ─▶ new ─▶ submit with the user's or the last round's flags
+                no smoke test, pilot or sizing; switches to the full setup for a lint error, a job above 24 h
+                without checkpoints, or more than ~500 queued jobs
+ full setup     everything else: the nine steps below
+```
+
+The full setup starts by reading the repository the skill is invoked in (project rules, existing job scripts, an
 existing orchestrator, checkpoint code, folder layout) and adapts to it; the skill itself holds nothing
 project-specific.
 
@@ -1769,7 +1780,8 @@ store and only the login host writes the project's store.
 | ⚙️ | one MLflow run across all segments, tags from `run.json`, status SCHEDULED, FINISHED or FAILED from the run's state | `d3job` (`ctx.mlflow()`) |
 | ⚙️ | the project's MLflow store from snapshots of the runs' stores, only new points, uploaded to the bucket | `d3track.py sync` |
 | 📖 **guides** | light commands only on the login host | `SKILL.md` |
-| 📖 | smoke test and pilot before every round; CPU part first | `SKILL.md` |
+| 📖 | quick submit for a project that is set up, full setup otherwise; asked once unless the message says which | `SKILL.md` |
+| 📖 | smoke test and pilot before every full setup; CPU part first | `SKILL.md` |
 | 📖 | a round split at its hardware phases, then its units; each job as wide as it keeps busy, fitted to the queue | `SKILL.md`, splitting and sizing |
 | 📖 | code that cannot save its state is never chained into segments; the ways out (fit into 24 h, the solver's time limit and best solution, libraries that continue, splitting the problem) are chosen with the user | `SKILL.md`, interruptible jobs |
 | 📖 | never pull while a round is queued | `SKILL.md` |

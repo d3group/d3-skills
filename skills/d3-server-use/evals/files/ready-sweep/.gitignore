@@ -1,0 +1,9 @@
+# run folders, registry, checkpoints and logs live on the server and in the bucket, not in git
+runs/
+logs/
+# data travels through the bucket (jobs/push_inputs.sh, d3run.py push/pull)
+data/
+# outputs of the old all-in-one script
+results/
+.venv/
+__pycache__/
