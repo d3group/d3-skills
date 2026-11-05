@@ -72,24 +72,23 @@ Request as many CPUs and GPUs as the job keeps busy, not the minimum.
      CPUs, each time in a fresh local run folder, and prints time, speed-up, efficiency and peak memory. The width
      is the widest at which each CPU still delivers 70 % of the narrow run's speed; below that the extra CPUs
      mostly wait, and below 60 % CPU use the monitoring flags the job.
-  2. Submit a few first units of the round (the largest among them) at that width, up to what the share lets run
-     at once, with about twice
-     the local time for a full unit (the server's CPUs are slower or faster). They are the pilot, and their results
-     count. Long units get a first segment of about an hour: `size` extrapolates from the `progress` they report,
-     and they resume later.
+  2. Submit a few first units of the round (the largest among them) at that width, up to what the share lets run at
+     once, with about twice the local time for a full unit (the server's CPUs are slower or faster). They are the
+     pilot, and their results count. Long units get a first segment of about an hour: `size` extrapolates from the
+     `progress` they report, and they resume later.
   3. `size` on those first jobs sets the flags for the rest. When they kept all their CPUs busy, `size` says so:
      the code may scale further.
 
   A pilot at two widths on the server only when `scale` was still scaling at all of the laptop's CPUs and `queue`
   shows room for the wider one: the same config at the laptop's width and twice that, the second with
   `d3run.py new --config <same> --allow-duplicate --tag <same tag>`; `size` compares them by the same rule.
-- **GPU jobs:** a laptop cannot measure the GPU side, but `scale` on the code's CPU path still gives the peak
-  memory (`--mem`) and the CPUs the data loading keeps busy. Start with 1 GPU and 4 CPUs (the partition's default
-  per GPU); `size` on the first jobs decides. Their GPU pays for up to 41 CPUs, so `size` takes a wider width when it is
-  at least 10 % faster. While the queue is full, these first jobs also carry the GPU checks (section 6).
-- **A unit that fills only part of a GPU** (GPU busy below about 50 % in the first jobs, little GPU memory): a GPU cannot be
-  shared between jobs, so several units share one 1-GPU job (processes, or one model vectorized over seeds), or the
-  unit runs on CPUs.
+- **GPU jobs:** a laptop cannot measure the GPU side, but `scale` on the code's CPU path still gives the peak memory
+  (`--mem`) and the CPUs the data loading keeps busy. Start with 1 GPU and 4 CPUs (the partition's default per GPU);
+  `size` on the first jobs decides. Their GPU pays for up to 41 CPUs, so `size` takes a wider width when it is at
+  least 10 % faster. While the queue is full, these first jobs also carry the GPU checks (section 6).
+- **A unit that fills only part of a GPU** (GPU busy below about 50 % in the first jobs, little GPU memory): a GPU
+  cannot be shared between jobs, so several units share one 1-GPU job (processes, or one model vectorized over seeds),
+  or the unit runs on CPUs.
 - **Memory:** what one unit needs (`size`). Units with very different memory needs go into separate jobs, each with
   its own `--mem`, instead of one job sized for the largest.
 
@@ -139,11 +138,12 @@ A smoke job on the server is for the first time a project runs there; the local 
 (SKILL.md, step 5). Each job waits for its own turn: when a GPU frees up, it goes to the highest-priority job
 pending at that moment, and a job submitted later waits for the next one. While `queue` shows no GPU free or other
 users waiting for one (its `GPU smoke` line), a separate 10-minute GPU smoke therefore spends your turn, and the
-first real job waits for the GPU after it, often hours. Backfill does not help: it fills free GPUs, and there are none. `submit` refuses a
-GPU job tagged or named smoke then (`--allow-gpu-smoke` only when the user wants one anyway). One turn does both:
+first real job waits for the GPU after it, often hours. Backfill does not help: it fills free GPUs, and there are
+none. `submit` refuses a GPU job tagged or named smoke then (`--allow-gpu-smoke` only when the user wants one
+anyway). One turn does both:
 
-1. **The server smoke on CPUs.** The tiny config end to end on the code's CPU path (`--gpus 0`; PyTorch on device `cpu`,
-   `JAX_PLATFORMS=cpu`), and the resume test ([interruptible-jobs.md](interruptible-jobs.md), section 8), on the
+1. **The server smoke on CPUs.** The tiny config end to end on the code's CPU path (`--gpus 0`; PyTorch on device
+   `cpu`, `JAX_PLATFORMS=cpu`), and the resume test ([interruptible-jobs.md](interruptible-jobs.md), section 8), on the
    `cpu` partition. Code without a CPU path: what runs without the GPU (imports, configs, data paths, one batch).
 2. **The first real GPU jobs at the same time**, without waiting for the CPU smoke, so they catch the next free
    GPU: the first units of the round, up to the share (`queue`, share line), 1 GPU and 4 CPUs unless `size` knows

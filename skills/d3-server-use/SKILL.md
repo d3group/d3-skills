@@ -83,30 +83,22 @@ the user (a test, a plan for later) list the questions instead of writing a site
 
    Store `ssh_alias`, `host` and the date in `ssh_ok`. From then on every server command is `ssh <alias> '…'`.
 3. **Bucket: detect, then ask only what is missing.** If `<site>` has `has_bucket = "no"`, or `"yes"` together
-   with `bucket` and `endpoint_url`, use that. Otherwise:
-   - Ask once: "Do you have an S3 bucket on the KiRegio storage?" Store `has_bucket` and `asked_on`.
-   - **yes:** look before asking. On the laptop: `aws --version`, `aws configure list`,
-     `grep -n -E '^\[|endpoint_url' ~/.aws/config`. On the server: `ssh <alias> '~/.local/bin/aws --version;
-     grep -n -E "^\[|endpoint_url" ~/.aws/config'`. Never open `~/.aws/credentials`. Then ask only for what is
-     still unknown: the bucket name, the S3 API endpoint (from the admin's mail; not the web console address), a
-     profile name if it is not `default`. Store `bucket`, `endpoint_url`, `aws_profile` in `<site>`. A missing CLI
-     or config: set it up with [references/data-and-storage.md](references/data-and-storage.md); the user writes
-     the keys themselves. Check access with `aws s3 ls s3://<bucket>/` on the laptop and on the login host and
-     store the date in `access_ok`. Once per bucket, check that it keeps objects:
-     `aws s3api get-bucket-lifecycle-configuration --bucket <bucket>` (no rules is good); a rule that expires or
-     deletes objects makes it unfit as the only copy, so tell the user and ask the admin.
-   - **Per project:** the folder inside the bucket (`s3_prefix`, default the project name) goes into
-     `<site>` under `[projects.<name>]` and into the project's registry with `d3run.py init --s3-uri
-     s3://<bucket>/<prefix>` (add `--s3-endpoint`/`--aws-profile` if the server's `~/.aws/config` does not set
-     them). `d3run.py settings` shows what a registry already has.
-   - From then on S3 holds data (raw, pre- and postprocessed), checkpoints, logs and results by default; the
-     server keeps only what running jobs need.
-   - **no:** suggest asking the admin for one. Until then the user's own computer is the store: rsync copies
-     runs and data there, and `d3run.py clean --manifest` deletes on the server only what the copy holds with the
-     same sizes. Small text results that belong in the repository can go by git (commit on the server, push, pull).
-     Other storage the user has (a university share, their own cloud) works the same way through a manifest of the
-     copy, within the data rules ([references/data-and-storage.md](references/data-and-storage.md), section 7).
-     Ask again only when the user says they got a bucket.
+   with `bucket` and `endpoint_url`, use that. Otherwise ask once: "Do you have an S3 bucket on the KiRegio
+   storage?" and store `has_bucket` and `asked_on`.
+   - **yes:** look before asking: `aws --version`, `aws configure list` and `grep -n -E '^\[|endpoint_url'
+     ~/.aws/config` on the laptop, the same on the server with `~/.local/bin/aws`. Never open `~/.aws/credentials`.
+     Ask only for what is still unknown (bucket name, the S3 API endpoint from the admin's mail, not the web console
+     address, a profile other than `default`) and store `bucket`, `endpoint_url`, `aws_profile`. A missing CLI or
+     config: [references/data-and-storage.md](references/data-and-storage.md); the user writes the keys. Check access
+     with `aws s3 ls s3://<bucket>/` on both hosts (`access_ok`), and once per bucket that no lifecycle rule expires
+     objects (`aws s3api get-bucket-lifecycle-configuration --bucket <bucket>`; a rule that deletes makes the bucket
+     unfit as the only copy: tell the user and the admin). Per project, the folder in the bucket (`s3_prefix`, default
+     the project name) goes into `<site>` and into the registry with `d3run.py init --s3-uri s3://<bucket>/<prefix>`
+     (plus `--s3-endpoint`/`--aws-profile` if the server's `~/.aws/config` lacks them).
+   - **no:** suggest asking the admin for one. Until then the user's own computer is the store (rsync, then
+     `d3run.py clean --manifest`); other storage works the same way within the data rules
+     ([references/data-and-storage.md](references/data-and-storage.md), section 7). Ask again only when the user
+     says they got a bucket.
 4. **New account:** change the JupyterHub default password at once and import the CA certificate once per
    computer ([references/first-time-setup.md](references/first-time-setup.md)).
 
@@ -114,49 +106,42 @@ the user (a test, a plan for later) list the questions instead of writing a site
 
 - **Everything that computes is a Slurm job.** No ssh to the compute node; on the login host only `ls`, `du` of a
   small folder, `git`, `uv sync`, `sq`, `sacct`, `d3run.py`. Each user has 4 CPUs and 8 GB there: heavy work crawls,
-  is killed above 8 GB, and its file reads still load the shared NFS server. On the old server, where login and
-  compute were one machine, a polars scan once made everything unresponsive for everyone.
-- **No scans of the whole home, not even in a job.** `du` or `find` over `~` sends the shared NFS server a request
-  for every file and slows everyone. The total is in Grafana, run folders in `d3run.py usage`, a single folder in
-  `du -sh <folder>`.
-- **uv only:** `uv add`, `uv sync`, `uv run`, `uv tool install`. No pip, conda, venv or global installs. Sync once on
-  the login host (`uv sync --managed-python`, so the Python sits in the home where the compute node sees it), then
-  jobs call `uv run --no-sync`, so a hundred jobs do not sync the shared `.venv` at the same time.
+  is killed above 8 GB, and its file reads still load the shared NFS server (a polars scan once froze the old
+  server for everyone).
+- **No scans of the whole home, not even in a job.** `du` or `find` over `~` sends the NFS server a request for
+  every file. The total is in Grafana, run folders in `d3run.py usage`, a single folder in `du -sh <folder>`.
+- **uv only:** `uv add`, `uv sync`, `uv run`, `uv tool install`; no pip, conda, venv or global installs. Sync once on
+  the login host (`uv sync --managed-python`, so Python sits in the home where the compute node sees it); jobs call
+  `uv run --no-sync`, so a hundred jobs do not sync the shared `.venv` at once.
 - **At most 24 h per job; every long job is interruptible.** A job above 24 h is accepted but never starts. Jobs
-  save checkpoints on a timer, use their time up to a margin measured from their own step and checkpoint times
-  (seconds to a few minutes, not a fixed quarter hour), resume from the newest checkpoint, and run as a chain of
-  segments ([references/interruptible-jobs.md](references/interruptible-jobs.md)).
+  checkpoint on a timer, stop at a margin measured from their own step and save times, resume from the newest
+  checkpoint and run as a chain of segments ([references/interruptible-jobs.md](references/interruptible-jobs.md)).
 - **Split a round at its seams.** Checkpoints are not enough: one job that loops over everything holds its CPUs or
   GPU for all of it. Cut where the hardware changes (CPU preparation, GPU training, CPU solving, evaluation and
   figures), then between independent units (configs, seeds, folds, scenarios): one run each. A step of a few
   minutes that reuses the previous step's model in memory stays in its job; units under about 10 minutes are
   bundled ([references/splitting-and-sizing.md](references/splitting-and-sizing.md)).
-- **Each job as wide as it keeps busy.** Not the minimum: as many CPUs (and GPUs, if the code uses several) as the
-  job uses efficiently, measured on the laptop (`scale`) and checked by `size` on the first jobs. A job that scales
-  costs the same fair share and ends sooner; CPUs
-  that its memory or GPU already pays for are free. Shorter `--time` and fitting `--mem` start earlier (backfill).
-- **All GPUs or CPUs only while nobody else waits.** The cluster never preempts, so a running job keeps its GPU until
-  it ends. `d3run.py queue` shows what is free, who waits and when GPUs free up; widths and job counts follow from
-  it. While others wait, `d3run.py submit` keeps your running and startable jobs within a share (3 of 4 GPUs, 112 of
-  150 CPUs in `cpu`; `init --share-gpus/--share-cpus`) and submits the rest held; `d3run.py feed` releases them when
-  nobody waits and holds back pending ones when others start waiting.
+- **Each job as wide as it keeps busy.** As many CPUs (and GPUs, if the code uses several) as the job uses
+  efficiently, measured on the laptop (`scale`) and checked by `size` on the first jobs; not the minimum. A job that
+  scales costs the same fair share and ends sooner; CPUs that its memory or GPU already pays for are free. Shorter
+  `--time` and fitting `--mem` start earlier (backfill).
+- **All GPUs or CPUs only while nobody else waits.** The cluster never preempts: a running job keeps its GPU until it
+  ends. `d3run.py queue` shows what is free, who waits and when GPUs free up. While others wait, `d3run.py submit`
+  keeps your running and startable jobs within a share (3 of 4 GPUs, 112 of 150 CPUs in `cpu`) and submits the rest
+  held; `d3run.py feed` releases them when nobody waits.
 - **A run ID before every submission.** `<YYYYMMDD>-<login>-<slug>-<4 hex>` names the run folder, the logs and the
-  S3 prefix. Slurm job IDs restart when the server is rebuilt and one run spans several 24 h jobs, so a job ID is
+  S3 prefix. Slurm job IDs restart when the server is rebuilt, and one run spans several 24 h jobs, so a job ID is
   only an attribute of one attempt.
-- **Committed code, recorded per run.** The code reaches the server by `git pull` in `<proj>`. A job runs the code
-  that is on the server when it *starts*, so never pull while jobs of a round are queued; `d3run.py new` refuses
-  uncommitted changes and records the commit.
-- **S3 is the store, the server is scratch.** Upload as you go, verify, then delete the local copy. The bucket sits
-  on the group's NAS, in a RAID but without backups: whoever needs a result safe for certain downloads it and backs
-  it up themselves. Without a bucket the user's own computer is the store (rsync, then `clean --manifest`). Clean up
-  after every round and whenever `d3run.py usage` passes about 50 GB. Nothing on the server is deleted before a copy
-  is verified by checksum (MD5 against the bucket's ETag, SHA-256 for other copies; `--size-only` only on the user's
-  request).
-- **Data takes one route per project.** With a bucket, it travels through the bucket: inputs from the laptop into
-  it (`jobs/push_inputs.sh`) and from there to the server (`d3run.py pull … --checksum`), results from the job into
-  it and from there to the laptop (`aws s3 sync`). Without a bucket yet, rsync is the route: the same script sends
-  the inputs straight into `<proj>`, and results come back by rsync. Git carries code, and without a bucket also small
-  text results that belong in the repository. Once a bucket exists, the project switches to it.
+- **Committed code, recorded per run.** Code reaches the server by `git pull` in `<proj>`. A job runs the code that
+  is there when it *starts*, so never pull while jobs of a round are queued; `d3run.py new` refuses uncommitted
+  changes and records the commit.
+- **The store holds the data, the server is scratch.** With a bucket, data travels through it: inputs laptop →
+  bucket → server (`jobs/push_inputs.sh`, `d3run.py pull … --checksum`), results job → bucket → laptop
+  (`aws s3 sync`). Without one, the user's computer is the store and rsync the route, until a bucket exists. Git
+  carries code (and, without a bucket, small text results for the repository). The bucket is on the group's NAS, in
+  a RAID but without backups: results that must be safe are downloaded and backed up by the user. Clean up after
+  every round and whenever `d3run.py usage` passes about 50 GB, and delete nothing before its copy is verified by
+  checksum (MD5 against the bucket's ETag, SHA-256 for other copies; `--size-only` only on the user's request).
 - **No secrets in files you write.** Passwords, access keys and the Grafana login stay in the user's own files
   (`~/.aws/credentials`, password manager) and the admin's mails, never in a repo, a note, a job script or `<site>`.
 - **One writer per file.** Only `d3run.py` on the login host writes the registry; jobs write their own run folder.
@@ -166,66 +151,56 @@ the user (a test, a plan for later) list the questions instead of writing a site
   MLflow run in every segment); only `d3track.py sync` on the login host writes the project's store `runs/mlflow.db`
   and uploads it to the bucket. Or, where the user chose the group's MLflow server (`mlflow_store = "server"`), the
   run logs there with `ctx.mlflow(server=True)` and needs no sync (tracking.md 3a). Never one shared `mlflow.db`
-  written by jobs, never `mlflow server` on the login host. For a new setup MLflow is the recommendation (it stays
-  on university infrastructure); Weights & Biases (`ctx.wandb()`) only for data without restrictions
-  ([references/tracking.md](references/tracking.md)).
-  SQLite over NFS written from two hosts can corrupt the database.
+  written by jobs (SQLite over NFS written from two hosts can corrupt), never `mlflow server` on the login host. For
+  a new setup MLflow is the recommendation (it stays on university infrastructure); Weights & Biases
+  (`ctx.wandb()`) only for data without restrictions ([references/tracking.md](references/tracking.md)).
 
 ## 2. Full setup: a round, step by step
 
-Claude runs on the user's computer and sends commands as `ssh <alias> 'cd <proj> && …'`. For many short commands
-(watching a queue) the ControlMaster settings in [references/first-time-setup.md](references/first-time-setup.md)
-reuse one connection.
+Claude runs on the user's computer and sends commands as `ssh <alias> 'cd <proj> && …'`; the ControlMaster settings
+in [references/first-time-setup.md](references/first-time-setup.md) reuse one connection for many short commands.
 
-1. **Read the project first, then set it up.** The skill is generic; the repository it is used in decides the
-   details. Look before changing anything: project rules (`CLAUDE.md`, `AGENTS.md`, `.agent/`, `README`; where they
-   are stricter, they win), the environment (`pyproject.toml`, `uv.lock`), existing job and submit scripts
-   (`grep -rl '^#SBATCH'`), an existing run database or orchestrator, existing checkpoint code, experiment tracking
-   (MLflow or W&B in the dependencies or the code, an `mlruns/`, `mlflow.db` or `wandb/` folder; commands in
-   [references/tracking.md](references/tracking.md)), and where configs, data, logs and results live. Then adapt: a
-   project with its own orchestrator keeps it and is checked against
-   "Fitting an existing orchestrator" in [references/registry.md](references/registry.md); a project without one
-   gets `d3run.py` and `d3job.py`. Keep the project's folder names and conventions instead of inventing new ones.
-   Tracking found: keep the tool and fit it to segments and one writer per store. None found, and the work trains or
-   compares runs: ask once whether the user wants it (MLflow recommended, W&B if they already use it, or none, the
-   default). With MLflow, ask in the same question whether runs go to the group server or into their own store
-   ([references/tracking.md](references/tracking.md) 3a). Store the answers as `tracking` and `mlflow_store` under
-   `[projects.<name>]` in `<site>` and do not ask again; without a user to ask (a batch run), add nothing and list
-   the question.
-   Setup (once per project): `git clone` into `<proj>`, `uv sync --managed-python`, `uv cache prune`. Copy
-   `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`), if the project tracks with
-   MLflow also `d3track.py` (and `uv add mlflow` unless the project has it; jobs and `d3track.py` use the project's
-   environment), and the job template `<skill-dir>/assets/job_template.sbatch` (e.g. `jobs/train.sbatch`) yourself,
-   as part of the change you prepare: the delivered project must run as it is, without the user copying files out
-   of the skill folder. `<skill-dir>/assets/push_inputs.sh` goes to `jobs/` too, set from `<site>`: `S3_URI_DEFAULT`
-   and `AWS_PROFILE_DEFAULT` with a bucket, otherwise `SERVER_DEFAULT` (`<alias>:<proj>`), and in both cases
-   `ALLOWED`, the folders the server may receive (never data that an agreement keeps on the laptop); the inputs are
-   listed in `jobs/server_inputs.txt`. Add `runs/` and `__pycache__/` to `.gitignore`, commit. Then
-   `uv run tools/d3run.py init --user <login> --s3-uri s3://<bucket>/<prefix>` with the values from `<site>` (or
-   `--no-s3`).
-   Record the project in `<site>` under `[projects.<name>]`, with or without a bucket: `server_dir` (the checkout
-   `<proj>`) always, `s3_prefix` when there is a bucket, `tracking` (`mlflow`, `wandb` or `none`), with MLflow
-   `mlflow_store` (`server` or `run`). Later sessions read `<proj>` from there instead of asking.
-2. **Plan the cut** ([references/splitting-and-sizing.md](references/splitting-and-sizing.md)). Find the code's
-   phases and loops and cut them as the rules say: each phase gets a tag, each unit a run, and the entry point runs
-   one unit (`--config`, `--chunk i/n`); without `--config` it reads the copy that `new` puts in its run folder
-   (`config.<ext>` under `ctx.run_dir`), because the arguments after `--` in `submit` are the same for every run. Only
-   code that computes on the GPU goes to a GPU; tree and linear models, solvers, evaluation and figures run on CPUs
-   (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Parallel work inside a
-   unit (threads, `n_jobs`, a pool, data loader workers) reads its count from `SLURM_CPUS_PER_TASK`. Estimate the
-   runtime per unit; above about 20 h plan segments. Code without state it can save (one long solver call, a
-   `fit()` without partial state) cannot resume: say so, never chain it into segments, and choose a way with the
-   user ([references/interruptible-jobs.md](references/interruptible-jobs.md), section 6).
+1. **Read the project, then set it up.** The repository decides the details; the skill is generic.
+   - **Look first:** project rules (`CLAUDE.md`, `AGENTS.md`, `.agent/`, `README`; where stricter, they win), the
+     environment (`pyproject.toml`, `uv.lock`), job and submit scripts (`grep -rl '^#SBATCH'`), a run database or
+     orchestrator, checkpoint code, experiment tracking (MLflow or W&B in the dependencies or the code, an
+     `mlruns/`, `mlflow.db` or `wandb/` folder), and where configs, data, logs and results live.
+   - **Adapt:** a project with its own orchestrator keeps it and is checked against "Fitting an existing
+     orchestrator" in [references/registry.md](references/registry.md); otherwise it gets `d3run.py` and
+     `d3job.py`. Keep the project's folder names and conventions.
+   - **Tracking:** found, keep the tool and fit it to segments and one writer per store. None found, and the work
+     trains or compares runs: ask once whether the user wants it (MLflow recommended, W&B if they already use it,
+     or none, the default); with MLflow, in the same question, the group server or the run's own store
+     ([references/tracking.md](references/tracking.md) 3a). Without a user to ask, add nothing and list the question.
+   - **Set up once per project:** `git clone` into `<proj>`, `uv sync --managed-python`, `uv cache prune`. Copy into
+     the project yourself, so it runs as delivered: `<skill-dir>/scripts/d3run.py` and `d3job.py` (e.g. `tools/`),
+     with MLflow also `d3track.py` (and `uv add mlflow` unless the project has it), the job template
+     `<skill-dir>/assets/job_template.sbatch` (e.g. `jobs/train.sbatch`), and `<skill-dir>/assets/push_inputs.sh`
+     into `jobs/`, set from `<site>` (`S3_URI_DEFAULT` and `AWS_PROFILE_DEFAULT` with a bucket, else
+     `SERVER_DEFAULT` = `<alias>:<proj>`; always `ALLOWED`, the folders the server may receive, never data an
+     agreement keeps on the laptop; the inputs listed in `jobs/server_inputs.txt`). Add `runs/` and `__pycache__/`
+     to `.gitignore`, commit, then `uv run tools/d3run.py init --user <login> --s3-uri s3://<bucket>/<prefix>`
+     (or `--no-s3`).
+   - **Record** the project in `<site>` under `[projects.<name>]`: `server_dir` (`<proj>`), `s3_prefix` with a
+     bucket, `tracking` (`mlflow`, `wandb` or `none`), with MLflow `mlflow_store` (`server` or `run`). Later
+     sessions read them instead of asking.
+2. **Plan the cut** ([references/splitting-and-sizing.md](references/splitting-and-sizing.md)). Cut the code's
+   phases and loops as the rules say: each phase gets a tag, each unit a run. The entry point runs one unit
+   (`--config`, `--chunk i/n`); without `--config` it reads the copy that `new` puts in its run folder
+   (`config.<ext>` under `ctx.run_dir`), because the arguments after `--` in `submit` are the same for every run.
+   Only code that computes on the GPU goes to a GPU; tree and linear models, solvers, evaluation and figures run on
+   CPUs (`JAX_PLATFORMS=cpu` for JAX). Parallel work inside a unit (threads, `n_jobs`, a pool, data loader
+   workers) reads its count from `SLURM_CPUS_PER_TASK`. Above about 20 h per unit plan segments. Code without state
+   it can save (one long solver call, a `fit()` without partial state) cannot resume: say so, never chain it, and
+   choose a way with the user ([references/interruptible-jobs.md](references/interruptible-jobs.md), section 6).
 3. **Make the code interruptible** with `RunContext` from `d3job.py`
-   ([references/interruptible-jobs.md](references/interruptible-jobs.md)). If the project tracks experiments,
-   `ctx.mlflow()` after `from_env()` and metrics with the global step, so a resumed run continues the same curve
-   ([references/tracking.md](references/tracking.md)). Lint every job script:
-   `uv run <skill-dir>/scripts/check_sbatch.py jobs/*.sbatch`.
-4. **Deploy.** Commit and push on the laptop, `git pull` in `<proj>` (nothing of the project queued), `uv sync`
-   if `pyproject.toml` or `uv.lock` changed. Inputs the round needs: on the laptop
-   `bash jobs/push_inputs.sh` (dry run), then `--go`. With a bucket it uploads them and prints the
-   `d3run.py pull … --checksum` to run in `<proj>` (`--submit` above 1 GB or 2,000 files); without one it rsyncs them
-   into `<proj>`.
+   ([references/interruptible-jobs.md](references/interruptible-jobs.md)); with tracking, `ctx.mlflow()` after
+   `from_env()` and metrics with the global step, so a resumed run continues the same curve. Lint every job
+   script: `uv run <skill-dir>/scripts/check_sbatch.py jobs/*.sbatch`.
+4. **Deploy.** Commit and push on the laptop; in `<proj>` `git pull` (nothing of the project queued) and `uv sync`
+   if `pyproject.toml` or `uv.lock` changed. Inputs: on the laptop `bash jobs/push_inputs.sh` (dry run), then
+   `--go`. With a bucket it uploads them and prints the `d3run.py pull … --checksum` to run in `<proj>` (`--submit`
+   above 1 GB or 2,000 files); without one it rsyncs them into `<proj>`.
 5. **Smoke test: locally always, on the server the first time.** On the laptop: parse every config of the round
    and check the types (YAML reads `seed: 08` as text), run the tiny config end to end in local mode (GPU code
    through a device switch on its CPU path), and run the local resume test
@@ -234,55 +209,49 @@ reuse one connection.
    there (`d3run.py list --status DONE` shows no run yet): it adds the environment, the data paths, the GPU and the
    resume through Slurm and S3. Later rounds skip it; a broken first job fails within minutes. The `GPU smoke` line
    of `d3run.py queue` says how:
-   - Room (a GPU free and nobody else waiting for one; for CPU jobs, free CPUs): a smoke job, `--time 00:10:00`,
-     `--allow-dirty` only if needed: imports, data paths, output written, GPU visible (`jax.devices()`,
-     `torch.cuda.is_available()`). The resume: `--segments 2 --time 00:05:00` on a config that needs about 5
-     minutes (a 5-minute segment does about 3 after start and stop margin); the second attempt must log that it
-     started from a checkpoint.
-   - Queue full (no GPU free, or others waiting for one): no separate GPU job for testing. Each GPU job waits for
-     its own free GPU, so a test job spends your turn and the first real job waits for the next free GPU, often
+   - **Room** (a GPU free and nobody else waiting for one; for CPU jobs, free CPUs): a smoke job,
+     `--time 00:10:00`, `--allow-dirty` only if needed: imports, data paths, output written, GPU visible
+     (`jax.devices()`, `torch.cuda.is_available()`). The resume: `--segments 2 --time 00:05:00` on a config of
+     about 5 minutes (a 5-minute segment does about 3); the second attempt must log that it started from a
+     checkpoint.
+   - **Queue full** (no GPU free, or others waiting for one): no separate GPU job for testing. Each GPU job waits
+     for its own free GPU, so a test job spends your turn and the first real job waits for the next one, often
      hours. The server smoke runs on CPUs (`--gpus 0`), and the first real GPU jobs go in at the same time and check
      the GPU in their first minutes ([references/splitting-and-sizing.md](references/splitting-and-sizing.md),
      section 6). `submit` refuses a GPU job tagged or named smoke then.
 6. **Size: locally first, then the first units.** On the laptop, `d3run.py scale -- <command on a slice of 1 to 5
    minutes>` prints time, speed-up, efficiency and peak memory at 1, 2, 4, … CPUs. The width is the widest at which
    each CPU still delivers 70 % of the narrow run's speed, `--mem` follows from the peak, and about twice the local
-   time of a full unit is the first `--time` (the server's CPUs are slower or faster). GPU code: `scale` on its CPU
-   path still gives the peak memory (`--mem`) and the CPUs its data loading keeps busy; the GPU time comes from the
-   first jobs, which start with 1 GPU and 4 CPUs. Then a few first units of the round (the largest among them), up
-   to what the share lets run at once, go to the server at that size: they are the pilot, and their results count.
-   Long units get a first segment of about an hour; the code reports `progress`, so `size` extrapolates, and the
-   runs resume later. After
-   they end: `d3run.py reconcile`, then `d3run.py size --tag <round>-<phase>` sets `--time`, `--cpus`, `--mem` and
-   segments for the rest. A pilot at two widths on the server only when `scale` was still scaling at all the
-   laptop's CPUs and `queue` shows room for the wider one
+   time of a full unit is the first `--time`. GPU code: `scale` on its CPU path still gives the peak memory and the
+   CPUs its data loading keeps busy; the GPU time comes from the first jobs, which start with 1 GPU and 4 CPUs.
+   Then a few first units of the round (the largest among them), up to what the share lets run at once, go to the
+   server at that size: they are the pilot, and their results count. Long units get a first segment of about an
+   hour (the code reports `progress`, so `size` extrapolates; the runs resume later). After they end, `reconcile`
+   and `d3run.py size --tag <round>-<phase>` set `--time`, `--cpus`, `--mem` and segments for the rest. A pilot at
+   two widths on the server only when `scale` was still scaling at all the laptop's CPUs and `queue` shows room
    ([references/splitting-and-sizing.md](references/splitting-and-sizing.md), section 3).
-7. **Submit the rest of the round** with the flags from `size`. Widths and job counts from `d3run.py queue`
-   ([references/splitting-and-sizing.md](references/splitting-and-sizing.md), section 4).
-   `d3run.py new --config configs/round/*.yaml --tag <round>-<phase>` creates one run per config;
-   `d3run.py submit <ids…> --script jobs/train.sbatch <flags from size>`. A later phase gets
-   `--after-tag <round>-<earlier phase>`, and its job checks that its inputs are done. Submit the CPU-only part
-   before the GPU part (age is the only priority difference between your own jobs). Never use `--partition`: GPU
-   jobs go to `main` and CPU jobs to `cpu` by themselves. If `submit` reports held jobs (others are waiting),
-   `reconcile` every 15 minutes releases them for free while the computer is on; a feeder job
-   (`d3run.py feed --submit`, one CPU) costs fair share (about 35 GPU-minutes a day) and is for rounds that run while
-   it is off. Write the round (tag, commit, flags) into the project notes.
-8. **Watch.** `d3run.py reconcile` (it also runs one fair-use pass, and flags finished jobs that would trigger the
-   admin's alerts) and `list --tag <round>` every 15 minutes or more, not in a tight loop. Queue views: `sq`,
-   `squeue -u $USER -t PD -o "%i %P %Q %r %S"`. Pending although resources look free: see
-   [references/cluster.md](references/cluster.md) (one priority list, backfill tests at most 100 jobs per user, the
-   `nice` fix). If the project tracks with MLflow, `uv run tools/d3track.py sync` after each `reconcile` updates the
-   project's store; `d3track.py where` prints how to open it on the laptop.
-9. **Archive and clean**, after the last phase that reads a run's results. With MLflow tracking, `d3track.py sync`
-   first (a cleaned run folder keeps no store).
-   With a bucket: `d3run.py archive --finished --clean --submit` uploads each finished
-   run folder, checks every file's size in S3, then deletes the server copy (three small JSON files stay). Data:
+7. **Submit the rest of the round** with the flags from `size`, widths and job counts fitted to `d3run.py queue`
+   ([references/splitting-and-sizing.md](references/splitting-and-sizing.md), section 4):
+   `d3run.py new --config configs/round/*.yaml --tag <round>-<phase>` (one run per config), then
+   `d3run.py submit <ids…> --script jobs/train.sbatch <flags>`. A later phase gets `--after-tag <round>-<earlier
+   phase>`, and its job checks that its inputs are done. CPU-only parts go in before GPU parts (among your own jobs
+   only age differs). Never `--partition`: GPU jobs go to `main`, CPU jobs to `cpu` by themselves. Held jobs
+   (others waiting) are released by `reconcile` every 15 minutes while the computer is on; a feeder job
+   (`d3run.py feed --submit`, one CPU, about 35 GPU-minutes of fair share a day) is for rounds that run while it is
+   off. Write the round (tag, commit, flags) into the project notes.
+8. **Watch.** `d3run.py reconcile` (one fair-use pass; flags finished jobs that would trigger the admin's alerts)
+   and `list --tag <round>` every 15 minutes or more, not in a tight loop. Queue views: `sq`,
+   `squeue -u $USER -t PD -o "%i %P %Q %r %S"`; pending although resources look free:
+   [references/cluster.md](references/cluster.md). With MLflow in run stores, `uv run tools/d3track.py sync` after
+   each `reconcile`; `d3track.py where` prints how to open the UI on the laptop.
+9. **Archive and clean** after the last phase that reads a run's results (with run-store MLflow, `d3track.py sync`
+   first). With a bucket: `d3run.py archive --finished --clean --submit` uploads each finished run folder, checks
+   every file in S3, then deletes the server copy (three small JSON files stay); data with
    `d3run.py push data/processed --clean --submit`, back with `pull`. Without a bucket: the rsync route in
    [references/data-and-storage.md](references/data-and-storage.md), section 7. The first time a store is used,
-   run a restore drill: bring one cleaned run back (`d3run.py pull runs/<id> --checksum`, or rsync it back) and
-   check it, before the server keeps nothing else. Then `d3run.py usage`. Results the user needs on the laptop: from the
-   bucket with `aws s3 sync s3://<bucket>/<prefix>/runs/<id>/results/ <folder> --profile <aws_profile>`
-   (`--exclude`/`--include` for a part of them), without a bucket by the rsync route above.
+   restore one cleaned run (`d3run.py pull runs/<id> --checksum`, or rsync) and check it before the server keeps
+   nothing else. Then `d3run.py usage`. Results for the laptop: `aws s3 sync
+   s3://<bucket>/<prefix>/runs/<id>/results/ <folder> --profile <aws_profile>`, or rsync without a bucket.
 
 ## When an alert arrives
 
@@ -290,9 +259,9 @@ The admin's monitoring ("Server Police") posts alerts to a Slack channel (`alert
 `HomeQuotaWarning` (home above 100 GB), `HomeQuotaReached` (less than 1 GB left below the 200 GB limit),
 `JobGpuIdle` (a GPU held over an hour at under about 10 % use), `JobCpuUnderused` (CPU jobs below 60 % of their
 CPUs that together leave 2.5 or more CPUs idle), `NasUnreachable` (storage monitoring blind, an admin matter), plus
-maintenance notices. They are notices, not blame. Find the job, say
-what the alert means, and fix the cause with [references/alerts.md](references/alerts.md); with a Slack connector,
-read the alert itself (search the channel for the user's login), but never post there.
+maintenance notices. They are notices, not blame. Find the job, say what the alert means, and fix the cause with
+[references/alerts.md](references/alerts.md); with a Slack connector, read the alert itself (search the channel for
+the user's login), but never post there.
 
 ## 3. The registry: `d3run.py`
 
@@ -311,12 +280,10 @@ read the alert itself (search the channel for the user's login), but never post 
 | `manifest`, `clean --manifest` | without a bucket: files, sizes and SHA-256 of a copy; delete on the server only what it holds |
 | `usage`, `mark <id> <STATUS>` | disk use of run folders; set a status by hand |
 
-Use the scripts through their help, not their source: `uv run <skill-dir>/scripts/d3run.py --help` and
-`d3run.py <command> --help` list every option, and the docstring at the top of `d3job.py` shows the job side; reading
-the full source is not needed. Every command is light: a small SQLite file and one `sacct` call per 200 jobs (an ID
-costs microseconds). Transfers
-above 1 GB or 2,000 files refuse to run on the login host and ask for `--submit`. Schema, statuses and how to fit an
-existing orchestrator: [references/registry.md](references/registry.md).
+Use the scripts through their help, not their source: `d3run.py --help` and `d3run.py <command> --help` list every
+option, the docstring at the top of `d3job.py` shows the job side. Every command is light (a small SQLite file, one
+`sacct` call per 200 jobs); transfers above 1 GB or 2,000 files refuse to run on the login host and ask for
+`--submit`. Schema, statuses and fitting an existing orchestrator: [references/registry.md](references/registry.md).
 
 ## 4. Files
 
