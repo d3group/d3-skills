@@ -1,6 +1,6 @@
 {
   "skill_name": "d3-server-use",
-  "note": "No eval may connect to a real server or bucket. Runs use `claude -p` from a neutral folder outside any project (no CLAUDE.md, no user plugins, hooks or memory), with a copy of the skill for the with-skill configuration, a sandbox HOME and outputs folder per run. Inputs in evals/files are copied, never edited in place. No eval gets a site file unless its prompt says so (first use). Graders run neutral too (claude -p from a neutral folder), never inside a project checkout.",
+  "note": "No eval may connect to a real server or bucket. Runs use `claude -p` from a neutral folder outside any project (no CLAUDE.md, no user plugins, hooks or memory), with a copy of the skill for the with-skill configuration, a sandbox HOME and outputs folder per run. Inputs in evals/files are copied, never edited in place. No eval gets a site file unless its prompt says so (first use). Graders run neutral too (claude -p from a neutral folder), never inside a project checkout. The scripts have their own tests, run on the laptop with fakes for Slurm and S3: python3 evals/tests/test_d3run.py and python3 evals/tests/test_d3job.py.",
   "evals": [
     {
       "id": 1,

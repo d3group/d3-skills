@@ -45,7 +45,8 @@ end time; the trap writes it into runs/<id>/STOP. SIGTERM (Slurm's kill) stops a
 `every_s` seconds (default 30 min) bound the loss when a job dies without any warning.
 
 Uploads: a checkpoint saved so close to the end that its upload might be cut off stays local; the next
-segment uploads it before it continues. S3 always holds a complete checkpoint, because LATEST.json is
+segment uploads it before it continues. Before an upload has been timed, its time is estimated from the
+checkpoint's size at upload_mb_s (10 MB/s), so the stop checkpoint of a short segment still reaches S3. S3 always holds a complete checkpoint, because LATEST.json is
 uploaded only after the checkpoint itself.
 
 Without the D3RUN_* variables (a local test run) the context works in runs/local/ without S3 and without
@@ -144,7 +145,7 @@ class RunContext:
                  every_s: float = 1800, first_ckpt_s: float = 300, keep_local: int = 1, keep_remote: int = 2,
                  margin_s: float | None = None, safety_s: float = 30, step_guess_s: float = 60,
                  save_guess_s: float = 120, signal_lead_s: float = 600, stop_check_s: float = 30,
-                 max_hard_failures: int = 2):
+                 max_hard_failures: int = 2, upload_mb_s: float = 10):
         self.run_id = run_id
         self.run_dir = Path(run_dir)
         self.attempt = attempt
@@ -163,6 +164,7 @@ class RunContext:
         self.signal_lead_s = signal_lead_s
         self.stop_check_s = stop_check_s
         self.max_hard_failures = max_hard_failures
+        self.upload_mb_s = upload_mb_s       # assumed upload rate until one upload is measured (conservative)
         self.checkpoints_dir = self.run_dir / "checkpoints"
         self.results_dir = self.run_dir / "results"
         for d in (self.checkpoints_dir, self.results_dir, self.run_dir / "logs"):
@@ -456,7 +458,7 @@ class RunContext:
         self._last_ckpt = time.monotonic()
         uploaded = False
         if self.s3_uri:
-            if self._upload_fits():
+            if self._upload_fits(final):
                 uploaded = self._upload_checkpoint(name, final)
             else:
                 _log(f"checkpoint {name} stays local (too close to the end); the next upload or segment takes it")
@@ -464,17 +466,23 @@ class RunContext:
         self._ckpt_since_tick += time.monotonic() - t_start
         _log(f"checkpoint {name} in {self._saves[-1]:.1f} s" + (", uploaded" if uploaded else ""))
 
-    def _upload_fits(self) -> bool:
+    def _upload_fits(self, path: Path) -> bool:
         """Upload now only if the upload cannot run into the end of the job."""
         left = self.time_left()
         if left is None:
             return True
         up = max(self._uploads) if self._uploads else None
         if self.should_stop():                # the last checkpoint of this segment
-            return up is not None and left - self.safety_s > 2 * up
+            need = up if up is not None else self._upload_guess(path)    # often the first one in short segments
+            return left - self.safety_s > 2 * need
         if up is None:
             return True                       # first upload: measure it (the first checkpoint comes early)
         return left - 1.5 * up > self.margin()   # must not run into the stop window
+
+    def _upload_guess(self, path: Path) -> float:
+        """Seconds an upload of `path` may take before one was measured: 5 s plus its size at upload_mb_s."""
+        size = path.stat().st_size if path.is_file() else sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
+        return 5 + size / 1e6 / self.upload_mb_s
 
     def _upload_checkpoint(self, name: str, path: Path) -> bool:
         t = time.monotonic()

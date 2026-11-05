@@ -36,7 +36,8 @@ segments. `d3job.py` (stdlib, copied into the project next to `d3run.py`) does t
    `checkpoints/LATEST.json`, then uploaded (checkpoint first, `LATEST.json` after, so S3 always points to a
    complete one), and only then are older ones pruned (1 kept locally, 2 in S3; 2 locally while the newest is not
    uploaded). An upload that could run into the end of the job is skipped: the checkpoint stays local and the next
-   upload, or the next segment at its start, takes it. `status.json` records `running`, `interrupted` (with
+   upload, or the next segment at its start, takes it. Until one upload has been timed, its time is estimated from
+   the checkpoint's size at 10 MB/s (`upload_mb_s=`), so the stop checkpoint of a short segment still reaches S3. `status.json` records `running`, `interrupted` (with
    `progress`), `done` or `failed`.
 
 ## 2. RunContext in a training loop
@@ -173,8 +174,20 @@ uv run tools/d3run.py reconcile && uv run tools/d3run.py show "$RID"
 grep -h "start\|checkpoint" runs/$RID/logs/attempt-0*
 ```
 
-Pass: attempt 1 ends `interrupted` with a checkpoint, attempt 2 logs that it started from it and ends `done`. With
-S3, also delete `runs/$RID/checkpoints/` between the attempts once: attempt 2 must fetch the checkpoint from S3.
+Pass: attempt 1 ends `interrupted` with a checkpoint, attempt 2 logs that it started from it and ends `done`.
+
+With S3, check once that a segment can resume from the bucket alone. A chain starts attempt 2 right after attempt
+1, so submit the two attempts one by one and delete the local checkpoints in between:
+
+```bash
+RID=$(uv run tools/d3run.py new --name s3-resume --config configs/smoke.yaml --tag smoke --allow-duplicate)
+uv run tools/d3run.py submit "$RID" --script jobs/train.sbatch --time 00:05:00 -- --config configs/smoke.yaml
+# when it has ended (reconcile: INTERRUPTED):
+rm -rf runs/$RID/checkpoints
+uv run tools/d3run.py submit "$RID" --script jobs/train.sbatch --time 00:05:00 -- --config configs/smoke.yaml
+```
+
+Pass: attempt 1 logs `checkpoint step-… in … s, uploaded`, attempt 2 logs `checkpoint step-… fetched from S3`.
 
 ## 9. What not to rely on
 
