@@ -98,6 +98,10 @@ Facts as set up by the admin on 2026-11-05 (repository `d3group/ki-regio-server`
   it.
 - **Artifacts** go through the server to the NAS (bucket `mlflow-artifacts`): no S3 keys needed. Final model
   weights and small files yes; running checkpoints stay in the run folder (the NAS has two disks for everyone).
+  This needs the experiment's artifact location left empty. Code that creates experiments (`mlflow.set_experiment`,
+  `ctx.mlflow(server=True)`) leaves it empty; in the browser, leave the field "Artifact Location" empty. An `s3://`
+  or local path there bypasses the server (S3 keys needed, or files only on one machine; the UI cannot show them)
+  and cannot be changed later: create a new experiment instead.
 - **Rights:** everyone reads every experiment; whoever creates one may change it and share it.
 - **Client:** `uv add "mlflow>=3,<4"` (the server runs MLflow 3).
 - **Which store:** with tracking = "mlflow", ask once which store the user wants: the group server (one UI for
