@@ -41,6 +41,8 @@ and November 2026 and have changed before (the CPU window was one hour at first)
 3. It works but keeps the GPU mostly idle: the GPU waits for data. Typical causes are too few data-loader workers
    (`num_workers`, prefetching, pinned memory), preprocessing on the CPU inside the loop, a batch too small for the
    GPU, or a model too small to need one. Fix the input pipeline, raise the batch size, or run it on CPUs.
+   Or the job is in a CPU phase (a solver, evaluation, plotting) while it holds the GPU: give that phase its own
+   CPU-only job ([splitting-and-sizing.md](splitting-and-sizing.md)).
 4. An open JupyterHub notebook holding a GPU counts too: stop the server when you are not computing.
 
 **`JobCpuUnderused`**

@@ -110,6 +110,9 @@ The rule of the group: one user's jobs take all GPUs or all CPUs only while nobo
   every 15 minutes does the feeding. A feeder job (`feed --submit`: 1 CPU, 1 GB, checks every 5 minutes, ends when
   nothing is held or after 23.5 h) bills one CPU while it runs, about 86,400 billing-seconds a day (some 35
   GPU-minutes); use it for rounds that run while your computer is off.
+- **`d3run.py queue`** (read-only) prints the free CPUs and GPUs, who waits, and when the running GPU jobs end at the
+  latest: the input for choosing how wide a round's jobs are and how many run at once
+  ([splitting-and-sizing.md](splitting-and-sizing.md), section 4).
 - Change the share per project with `d3run.py init --share-gpus N --share-cpus N`; skip the check with
   `submit --no-throttle` only when you know nobody else uses the server.
 - Without d3run, Slurm's own array throttle does the static part: `sbatch --array=0-79%3` runs at most 3 tasks at

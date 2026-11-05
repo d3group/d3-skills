@@ -106,5 +106,13 @@
   {
     "query": "explain the difference between mlflow's model registry and its tracking server for a blog post",
     "should_trigger": false
+  },
+  {
+    "query": "my pipeline trains an lstm on the gpu and then solves a few thousand milps with highs, all in one python script. how should I cut that into slurm jobs on the kiregio server?",
+    "should_trigger": true
+  },
+  {
+    "query": "how many cpus should I request for my xgboost cross-validation jobs on our group's slurm server? last time I asked for 2 and it took forever",
+    "should_trigger": true
   }
 ]

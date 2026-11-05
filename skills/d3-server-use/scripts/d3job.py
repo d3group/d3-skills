@@ -210,8 +210,9 @@ class RunContext:
         limit = float(env["D3RUN_TIME_LIMIT_S"]) if env.get("D3RUN_TIME_LIMIT_S") else None
         lead = float(env.get("D3RUN_SIGNAL_LEAD_S") or 600)
         if not env.get("D3RUN_ID"):
-            _log("no D3RUN_ID: local mode in runs/local (no S3)")
-            return cls("local", Path("runs/local"), deadline=deadline, limit_s=limit, signal_lead_s=lead, **kwargs)
+            local = env.get("D3RUN_LOCAL_DIR") or "runs/local"     # `d3run.py scale` gives every width its own
+            _log(f"no D3RUN_ID: local mode in {local} (no S3)")
+            return cls("local", Path(local), deadline=deadline, limit_s=limit, signal_lead_s=lead, **kwargs)
         aws = []
         if env.get("D3RUN_S3_URI"):
             aws = [env.get("D3RUN_AWS") or shutil.which("aws") or str(Path.home() / ".local/bin/aws")]

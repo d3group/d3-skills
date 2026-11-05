@@ -75,6 +75,16 @@ HOLD_REASONS = ("JobHeldUser", "JobHeldAdmin")
 # over 30 min below 60 % of their CPUs; JobGpuIdle for a GPU held over 1 h at under about 10 % use.
 CPU_ALERT_EFF, CPU_ALERT_MIN_S = 0.60, 1800
 GPU_ALERT_UTIL, GPU_ALERT_MIN_S = 15.0, 3600     # warn a little above the alert's ~10 %
+# Width of a job. Billing per second = max(CPUs x 1.0, memory GB x 0.266, GPUs x 41.5) (PriorityFlags=MAX_TRES), so
+# CPUs that a job's memory or GPU already pays for cost no extra fair share, and a CPU job that scales well costs the
+# same at 16 CPUs as at 1, only it ends sooner.
+BILL_PER_GB, BILL_PER_GPU = 0.266, 41.5
+SCALE_EFF = 0.70                # a wider job is worth it while each CPU keeps this share of the narrow job's speed
+SATURATED = 0.85                # a pilot that kept this share of its CPUs busy may scale further: measure wider
+GPU_SPEEDUP_MIN = 1.10          # a GPU job takes more CPUs (its GPU already pays for them) when they make it this much faster
+SHORT_RUN_S = 600               # runs shorter than this spend much of their time starting up: bundle units
+JOBS_WARN = 500                 # one user's jobs in the queue; MaxJobCount is 10,000 for all users together
+SHORT_SLICE_S = 20              # `scale`: a slice shorter than this at the narrowest width mostly measures start-up
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
@@ -500,7 +510,7 @@ def s3_settings(root: Path, a) -> tuple[dict, str]:
 def queue_snapshot() -> list[dict]:
     """All jobs in the queue: one squeue call."""
     try:
-        res = subprocess.run(["squeue", "-h", "-o", "%i|%u|%t|%P|%b|%C|%r|%k"], capture_output=True, text=True,
+        res = subprocess.run(["squeue", "-h", "-o", "%i|%u|%t|%P|%b|%C|%r|%L|%k"], capture_output=True, text=True,
                              timeout=60)
     except FileNotFoundError:
         die("squeue not found: run this on the login host (or pass --no-throttle)")
@@ -509,7 +519,7 @@ def queue_snapshot() -> list[dict]:
     jobs = []
     for line in res.stdout.splitlines():
         f = line.split("|")
-        if len(f) < 8:
+        if len(f) < 9:
             continue
         m = re.search(r"gpu(?::[A-Za-z0-9_.-]+)?:(\d+)", f[4])
         try:
@@ -517,8 +527,38 @@ def queue_snapshot() -> list[dict]:
         except ValueError:
             cpus = 0
         jobs.append({"id": f[0], "user": f[1], "state": f[2], "partition": f[3], "gpus": int(m.group(1)) if m else 0,
-                     "cpus": cpus, "reason": f[6], "comment": "|".join(f[7:])})
+                     "cpus": cpus, "reason": f[6], "left_s": parse_duration(f[7]), "comment": "|".join(f[8:])})
     return jobs
+
+
+def node_snapshot() -> list[dict]:
+    """Size and allocation of the compute node(s): one `scontrol show node` call."""
+    try:
+        res = subprocess.run(["scontrol", "show", "node", "-o"], capture_output=True, text=True, timeout=60)
+    except FileNotFoundError:
+        die("scontrol not found: run this on the login host")
+    if res.returncode != 0:
+        die(f"scontrol failed: {res.stderr.strip()}")
+    nodes = []
+    for line in res.stdout.splitlines():
+        kv = dict(t.split("=", 1) for t in line.split() if "=" in t)
+        if "NodeName" not in kv:
+            continue
+
+        def tres(key: str, name: str) -> int:
+            m = re.search(rf"(?:^|,){re.escape(name)}=(\d+)", kv.get(key, ""))
+            return int(m.group(1)) if m else 0
+
+        def num(key: str) -> int:
+            try:
+                return int(kv.get(key) or 0)
+            except ValueError:
+                return 0
+
+        nodes.append({"name": kv["NodeName"], "cpus": num("CPUEfctv") or num("CPUTot"), "cpus_used": num("CPUAlloc"),
+                      "mem_gb": num("RealMemory") / 1024, "mem_used_gb": num("AllocMem") / 1024,
+                      "gpus": tres("CfgTRES", "gres/gpu"), "gpus_used": tres("AllocTRES", "gres/gpu")})
+    return nodes
 
 
 def _reasons(job: dict) -> list[str]:
@@ -756,17 +796,39 @@ def cmd_submit(a) -> None:
         info("note: 4 GPUs serve the whole group; ask for more than one only if the code uses them")
     export_extra = {"D3RUN_AWS": st.get("aws_bin", ""), "D3RUN_S3_ENDPOINT": st.get("s3_endpoint", ""),
                     "D3RUN_AWS_PROFILE": st.get("aws_profile", "")}
-    budget = None if a.no_throttle else share_budget(queue_snapshot(), getpass.getuser(), st)
+    after = a.after
+    if a.after_tag:
+        ups = []
+        for up in conn.execute("SELECT run_id FROM runs WHERE tag = ?", (a.after_tag,)).fetchall():
+            act = [x for x in attempts_of(conn, up["run_id"]) if x["state"] in ACTIVE_JOB_STATES and x["slurm_job_id"]]
+            if act:
+                ups.append(act[-1]["slurm_job_id"])     # the last segment: the run is over when it has ended
+        if ups:
+            after = ":".join(([a.after] if a.after else []) + ups)
+            info(f"starting after {len(ups)} queued or running run(s) of tag {a.after_tag} (afterany: the job must "
+                 "check that its inputs are done; run `reconcile` first so the registry is current)")
+        else:
+            info(f"no run of tag {a.after_tag} is queued or running: submitted without waiting for it")
+    me = getpass.getuser()
+    queue = None if a.no_throttle else queue_snapshot()
+    budget = None if queue is None else share_budget(queue, me, st)
     if budget:
         info("fair use: " + budget_line(budget))
+    run_ids = read_ids(a.run_ids)
+    queued = sum(1 for j in queue or [] if j["user"] == me)
+    if queued + len(run_ids) * a.segments > JOBS_WARN:
+        info(f"warning: {queued + len(run_ids) * a.segments} of your jobs would be in the queue ({queued} now, "
+             f"{len(run_ids) * a.segments} from this call). The cluster holds at most 10,000 jobs for all users "
+             "together and backfill tests only 100 of yours per cycle: bundle short units into fewer jobs (work "
+             "lists), or submit the round in parts (references/splitting-and-sizing.md)")
     held = 0
-    for rid in read_ids(a.run_ids):
+    for rid in run_ids:
         run = get_run(conn, rid)
         if run["status"] == "DONE" and not a.force:
             info(f"{rid}: DONE, skipped (--force runs it again)")
             continue
         active = [r["slurm_job_id"] for r in attempts_of(conn, rid) if r["state"] in ACTIVE_JOB_STATES]
-        if active and not a.after and not a.force:
+        if active and not after and not a.force:
             info(f"{rid}: job {active[-1]} is still queued or running (run `reconcile` if that is stale); "
                  f"skipped. Chain behind it with --after {active[-1]}")
             continue
@@ -774,7 +836,7 @@ def cmd_submit(a) -> None:
         (run_dir / "logs").mkdir(parents=True, exist_ok=True)
         job_name = f"{run['name']}-{rid[-4:]}"
         last = conn.execute("SELECT MAX(attempt) FROM attempts WHERE run_id = ?", (rid,)).fetchone()[0] or 0
-        prev = a.after
+        prev = after
         for i in range(a.segments):
             attempt = last + 1 + i
             out = run_dir / "logs" / f"attempt-{attempt:02d}-%j.out"
@@ -1065,6 +1127,50 @@ def cmd_find_job(a) -> None:
         print(f"{r['run_id']}  attempt {r['attempt']}  submitted {r['submitted_at']}  {r['state']}")
 
 
+def scaling_choice(measured: list[dict]) -> tuple[int | None, list[str]]:
+    """The CPU count to size from, for configs measured at more than one width.
+
+    CPU jobs: the widest width at which each CPU keeps SCALE_EFF of the narrow job's speed (usage is CPU-seconds).
+    GPU jobs: the GPU bills like 41.5 CPUs whatever their number, so the fastest width wins, as long as it is
+    GPU_SPEEDUP_MIN faster than the next narrower choice and within the CPUs the GPUs pay for.
+    """
+    groups: dict[str, dict[int, list[float]]] = {}
+    gpus: dict[str, int] = {}
+    for m in measured:
+        h = m["run"]["config_hash"]
+        if h:
+            groups.setdefault(h, {}).setdefault(m["width"], []).append(m["total"])
+            gpus[h] = max(gpus.get(h, 0), max(x["req_gpus"] or 0 for x in m["att"]))
+    picks, lines = [], []
+    for h, widths in groups.items():
+        if len(widths) < 2:
+            continue
+        ws = sorted(widths)
+        w0 = ws[0]
+        t0 = sum(widths[w0]) / len(widths[w0])
+        pick, t_pick = w0, t0
+        for w in ws[1:]:
+            t = sum(widths[w]) / len(widths[w])
+            if gpus[h]:
+                gain = t_pick / t
+                fits = w <= BILL_PER_GPU * gpus[h]
+                lines.append(f"scaling {pick} -> {w} CPUs  {(gain - 1) * 100:.0f} % faster (GPU job: CPUs up to "
+                             f"{int(BILL_PER_GPU * gpus[h])} cost no extra fair share"
+                             + ("; under 10 %: not worth taking them from others)" if gain < GPU_SPEEDUP_MIN
+                                else ")" if fits else "; more than the GPU pays for)"))
+                if gain >= GPU_SPEEDUP_MIN and fits:
+                    pick, t_pick = w, t
+                continue
+            speed = t0 / t
+            eff = speed / (w / w0)
+            lines.append(f"scaling {w0} -> {w} CPUs  {speed:.1f}x faster, efficiency {eff * 100:.0f} %"
+                         + ("" if eff >= SCALE_EFF else f" (below {SCALE_EFF * 100:.0f} %: the extra CPUs mostly wait)"))
+            if eff >= SCALE_EFF:
+                pick = w
+        picks.append(pick)
+    return (min(picks) if picks else None), lines
+
+
 def cmd_size(a) -> None:
     root = project_root(a.root)
     conn = open_registry(root)
@@ -1072,7 +1178,7 @@ def cmd_size(a) -> None:
         else [get_run(conn, rid) for rid in a.run_ids]
     if not runs:
         die("no runs selected (give --tag or run IDs)")
-    totals, rss, cores, gpu, notes, req_cpus = [], [], [], [], [], []
+    measured, notes = [], []
     for run in runs:
         att = [x for x in attempts_of(conn, run["run_id"]) if x["elapsed_s"]]
         if not att:
@@ -1085,23 +1191,29 @@ def cmd_size(a) -> None:
             continue
         elapsed = sum(x["elapsed_s"] for x in att)
         if run["status"] == "DONE":
-            totals.append(elapsed)
+            total = elapsed
         elif run["progress"] and 0 < run["progress"] < 1:
-            totals.append(elapsed / run["progress"])
+            total = elapsed / run["progress"]
             notes.append(f"{run['run_id']}: total time extrapolated from progress {run['progress']:.0%}")
         else:
-            totals.append(elapsed)
+            total = elapsed
             notes.append(f"{run['run_id']}: not finished and no progress reported, its time is a lower bound")
-        rss += [x["max_rss_mb"] for x in att if x["max_rss_mb"]]
-        cores += [x["total_cpu_s"] / x["elapsed_s"] for x in att if x["total_cpu_s"] and x["elapsed_s"] >= 60]
-        gpu += [x["gpu_mem_mb"] for x in att if x["gpu_mem_mb"]]
-        req_cpus += [x["req_cpus"] for x in att if x["req_cpus"]]
         gpu_util = [x["gpu_util"] for x in att if x["gpu_util"] is not None]
         if gpu_util:
             notes.append(f"{run['run_id']}: GPU busy {sum(gpu_util) / len(gpu_util):.0f} % on average")
         notes += [f"{run['run_id']}: {w}" for x in att for w in usage_warnings(x)]
-    if not totals:
+        measured.append({"run": run, "att": att, "total": total, "width": max(x["req_cpus"] or 1 for x in att)})
+    if not measured:
         die("no attempts with accounting data yet: run `reconcile` after the pilot jobs have ended")
+    width, lines = scaling_choice(measured)
+    chosen = [x for x in measured if x["width"] == width] if width else measured
+    totals = [x["total"] for x in chosen]
+    att = [x for c in chosen for x in c["att"]]
+    rss = [x["max_rss_mb"] for x in att if x["max_rss_mb"]]
+    cores = [x["total_cpu_s"] / x["elapsed_s"] for x in att if x["total_cpu_s"] and x["elapsed_s"] >= 60]
+    gpu = [x["gpu_mem_mb"] for x in att if x["gpu_mem_mb"]]
+    util = [x["gpu_util"] for x in att if x["gpu_util"] is not None]
+    req = max(c["width"] for c in chosen)
     m = a.margin
     need = max(totals) * m
     if need <= LONG_TIME_S:
@@ -1110,15 +1222,21 @@ def cmd_size(a) -> None:
         seg_time = SEGMENT_S
         segments = math.ceil(need / (SEGMENT_S - 900))
     flags = [f"--time {fmt_time(seg_time)}"]
-    print(f"runs measured      {len(totals)} ({sum(1 for r in runs if r['status'] == 'DONE')} done)")
+    print(f"runs measured      {len(measured)} ({sum(1 for r in runs if r['status'] == 'DONE')} done)"
+          + (f"; sized from the {len(chosen)} at {width} CPUs" if width else ""))
+    for line in lines:
+        print(line)
     print(f"longest run        {max(totals) / 3600:.2f} h  -> --time {fmt_time(seg_time)}"
           + (f" x {segments} segments" if segments > 1 else "") + f"  (margin {m})")
     if segments > 1:
         flags.append(f"--segments {segments}")
+    c = None
     if cores:
-        c = max(1, math.ceil(max(cores) - 0.05))
-        print(f"CPU cores used     {max(cores):.2f} (requested {max(req_cpus) if req_cpus else '?'})  -> --cpus {c}")
+        used = max(cores)
+        c = req if used >= SCALE_EFF * req else max(1, math.ceil(used - 0.05))   # keep a width the code fills
+        print(f"CPU cores used     {used:.2f} (requested {req})  -> --cpus {c}")
         flags.append(f"--cpus {c}")
+    g = None
     if rss:
         g = max(1, math.ceil(max(rss) * m / 1024))
         print(f"peak memory        {max(rss) / 1024:.2f} GB  -> --mem {g}G")
@@ -1126,6 +1244,29 @@ def cmd_size(a) -> None:
     if gpu:
         print(f"peak GPU memory    {max(gpu) / 1024:.2f} GB of 24 GB (RTX 4090)")
         flags.append("--gpus 1")
+    if cores and used >= SATURATED * req:
+        if gpu:
+            if not util or sum(util) / len(util) < 50:
+                busy = f"{sum(util) / len(util):.0f} %" if util else "not measured"
+                notes.append(f"one GPU bills like {int(BILL_PER_GPU)} CPUs, so CPUs for data loading cost no extra fair "
+                             f"share (they are still missing for others' CPU jobs). The pilot kept its {req} CPU"
+                             f"{'s' * (req != 1)} busy while the GPU was busy {busy}: more --cpus with more data loader "
+                             "workers (num_workers) may feed the GPU faster")
+        elif not width or width == max(x["width"] for x in measured):
+            cpus_txt = f"all {req} CPUs" if req > 1 else "their one CPU"
+            notes.append(f"the runs kept {cpus_txt} busy: if the code can use more (threads, n_jobs, worker processes), "
+                         f"measure the same config once more with 2 to 4 times the CPUs (`new --config <same> "
+                         f"--allow-duplicate --tag {a.tag or '<tag>'}`, `submit ... --cpus {req * 4}`); `size` then "
+                         "compares the two")
+    if c and g and not gpu and c < int(BILL_PER_GB * g):
+        free = int(BILL_PER_GB * g)
+        notes.append(f"--mem {g}G bills like {free} CPUs (billing counts the largest of CPUs, {BILL_PER_GB} per GB and "
+                     f"{BILL_PER_GPU} per GPU): up to {free} CPUs cost no extra fair share, so CPUs the code can use "
+                     "only make the job end sooner")
+    if max(totals) < SHORT_RUN_S:
+        k = math.ceil(1800 / max(max(totals), 1))
+        notes.append(f"runs take {max(totals) / 60:.0f} min: Slurm, uv, imports and loading data are a large part of "
+                     f"that; bundle about {k} units per job so each job runs 30 min or more (a work list)")
     for n in notes:
         print(f"note: {n}")
     print("flags: " + " ".join(flags))
@@ -1442,6 +1583,109 @@ def cmd_feed(a) -> None:
         print(f"{still} job(s) still held; start another feeder (`feed --submit`) or run `reconcile` regularly")
 
 
+def cmd_queue(a) -> None:
+    """What is free now, who waits, and when GPUs free up: the input for choosing how wide a round's jobs are."""
+    jobs = queue_snapshot()
+    me = getpass.getuser()
+    st = read_settings_ro(project_root(a.root))
+    for n in node_snapshot():
+        print(f"node {n['name']:<10}CPUs {n['cpus_used']} of {n['cpus']} in use, GPUs {n['gpus_used']} of "
+              f"{n['gpus']}, memory {n['mem_used_gb']:.0f} of {n['mem_gb']:.0f} GB")
+    running = [j for j in jobs if j["state"] in ("R", "CG")]
+    cpu_part = sum(j["cpus"] for j in running if j["partition"] == "cpu")
+    print(f"cpu partition  {cpu_part} of {int(st.get('cpu_cap') or CPU_CAP)} CPUs in use by CPU-only jobs")
+    total_g = int(st.get("gpus_total") or GPUS_TOTAL)
+    ends = sorted(j["left_s"] for j in running if j["partition"] == "main" and j["left_s"] is not None
+                  for _ in range(max(1, j["gpus"])))
+    free_g = max(0, total_g - sum(max(1, j["gpus"]) for j in running if j["partition"] == "main"))
+    when = ", ".join(f"{s / 3600:.1f} h" for s in ends)
+    if not ends:
+        gpu_line = f"{free_g} free now"
+    else:
+        gpu_line = (f"{free_g} free now; the others" if free_g else "none free now; they") + \
+            f" free up within {when} (time limits of the running jobs; many end earlier)"
+    print("GPUs free up   " + gpu_line)
+    others = [j for j in jobs if j["user"] != me and is_waiting(j)]
+    n_g = sum(1 for j in others if j["partition"] == "main")
+    n_c = sum(1 for j in others if j["partition"] == "cpu")
+    print(f"waiting        other users: {n_g} GPU job{'s' * (n_g != 1)}, {n_c} CPU job{'s' * (n_c != 1)} "
+          "(pending for resources or priority; held jobs and dependencies not counted)")
+    mine = [j for j in jobs if j["user"] == me]
+    held = sum(1 for j in mine if j["state"] == "PD" and any(r.startswith(HOLD_REASONS) for r in _reasons(j)))
+    print(f"yours          {sum(1 for j in mine if j['state'] in ('R', 'CG'))} running, "
+          f"{sum(1 for j in mine if j['state'] == 'PD')} pending ({held} held); {len(jobs)} jobs in the queue in all")
+    print("share          " + budget_line(share_budget(jobs, me, st)))
+
+
+def tree_rss_kb(pgid: int) -> int:
+    """Resident memory of one process group (a command and its workers): one `ps` call."""
+    try:
+        out = subprocess.run(["ps", "-A", "-o", "pgid=,rss="], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return 0
+    total = 0
+    for line in out.splitlines():
+        f = line.split()
+        if len(f) == 2 and f[0] == str(pgid) and f[1].isdigit():
+            total += int(f[1])
+    return total
+
+
+def cmd_scale(a) -> None:
+    """On your own computer: how a command speeds up with more CPUs, for when the server has no room for a pilot."""
+    if in_job() or shutil.which("sbatch"):
+        die("`scale` measures on your own computer, not on the server: the login host gives each user 4 CPUs and "
+            "8 GB for light commands, and a pilot there belongs in a job. Run it in the project on the laptop")
+    cmd = a.script_args
+    if not cmd:
+        die("give the command after --, e.g. `d3run.py scale -- uv run python src/run.py --config configs/slice.toml`")
+    ncpu = os.cpu_count() or 1
+    widths = sorted(set(a.widths)) if a.widths else [w for w in (1, 2, 4, 8, 16, 32, 64) if w <= ncpu]
+    if widths[-1] > ncpu:
+        info(f"warning: widths above this computer's {ncpu} CPUs measure oversubscription, not scaling")
+    print(f"this computer: {ncpu} CPUs; the command runs once per width with SLURM_CPUS_PER_TASK set, "
+          "each time in a fresh local run folder")
+    print("width   seconds  speed-up  efficiency   peak memory")
+    rows = []
+    for w in widths:
+        local = Path(tempfile.mkdtemp(prefix=f"d3scale-w{w}-"))
+        env = {k: v for k, v in job_env().items() if not k.startswith(("D3RUN_", "SLURM_"))}
+        env.update({"SLURM_CPUS_PER_TASK": str(w), "D3RUN_LOCAL_DIR": str(local / "run")})
+        t0 = time.monotonic()
+        proc = subprocess.Popen(cmd, env=env, start_new_session=True)    # its own process group: memory of all workers
+        peak = 0
+        while True:
+            peak = max(peak, tree_rss_kb(proc.pid))
+            try:
+                proc.wait(timeout=0.5)
+                break
+            except subprocess.TimeoutExpired:
+                pass
+        wall = time.monotonic() - t0
+        shutil.rmtree(local, ignore_errors=True)
+        if proc.returncode != 0:
+            die(f"the command failed at width {w} (exit {proc.returncode}); fix it before measuring")
+        w0, t0w = (rows[0][0], rows[0][1]) if rows else (w, wall)
+        speed = t0w / wall
+        eff = speed / (w / w0)
+        rows.append((w, wall, eff, peak / 1024 / 1024))
+        print(f"{w:<6} {wall:9.1f}  {speed:7.1f}x  {eff * 100:8.0f} %  {peak / 1024 / 1024:9.2f} GB", flush=True)
+    pick = max((r for r in rows if r[2] >= SCALE_EFF), key=lambda r: r[0])
+    print(f"suggest --cpus {pick[0]}: the widest width at which each CPU keeps {SCALE_EFF * 100:.0f} % of its speed "
+          f"at width {rows[0][0]}")
+    if pick[0] == rows[-1][0] >= ncpu:
+        print(f"note: still scaling at all {ncpu} CPUs of this computer: the server may take more. Start there; "
+              "`size` on the first jobs says when they kept all their CPUs busy")
+    if rows[0][1] < SHORT_SLICE_S:
+        print(f"note: the slice is short ({rows[0][1]:.0f} s at width {rows[0][0]}): start-up (imports, loading data) "
+              "is a large part of it. Give it 1 to 5 minutes of work for a reliable measurement")
+    print(f"note: peak memory {pick[3]:.2f} GB at width {pick[0]} (the command and all its workers) for this slice; "
+          "--mem for a full unit: what a full unit loads on top, times 1.3")
+    print("note: times are from this computer; a server CPU is slower or faster. Submit the first units of the round "
+          "at this width with a generous --time (about twice the local estimate for a full unit); their results "
+          "count, and `size` on them sets the flags for the rest")
+
+
 def cmd_mark(a) -> None:
     login_only("mark")
     root = project_root(a.root)
@@ -1499,7 +1743,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--mem", default="4G")
     s.add_argument("--gpus", type=int, default=0)
     s.add_argument("--segments", type=int, default=1, help="chain of attempts linked by afterany")
-    s.add_argument("--after", help="start the first segment after this Slurm job")
+    s.add_argument("--after", help="start the first segment after this Slurm job (several: 101:102:103)")
+    s.add_argument("--after-tag", help="start after every queued or running run of this tag (the previous phase)")
     s.add_argument("--signal-lead", type=int, default=600, help="seconds of warning before the limit")
     s.add_argument("--sbatch-arg", action="append", help="extra sbatch flag, e.g. --sbatch-arg=--nice=100")
     s.add_argument("--force", action="store_true", help="submit even if DONE or still queued")
@@ -1582,6 +1827,17 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--submit", action="store_true", help="run the loop as a 1-CPU Slurm job (feeder)")
     s.add_argument("--here", action="store_true", help=argparse.SUPPRESS)
     s.set_defaults(func=cmd_feed)
+
+    s = sub.add_parser("scale", parents=[common],
+                       help="on your own computer: speed-up of a command at 1, 2, 4, ... CPUs (no room for a pilot)",
+                       description="The command after -- runs once per width with SLURM_CPUS_PER_TASK set, each time "
+                                   "in a fresh local run folder (D3RUN_LOCAL_DIR). Give it a slice of 1 to 5 minutes.")
+    s.add_argument("--widths", type=int, nargs="+", help="CPU counts to try (default 1, 2, 4, ... up to this computer's)")
+    s.set_defaults(func=cmd_scale)
+
+    s = sub.add_parser("queue", parents=[common],
+                       help="free CPUs and GPUs, who waits, when GPUs free up (read-only; before choosing job widths)")
+    s.set_defaults(func=cmd_queue)
 
     s = sub.add_parser("mark", parents=[common], help="set a run's status by hand")
     s.add_argument("run_id")

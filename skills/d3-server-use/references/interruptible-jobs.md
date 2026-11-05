@@ -118,8 +118,10 @@ Many short units inside one job (evaluation metrics, post-processing, a seed swe
 - Give every unit a timeout (a solver's time limit, or a watchdog per unit) and record a unit that runs out as
   failed, then go on. One bad case should not hold the job's CPUs or GPU until the time limit; the admin's
   monitoring flags such jobs (references/alerts.md).
-- Prefer one job per unit through `d3run.py new --config …` when a unit takes minutes or more: Slurm then packs the
-  jobs, and a failure costs one unit.
+- Prefer one job per unit through `d3run.py new --config …` when a unit takes about 10 minutes or more: Slurm then
+  packs the jobs, and a failure costs one unit ([splitting-and-sizing.md](splitting-and-sizing.md)).
+- A work list of single-threaded units runs as a pool of `SLURM_CPUS_PER_TASK` workers, longest units first, so the
+  pool's tail (the last units running while the other CPUs idle) stays short.
 - Many tiny result files are slow on NFS and in S3; collect them in one SQLite or Parquet file per job.
 
 ## 6. When the code cannot resume

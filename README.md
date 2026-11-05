@@ -41,7 +41,7 @@ Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Up
 | [d3-explainer](#explaining-a-project-to-its-own-authors-d3-explainer) | 0.12.1 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](#wording-of-research-texts-d3-scientific-wording) | 0.1.1 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet guides, STE guide, wording lint, corpus profiler |
 | [d3-marimo](#teaching-apps-in-the-browser-d3-marimo) | 0.1.2 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab, Jupyter or molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet and style-cell generator, headless browser check, pitfalls |
-| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.5.3 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
+| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.6.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, run IDs and a registry that tie code, config, logs, checkpoints and results together, rounds split at their phases and units with each job as wide as it keeps busy and fitted to the queue, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
 
 Each skill has a section below: what its folder contains, how a run goes from the first question to the delivery, and
 what it checks. The folders are under [`skills/`](skills/). Design and review depth apply to several skills and come
@@ -1553,7 +1553,7 @@ outside the small server home through which data travels between laptop and serv
 answers live in a local site file (`~/.config/d3-server/site.toml`), never in this repository.
 
 <details>
-<summary><b>In detail:</b> What the skill contains · Where things run, and who writes what · First use · A round, step by step · Run IDs · One run as a chain of segments · Fair use · Storage · Experiment tracking, where a project uses it · What is enforced, and how</summary>
+<summary><b>In detail:</b> What the skill contains · Where things run, and who writes what · First use · A round, step by step · Run IDs · Splitting a round, and how wide each job is · One run as a chain of segments · Fair use · Storage · Experiment tracking, where a project uses it · What is enforced, and how</summary>
 
 ### What the skill contains
 
@@ -1569,8 +1569,8 @@ skills/d3-server-use/
 │   ├── job_template.sbatch  job clock, USR1 trap, GPU memory log, uv run --no-sync
 │   ├── push_inputs.sh       the server's inputs from the laptop: into the bucket, or by rsync without one
 │   └── site.example.toml    template of the user's local site file (no secrets)
-├── references/              first-time setup · cluster · interruptible jobs · data and storage
-│                            registry · tracking · alerts · pitfalls
+├── references/              first-time setup · cluster · splitting and sizing · interruptible jobs
+│                            data and storage · registry · tracking · alerts · pitfalls
 └── evals/                   test prompts and two toy projects
 ```
 
@@ -1624,10 +1624,10 @@ project-specific.
 ```
  ①setup ─▶ ②plan ─▶ ③interruptible ─▶ ④deploy ─▶ ⑤smoke ─▶ ⑥pilot+size ─▶ ⑦submit ─▶ ⑧watch ─▶ ⑨archive+clean
    │          │          │                │          │            │              │           │          │
- read repo, CPU or    d3job +           commit,    tiny job,    full-size     new --tag,  reconcile  verified copy,
- clone,     GPU per   check_sbatch      git pull   GPU check,   run, then     CPU part    every 15+  then delete;
- uv sync,   part                        (queue     resume       `size`        first;      min        `usage`
- init                                   empty)     test                       fair use
+ read repo, cut at    d3job +           commit,    tiny job,    full-size,    queue, new  reconcile  verified copy,
+ clone,     phases,   check_sbatch      git pull   GPU check,   two widths,   --tag; CPU  every 15+  then delete;
+ uv sync,   units;                      (queue     resume       `size`        part first; min        `usage`
+ init       CPU/GPU                     empty)     test                       fair use
 
  data with a bucket:   ④ inputs laptop ─▶ bucket ─▶ server (push_inputs.sh, pull --checksum) · ⑨ results ─▶ laptop
  without a bucket yet: ④ push_inputs.sh rsyncs the inputs into the checkout · ⑨ results come back by rsync
@@ -1644,6 +1644,27 @@ project-specific.
    Slurm job name:  lstm-s42-7c1e        (queue views cut long names)
    Slurm job ID:    only in `attempts`, with its submit time (IDs restart when the server is rebuilt)
    Run folder:      runs/<id>/   =   s3://<bucket>/<project>/runs/<id>/
+```
+
+### Splitting a round, and how wide each job is
+
+Checkpoints let a job survive the 24 h limit; they do not make one job that does everything a good job on a shared
+server that never preempts. A round is cut where the hardware changes, then between independent units, and each job
+gets as many CPUs and GPUs as it keeps busy, chosen against the queue of the moment.
+
+```
+ before: one script, one GPU job, four days            after: one job per phase and unit
+ ┌──────────────────────────────────────────┐          train+predict DE ─┐
+ │ train · predict · 1,095 MILPs · evaluate │          train+predict FR ─┼─▶ solve × 36 ─────▶ evaluate
+ │ the GPU idles through the solver hours   │          train+predict NL ─┘   CPU chunks        1 CPU job
+ └──────────────────────────────────────────┘          1 GPU each            --after-tag       --after-tag
+
+ width   pilot at 4 and 16 CPUs ─▶ `size`: speed-up, efficiency ≥ 70 % ─▶ --cpus 16
+         no room for a pilot: `d3run.py scale -- <slice>` on the laptop, same rule; `size` on the first jobs
+         billing per second = max(CPUs, 0.266 × GB, 41.5 × GPUs): a job that scales costs the same and ends
+         sooner; CPUs that its memory or GPU already pays for are free
+ queue   `d3run.py queue` ─▶ nobody waits: wide and many · others wait: the share · busy for hours: what is free now
+ limits  units under ~10 min bundled into chunks · fewer than ~500 queued jobs (MaxJobCount 10,000 for everyone)
 ```
 
 ### One run as a chain of segments
@@ -1739,12 +1760,17 @@ store and only the login host writes the project's store.
 | ⚙️ | fair-use hold and release | `submit`, `feed`, `reconcile` |
 | ⚙️ | chained segments; later segments exit if the run is done or failed, also after two hard crashes in a row | `submit`, `d3job` |
 | ⚙️ | measured stop margin, deferred uploads, resume from the server or S3 | `d3job` |
-| ⚙️ | `--time` / `--mem` / `--cpus` / segments from measured usage | `size` |
+| ⚙️ | `--time` / `--mem` / `--cpus` / segments from measured usage; speed-up between two pilot widths; notes when more CPUs cost no extra fair share, when a pilot kept all its CPUs busy, when runs are too short | `size` |
+| ⚙️ | a phase waits for the runs of the previous phase | `submit --after-tag` |
+| ⚙️ | free CPUs and GPUs, who waits, when the GPUs free up | `queue` |
+| ⚙️ | width measured on your own computer when the server has no room for a pilot: time, speed-up, efficiency, peak memory per width | `scale` (refuses on the cluster) |
+| ⚙️ | a warning above 500 queued jobs | `submit` |
 | ⚙️ | flags finished jobs that would trigger the admin's alerts (CPUs below 60 %, GPU below 15 %) | `reconcile`, `size` |
 | ⚙️ | one MLflow run across all segments, tags from `run.json`, status SCHEDULED, FINISHED or FAILED from the run's state | `d3job` (`ctx.mlflow()`) |
 | ⚙️ | the project's MLflow store from snapshots of the runs' stores, only new points, uploaded to the bucket | `d3track.py sync` |
 | 📖 **guides** | light commands only on the login host | `SKILL.md` |
 | 📖 | smoke test and pilot before every round; CPU part first | `SKILL.md` |
+| 📖 | a round split at its hardware phases, then its units; each job as wide as it keeps busy, fitted to the queue | `SKILL.md`, splitting and sizing |
 | 📖 | code that cannot save its state is never chained into segments; the ways out (fit into 24 h, the solver's time limit and best solution, libraries that continue, splitting the problem) are chosen with the user | `SKILL.md`, interruptible jobs |
 | 📖 | never pull while a round is queued | `SKILL.md` |
 | 📖 | one data route per project: with a bucket through it (inputs laptop → bucket → server, results job → bucket → laptop), without one by rsync; git carries code | `SKILL.md`, data and storage |

@@ -83,6 +83,77 @@
         "The plan runs `d3track.py sync` on the login host after reconcile and before `archive --clean`, and opens the project's store on the laptop with the same MLflow version (from the bucket)",
         "Checkpoints stay with d3job and are not logged as MLflow artifacts"
       ]
+    },
+    {
+      "id": 6,
+      "name": "predict-optimize-phases",
+      "prompt": "My predict-then-optimize study is src/pipeline.py (project in <copy of evals/files/predict-optimize>). It runs about four days on my workstation, so it has to go to KiRegio and survive the 24 h limit there. Prepare the code changes, the job script(s) and the exact commands. I'm offline right now, don't run anything on the server. Login abcd, alias kiregio, bucket yes. The data/processed/*.npy files are already on the server.",
+      "expected_output": "The script is cut at its hardware phases: training and prediction per market as 1-GPU jobs (prediction stays in the training job: minutes, same model in memory), the 1,095 MILP solves as CPU-only jobs (per market or per market and month, a resumable work list with a per-solve time limit), the evaluation as a small CPU job; phases linked by tags and `--after-tag` (or submitted after reconcile) and the downstream job checks its inputs are done; widths from a pilot at two widths and `size`, CPUs for the GPU job's data loading; `d3run.py queue` before choosing widths and counts; archive --clean only after the last phase.",
+      "files": [],
+      "assertions": [
+        "Training and prediction run as GPU jobs and the MILP solves and the evaluation as CPU-only jobs: no job holds a GPU while it solves, evaluates or writes figures",
+        "The solves are split into units or chunks that run side by side (several jobs, or a pool inside a job), and finished solves are kept so a resumed job does not repeat them",
+        "A later phase starts only after the earlier one (a dependency such as --after-tag/--after, or submission after reconcile shows it done), and checks that its inputs exist and are done before it uses them",
+        "The number of CPUs per CPU job comes from a measurement (a pilot at two widths compared by `size`) or is tied to what `d3run.py queue` shows, not only from a fixed guess",
+        "The GPU jobs request the CPUs their data loading uses (more than one, or measured by the pilot), not the minimum by default",
+        "The plan runs `d3run.py queue` (or reads the queue) before choosing how wide and how many jobs to submit"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "scenario-pool-width",
+      "prompt": "I need to run src/evaluate.py (project in <copy of evals/files/scenario-eval>) on KiRegio: 1,200 scenarios, roughly 300 CPU-hours. It already runs in parallel with joblib, I'd just set it to 64 processes. Prepare whatever is needed and the exact commands. I'm not connected right now. Login abcd, alias kiregio, bucket yes. data/scenarios.parquet is small and already on the server.",
+      "expected_output": "Not one 64-CPU job and not 1,200 jobs: chunks of scenarios (tens of runs), each a resumable work list whose pool size comes from SLURM_CPUS_PER_TASK, longest scenarios first, a timeout per scenario, one result per scenario kept; pilot of one chunk at two widths, `size` compares them; `d3run.py queue` decides how many chunk jobs run at once; results merged at the end.",
+      "files": [],
+      "assertions": [
+        "The 1,200 scenarios are not run as one job holding 64 CPUs, and not as one job per scenario: they are bundled into chunks that run as separate jobs",
+        "The number of worker processes in a job comes from SLURM_CPUS_PER_TASK, not from a constant in the code",
+        "The CPUs per job are measured (a pilot at two widths compared by `size`, or the pilot's CPU use) or tied to what `d3run.py queue` shows",
+        "Finished scenarios are kept per scenario or per checkpoint, so a crash or the time limit does not lose the finished work, and a resumed job skips them",
+        "Every scenario has a time limit, and a scenario that fails or runs out is recorded while the others go on",
+        "The results of all chunks are merged into one table at the end"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "sweep-busy-gpus",
+      "prompt": "My hyperparameter sweep is in src/sweep.py (project in <copy of evals/files/grid-sweep>). It takes about three days on one GPU, so it won't fit the 24 h limit on KiRegio. A colleague said I should rewrite it for DDP and train on all 4 GPUs at once so each training is faster. Get it ready for the server: change what has to change and tell me exactly how to submit it. I'm offline now, so prepare the files and the commands, don't run anything on the server. Login abcd, ssh alias kiregio, I have a bucket. Data is already in data/processed/load.npy on the server. This is what the queue looked like an hour ago:\n\n```\n$ uv run tools/d3run.py queue\nnode compute   CPUs 27 of 166 in use, GPUs 4 of 4, memory 264 of 624 GB\ncpu partition  20 of 150 CPUs in use by CPU-only jobs\nGPUs free up   none free now; they free up within 1.4 h, 4.0 h, 5.5 h, 23.3 h (time limits of the running jobs; many end earlier)\nwaiting        other users: 2 GPU jobs, 0 CPU jobs (pending for resources or priority; held jobs and dependencies not counted)\nyours          0 running, 0 pending (0 held); 20 jobs in the queue in all\nshare          GPUs 0/3, CPUs 0/150 (others waiting for GPU: share applies)\n```",
+      "expected_output": "No DDP: 48 independent trainings parallelize across 1-GPU jobs; a 4-GPU job would wait until all 4 GPUs are free at once (up to 23 h here) while 1-GPU jobs start as each GPU frees and spread as more free up; others wait, so the share (3 GPUs) applies and submit holds the rest; each job asks for the CPUs its data loading uses (pilot GPU busy %, `size` note), not 1; one run per grid point.",
+      "files": [],
+      "assertions": [
+        "Does not rewrite the code for DDP or multi-GPU jobs: each of the 48 trainings runs as its own 1-GPU job",
+        "Uses the pasted queue output in the reasoning: all GPUs are busy and free up one at a time, so 1-GPU jobs start sooner than a job that needs all 4 at once",
+        "Notes that other users are waiting for GPUs, so the user's jobs stay within the share (fewer than 4 GPUs) and the rest is held or released later",
+        "The GPU jobs request the CPUs their data loading uses (more than one, or measured in the pilot), not the minimum by default",
+        "Each grid point is one run with its own ID, config and result path"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "short-units-bundled",
+      "prompt": "src/score.py scores one forecast file (project in <copy of evals/files/score-files>). I have 6,000 of them in data/forecasts/ on the server and want all scores in one table at the end. Run it on KiRegio and use the parallelism properly. Prepare the files and the commands, I'm offline. Login abcd, alias kiregio, bucket yes.",
+      "expected_output": "Units of 5 s are bundled: one or a few work-list jobs with a pool of SLURM_CPUS_PER_TASK workers, not 6,000 jobs or a 6,000-task array; width from a pilot (or a short measured run), results collected into one table, resumable by finished chunks.",
+      "files": [],
+      "assertions": [
+        "Does not submit one job (or one array task) per file: the 6,000 files are bundled into at most a few dozen jobs",
+        "The work inside a job runs in parallel with as many workers as SLURM_CPUS_PER_TASK",
+        "Finished files or chunks are kept so a resumed job does not score them again",
+        "All scores end up in one table"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "full-server-local-sizing",
+      "prompt": "I need to run src/evaluate.py (project in <copy of evals/files/scenario-eval>) on KiRegio: 1,200 scenarios, roughly 300 CPU-hours. It already runs in parallel with joblib. Prepare whatever is needed and the exact commands; I'll run them myself. I'm not connected right now. Login abcd, alias kiregio, bucket yes. data/scenarios.parquet is small and already on the server. The server is packed today, this is what I saw ten minutes ago:\n\n```\n$ uv run tools/d3run.py queue\nnode compute   CPUs 158 of 166 in use, GPUs 4 of 4, memory 590 of 624 GB\ncpu partition  146 of 150 CPUs in use by CPU-only jobs\nGPUs free up   none free now; they free up within 3.2 h, 9.8 h, 15.0 h, 21.5 h (time limits of the running jobs; many end earlier)\nwaiting        other users: 1 GPU job, 6 CPU jobs (pending for resources or priority; held jobs and dependencies not counted)\nyours          0 running, 0 pending (0 held); 61 jobs in the queue in all\nshare          GPUs 0/3, CPUs 0/112 (others waiting for GPU and CPU: share applies)\n```",
+      "expected_output": "Reads the queue: 4 CPUs free, CPU jobs of others waiting, so a pilot at two widths would wait like the round. The width is measured on the laptop with `d3run.py scale -- <slice>` (a few scenarios and days, 1 to 5 minutes), the first chunks go in at that width with about twice the local time, and `size` on them sets the flags for the rest; within the share; the functional smoke test still runs on the server (short).",
+      "files": [],
+      "assertions": [
+        "Reads the pasted queue and concludes that a sizing pilot on the server would wait (almost no free CPUs, others waiting)",
+        "Measures the width on the user's own computer (`d3run.py scale` or timing a slice at several worker counts), not with a pilot at two widths on the server",
+        "The local measurement runs a slice of the work (a few scenarios or days), not the full round",
+        "The first chunks of the round are submitted at the measured width with a generous --time, and `size` on them sets --time, --cpus and --mem for the rest",
+        "Nothing heavy runs on the login host"
+      ]
     }
   ]
 }

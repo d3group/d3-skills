@@ -8,6 +8,10 @@ Symptom, cause, fix. Most were met in practice.
 | Job pending forever, reason `PartitionTimeLimit` | `--time` above 24 h (e.g. old scripts with 48 h) | at most 24 h; checkpoints and segments |
 | `sbatch` rejected right away | `--partition=main` without a GPU, or `--partition=cpu` with one | leave `--partition` out |
 | Your jobs hold all GPUs while a colleague waits hours | no preemption: running jobs keep their GPUs until they end | `d3run.py submit` keeps a share free while others wait, `feed` releases the rest later; shorter GPU segments when the group is busy (cluster.md, section 4) |
+| A GPU job holds its GPU for days, `JobGpuIdle` while it solves or plots | one script does every phase, the CPU phases inside the GPU job | one job per phase, a GPU only for the GPU phase, `--after-tag` between them (splitting-and-sizing.md) |
+| A job takes far longer than its CPUs could do it | it asked for 1 or 2 CPUs although the code runs threads or a pool; `size` repeats what the pilot had | read the count from `SLURM_CPUS_PER_TASK`; pilot at two widths, `size` compares them (splitting-and-sizing.md, section 3) |
+| The sizing pilot waits for hours | the server is full, and a pilot waits like any job | measure the width on the laptop with `d3run.py scale -- <slice>`, submit the first units at that width, `size` on them (splitting-and-sizing.md, section 3) |
+| A wide job (many CPUs, 2+ GPUs) waits for hours | it needs all of them free at once | `d3run.py queue`; ask for what is free now, several narrower jobs start and spread by themselves |
 | CPU jobs pending although CPUs are free | your own pending GPU jobs rank higher and hold the node; backfill tests only 100 of your jobs | submit CPU jobs first; `nice` on the GPU jobs (cluster.md, section 3) |
 | Job runs older code than expected | the code changed on the server between submission and start | never pull while a round is queued; `d3run.py show` lists the commit |
 | Job fails at once without any log | the `--output` folder does not exist (Slurm does not create it) | create it, or submit with `d3run.py`, which writes into the run folder |
