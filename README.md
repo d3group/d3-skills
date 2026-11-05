@@ -31,6 +31,9 @@ In older versions, or to browse the skills first:
 
 Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Update later with `/plugin marketplace update d3-skills`.
 
+New versions are announced in #d3_skills on the D3 Slack: when a plugin's version in `.claude-plugin/marketplace.json`
+changes on `main`, `.github/workflows/slack-plugin-updates.yml` posts it there (secret `SLACK_WEBHOOK_URL`).
+
 ## Available Skills
 
 | Skill | Version | Description | Resources |

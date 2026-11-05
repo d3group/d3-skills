@@ -1,0 +1,38 @@
+# Posts new plugin versions to #d3_skills on the D3 Slack and tags the channel (.github/scripts/slack_plugin_updates.py).
+# Needs the repository secret SLACK_WEBHOOK_URL (an incoming webhook for #d3_skills); without it a run only warns.
+# "Run workflow" by hand posts what changed since a given commit (default: the previous one), e.g. to test the webhook.
+name: Slack plugin updates
+
+on:
+  push:
+    branches: [main]
+    paths: [".claude-plugin/marketplace.json"]
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Post what changed since this commit (empty: the previous commit)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: slack-plugin-updates
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Post new versions to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          BEFORE: ${{ github.event_name == 'push' && github.event.before || inputs.since }}
+        run: python3 .github/scripts/slack_plugin_updates.py "$BEFORE" "$GITHUB_SHA"
