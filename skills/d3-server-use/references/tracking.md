@@ -11,6 +11,7 @@ work with it, for data without restrictions.
 1. Whether to track: detect, then ask
 2. What goes wrong without care
 3. MLflow: one store per run, one project store
+3a. The group MLflow server (since 2026-11-05)
 4. In the training code
 5. On the login host: sync and view
 6. Weights & Biases
@@ -55,8 +56,8 @@ ls -d mlruns mlflow.db wandb 2>/dev/null
 - **Segments split a run.** A run that spans three 24 h jobs becomes three MLflow runs unless every segment
   reopens the same one. MLflow also ends any active run as FINISHED when the process exits, so a segment that
   stops to resume later must set the status itself.
-- **The login host runs light commands only.** No `mlflow server` there; a group tracking server would be the
-  admin's (not planned).
+- **The login host runs light commands only.** No `mlflow server` there. Since 2026-11-05 the admin runs a group
+  MLflow server instead (section 3a).
 - **MLflow is not installed system-wide** (checked 2026-11-04 on the login host and a compute node). It comes from
   the project: `uv add mlflow`, which jobs then use through `uv run --no-sync`.
 
@@ -82,6 +83,29 @@ ls -d mlruns mlflow.db wandb 2>/dev/null
   copied while neither changed), so it never touches a store a job is writing; a store that keeps changing is
   skipped until the next sync. Metrics are appended (only new points), params copied once, tags and status
   updated; artifacts stay in the run folder (tag `d3.artifact_uri`).
+
+## 3a. The group MLflow server (since 2026-11-05)
+
+Facts as set up by the admin on 2026-11-05 (repository `d3group/ki-regio-server`, role `mlflow`):
+
+- **Where:** `http://10.99.0.50:5000/mlflow` from the login host, the compute node and notebooks; in a browser
+  `https://p086wiwi177011.wiwi.uni-wuerzburg.de/mlflow/` (import the server's CA first, as for the hub).
+  `MLFLOW_TRACKING_URI` is preset in login shells (`/etc/profile.d`), in jobs (sbatch passes the environment on)
+  and in hub notebooks.
+- **Login:** every server account has an MLflow account. Start password `<login>1234,.ml` (the hub's start
+  password plus `ml`; MLflow needs 12 characters). `mlflow-passwd` on the login host changes it and updates
+  `~/.mlflow/credentials`, from which jobs and notebooks log in without setup. Forgot it: the admin resets it.
+- **Artifacts** go through the server to the NAS (bucket `mlflow-artifacts`): no S3 keys needed. Final model
+  weights and small files yes; running checkpoints stay in the run folder (the NAS has two disks for everyone).
+- **Rights:** everyone reads every experiment; whoever creates one may change it and share it.
+- **Client:** `uv add "mlflow>=3,<4"` (the server runs MLflow 3).
+- **Effect on this skill:** `RunContext.mlflow()` sets its own tracking URI (the run's `mlflow.db`) and is not
+  affected by the preset variable; so are `d3track.py` and `mlflow ui --backend-store-uri`. Code that logs without
+  setting a URI (plain `mlflow.log_metric`, a Lightning `MLFlowLogger()` without `tracking_uri`) now logs to the
+  group server, no longer to an `mlflow.db` in the working directory. With tracking = "mlflow", ask once which
+  store the user wants: the group server (one UI for everyone's runs, no sync, needs the server up) or the run's
+  own store (section 3; works without the server, travels with the run folder). Remember it as
+  `mlflow_store = "server" | "run"` under `[projects.<name>]` in the site file.
 
 ## 4. In the training code
 

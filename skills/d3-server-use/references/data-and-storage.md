@@ -26,6 +26,7 @@ it and backs it up themselves.
 | Checkpoints | the newest one per active run | the newest two per run |
 | Logs, results | until `archive --clean` | all of it |
 | Registry `runs/registry.db` | the working copy | a daily snapshot (`registry/`) |
+| Tracking on the group MLflow server | only `~/.mlflow/credentials` | its artifacts go through MLflow into the server's own bucket on the NAS (tracking.md 3a) |
 
 With a bucket, data travels through it in both directions: inputs laptop → bucket → server, results job → bucket →
 laptop (section 5), and git carries code. Without one yet, rsync does the same job (section 7): `jobs/push_inputs.sh`

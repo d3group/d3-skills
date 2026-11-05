@@ -26,8 +26,11 @@ before relying on a number.
 - **Tools:** `uv` system-wide, `sq` (queue sorted by priority), `seff` (what a finished job used), `gpu-status`
   (needs `ssh -t`), `rsync`. Missing: `sqlite3` (read databases with Python), `nvidia-smi` on the login host,
   git-lfs, MLflow (a project adds it: `uv add mlflow`). The AWS CLI is installed per user (`uv tool install awscli`).
+  `mlflow-passwd` changes the password of the group MLflow server (login host, compute node, `workbench`).
 - **Network** (tested 2026-11-04 from a compute node): the internet without a proxy (pypi.org, github.com,
-  api.wandb.ai), the bucket, and the login host's ssh port. No tracking server runs on either host.
+  api.wandb.ai), the bucket, and the login host's ssh port. Since 2026-11-05 a group MLflow server runs on the
+  admin's monitoring VM (`http://10.99.0.50:5000/mlflow`, reachable from the login host and the compute node;
+  `MLFLOW_TRACKING_URI` points there in login shells, jobs and notebooks), see tracking.md section 3a.
 
 ## 2. Partitions, submit filter, limits
 

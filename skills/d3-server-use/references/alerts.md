@@ -18,6 +18,7 @@ and November 2026 and have changed before (the CPU window was one hour at first)
 | `JobGpuIdle` | a job has held a GPU for over 1 h and used less than about 10 % of it in the last hour | nobody else can use that GPU meanwhile (no GPU sharing on this cluster) |
 | `JobCpuUnderused` | CPU-only jobs (partition `cpu`, not notebooks) with more than one CPU that have run for over 30 min and use less than 60 % of their CPUs leave, summed per user, 2.5 or more requested CPUs idle over the last half hour; resolved below 1.5 | the requested CPUs sit idle and are missing for other jobs |
 | `NasUnreachable` | the storage (NAS) has not answered a single monitoring query for 30 min | an admin matter: disk and volume alerts are blind meanwhile. The home is not on the NAS, so jobs keep running; if the NAS itself is down, S3 is too, so retry failed transfers after "Resolved" |
+| `ServiceDown` for `mlflow` | the group MLflow server has not answered for 5 min | jobs that log to it get connection errors from the mlflow client until it is back; an admin matter (`MlflowBackupStale`, a missed nightly backup of MLflow, is one too) |
 | ops, updates | maintenance, updates, outages | follow the message; do not start long rounds right before announced maintenance |
 
 ## What to do
