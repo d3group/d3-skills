@@ -77,6 +77,10 @@ ssh kiregio hostname
   - Windows: double-click, compare the SHA-1 thumbprint under Details with the admin's mail, then Install
     Certificate, Current User, "Trusted Root Certification Authorities".
   - Linux, Chrome on Linux and Firefox (own certificate stores): the steps are on the start page.
+- MLflow, the group's experiment tracking server, is at `https://<host name>/mlflow/` behind the same certificate.
+  Every server account has an MLflow account; its start password is the hub's start password with `ml` appended.
+  Change it on the login host with `mlflow-passwd`, which also updates `~/.mlflow/credentials` for jobs and
+  notebooks. Only needed when a project tracks on the group server (tracking.md section 3a).
 - Grafana (utilization, storage, home quota) has a shared login from the admin's mail. It stays in the mail or a
   password manager.
 

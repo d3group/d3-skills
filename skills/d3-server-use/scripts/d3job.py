@@ -55,6 +55,7 @@ a time limit, so the same code runs on the laptop.
 Experiment tracking, for projects that use it (references/tracking.md): ctx.mlflow() starts or resumes this run's
 MLflow run in the run folder's own store, runs/<id>/mlflow/mlflow.db, so every segment logs into the same MLflow
 run and every store has one writer; d3track.py copies the stores into the project's store on the login host.
+ctx.mlflow(server=True) keeps the run on the group's MLflow server instead (MLFLOW_TRACKING_URI), no sync needed.
 ctx.wandb(**init_kwargs) does the same for Weights & Biases (run ID as W&B id, resume="allow"). mark(), finish()
 and fail() close the tracked run: SCHEDULED when a segment stops to resume later, FINISHED when done, FAILED when
 failed. Both import their package only when called; add it to the project (`uv add mlflow`).
@@ -63,6 +64,7 @@ from __future__ import annotations
 
 import collections
 import contextlib
+import getpass
 import json
 import os
 import shutil
@@ -269,32 +271,50 @@ class RunContext:
 
     # ------------------------------------------------------------ experiment tracking
     def mlflow_uri(self) -> str:
-        """Tracking URI of this run's own MLflow store (one writer: this run's jobs, one after another)."""
+        """Tracking URI of this run's MLflow run: the group server's for a run started with mlflow(server=True)
+        (kept in runs/<id>/mlflow/tracking_uri), otherwise the run's own store (one writer: this run's jobs, one
+        after another)."""
+        server = self.run_dir / "mlflow" / "tracking_uri"
+        if server.exists():
+            return server.read_text().strip()
         return f"sqlite:///{(self.run_dir / 'mlflow' / 'mlflow.db').resolve()}"
 
-    def mlflow(self, experiment: str | None = None, tags: dict | None = None) -> str:
+    def mlflow(self, experiment: str | None = None, tags: dict | None = None, server: bool = False) -> str:
         """Start this run's MLflow run, or resume it in a later segment, and return its MLflow run ID.
 
         The store is runs/<id>/mlflow/mlflow.db (artifacts in runs/<id>/mlflow/artifacts); the experiment is the
-        project. The first segment creates the run (name = run ID, tags from run.json, its params as MLflow
-        params); later segments reopen it. Afterwards log with the usual API (mlflow.log_metric(...)), or pass the
-        returned ID to a framework logger (Lightning: MLFlowLogger(tracking_uri=ctx.mlflow_uri(), run_id=...)).
+        project. With server=True the run goes to the group server in MLFLOW_TRACKING_URI (preset on the cluster),
+        in the experiment <login>/<project>, artifacts in the server's bucket; without that variable (the laptop)
+        it falls back to the run's own store. A run keeps the store its first segment chose. The first segment
+        creates the run (name = run ID, tags from run.json, its params as MLflow params); later segments reopen
+        it. Afterwards log with the usual API (mlflow.log_metric(...)), or pass the returned ID to a framework
+        logger (Lightning: MLFlowLogger(tracking_uri=ctx.mlflow_uri(), run_id=...)).
         MLFLOW_TRACKING_URI and MLFLOW_EXPERIMENT_NAME are set for libraries that read them."""
         import mlflow
         from mlflow import MlflowClient
         from mlflow.entities import Param
         folder = self.run_dir / "mlflow"
         folder.mkdir(parents=True, exist_ok=True)
-        uri = self.mlflow_uri()
-        meta = _read_json(self.run_dir / "run.json", {})
-        name = experiment or meta.get("project") or "d3run"
-        client = MlflowClient(uri)
         id_file = folder / "run_id"
         rid = id_file.read_text().strip() if id_file.exists() else ""
+        if server and not rid and not (folder / "tracking_uri").exists():
+            if os.environ.get("MLFLOW_TRACKING_URI"):
+                tmp = folder / ".tracking_uri.d3tmp"
+                tmp.write_text(os.environ["MLFLOW_TRACKING_URI"] + "\n")
+                os.replace(tmp, folder / "tracking_uri")
+            else:
+                _log("mlflow: no MLFLOW_TRACKING_URI, so this run logs into its own store")
+        uri = self.mlflow_uri()
+        on_server = (folder / "tracking_uri").exists()
+        meta = _read_json(self.run_dir / "run.json", {})
+        name = experiment or meta.get("project") or "d3run"
+        if on_server and not experiment:
+            name = f"{getpass.getuser()}/{name}"   # one name space for everyone; another user's is read-only
+        client = MlflowClient(uri)
         if not rid:
             exp = client.get_experiment_by_name(name)
             exp_id = exp.experiment_id if exp else client.create_experiment(
-                name, artifact_location=(folder / "artifacts").resolve().as_uri())
+                name, artifact_location=None if on_server else (folder / "artifacts").resolve().as_uri())
             run_tags = {"d3.run_id": self.run_id, "mlflow.source.git.commit": meta.get("git_commit") or "",
                         "d3.project": meta.get("project") or "", "d3.user": meta.get("user") or "",
                         "d3.tag": meta.get("tag") or "", "d3.config_path": meta.get("config_path") or "",

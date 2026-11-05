@@ -41,7 +41,7 @@ Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Up
 | [d3-explainer](#explaining-a-project-to-its-own-authors-d3-explainer) | 0.12.1 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](#wording-of-research-texts-d3-scientific-wording) | 0.1.1 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet guides, STE guide, wording lint, corpus profiler |
 | [d3-marimo](#teaching-apps-in-the-browser-d3-marimo) | 0.1.2 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab, Jupyter or molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet and style-cell generator, headless browser check, pitfalls |
-| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.7.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, a quick submit for projects that are set up, run IDs and a registry that tie code, config, logs, checkpoints and results together, rounds split at their phases and units with each job as wide as it keeps busy and fitted to the queue, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
+| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.8.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, a quick submit for projects that are set up, run IDs and a registry that tie code, config, logs, checkpoints and results together, rounds split at their phases and units with each job as wide as it keeps busy and fitted to the queue, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
 
 Each skill has a section below: what its folder contains, how a run goes from the first question to the delivery, and
 what it checks. The folders are under [`skills/`](skills/). Design and review depth apply to several skills and come
@@ -1740,7 +1740,9 @@ otherwise asks once whether the user wants it; the answer is kept per project in
 added without a yes. For a new setup MLflow is the recommendation, since it keeps everything on university
 infrastructure; Weights & Biases suits users who already work with it, for data without restrictions. A training
 run spans several 24 h jobs, and many jobs must not write one SQLite file on NFS, so every run logs into its own
-store and only the login host writes the project's store.
+store and only the login host writes the project's store. Since 2026-11-05 the group also runs an MLflow server on
+the cluster: a project can log there instead (`ctx.mlflow(server=True)`, one MLflow run across the segments, one UI
+for everyone, no sync); the skill asks once which store a project uses.
 
 ```
  job, segment 1 ─┐                                     login host                      laptop
@@ -1750,6 +1752,7 @@ store and only the login host writes the project's store.
                      FINISHED or FAILED at the end     ─▶ s3://<bucket>/<project>/mlflow/mlflow.db
 
  in the code:  ctx = RunContext.from_env(); ctx.mlflow(); mlflow.log_metric("loss", value, step=epoch)
+ group server: ctx.mlflow(server=True)   experiment <login>/<project>, artifacts on the NAS, no d3track.py sync
  W&B instead:  ctx.wandb()   id = run ID, resume="allow"; compute nodes reach W&B (tested); unrestricted data only
 ```
 

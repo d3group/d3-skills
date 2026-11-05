@@ -163,9 +163,11 @@ the user (a test, a plan for later) list the questions instead of writing a site
   otherwise ask once; never add MLflow or W&B unasked (the registry books every run without them). When a project
   tracks, each run logs into its own store (`ctx.mlflow()` from `d3job`: `runs/<id>/mlflow/mlflow.db`, the same
   MLflow run in every segment); only `d3track.py sync` on the login host writes the project's store `runs/mlflow.db`
-  and uploads it to the bucket. Never one shared `mlflow.db` written by jobs, never `mlflow server` on the login
-  host. For a new setup MLflow is the recommendation (it stays on university infrastructure); Weights & Biases
-  (`ctx.wandb()`) only for data without restrictions ([references/tracking.md](references/tracking.md)).
+  and uploads it to the bucket. Or, where the user chose the group's MLflow server (`mlflow_store = "server"`), the
+  run logs there with `ctx.mlflow(server=True)` and needs no sync (tracking.md 3a). Never one shared `mlflow.db`
+  written by jobs, never `mlflow server` on the login host. For a new setup MLflow is the recommendation (it stays
+  on university infrastructure); Weights & Biases (`ctx.wandb()`) only for data without restrictions
+  ([references/tracking.md](references/tracking.md)).
   SQLite over NFS written from two hosts can corrupt the database.
 
 ## 2. Full setup: a round, step by step
@@ -185,8 +187,10 @@ reuse one connection.
    gets `d3run.py` and `d3job.py`. Keep the project's folder names and conventions instead of inventing new ones.
    Tracking found: keep the tool and fit it to segments and one writer per store. None found, and the work trains or
    compares runs: ask once whether the user wants it (MLflow recommended, W&B if they already use it, or none, the
-   default). Store the answer as `tracking` under `[projects.<name>]` in `<site>` and do not ask again; without a
-   user to ask (a batch run), add nothing and list the question.
+   default). With MLflow, ask in the same question whether runs go to the group server or into their own store
+   ([references/tracking.md](references/tracking.md) 3a). Store the answers as `tracking` and `mlflow_store` under
+   `[projects.<name>]` in `<site>` and do not ask again; without a user to ask (a batch run), add nothing and list
+   the question.
    Setup (once per project): `git clone` into `<proj>`, `uv sync --managed-python`, `uv cache prune`. Copy
    `<skill-dir>/scripts/d3run.py` and `d3job.py` into the project (e.g. `tools/`), if the project tracks with
    MLflow also `d3track.py` (and `uv add mlflow` unless the project has it; jobs and `d3track.py` use the project's
@@ -199,8 +203,8 @@ reuse one connection.
    `uv run tools/d3run.py init --user <login> --s3-uri s3://<bucket>/<prefix>` with the values from `<site>` (or
    `--no-s3`).
    Record the project in `<site>` under `[projects.<name>]`, with or without a bucket: `server_dir` (the checkout
-   `<proj>`) always, `s3_prefix` when there is a bucket, `tracking` (`mlflow`, `wandb` or `none`). Later sessions
-   read `<proj>` from there instead of asking.
+   `<proj>`) always, `s3_prefix` when there is a bucket, `tracking` (`mlflow`, `wandb` or `none`), with MLflow
+   `mlflow_store` (`server` or `run`). Later sessions read `<proj>` from there instead of asking.
 2. **Plan the cut** ([references/splitting-and-sizing.md](references/splitting-and-sizing.md)). Find the code's
    phases and loops and cut them as the rules say: each phase gets a tag, each unit a run, and the entry point runs
    one unit (`--config`, `--chunk i/n`). Only code that computes on the GPU goes to a GPU; tree and linear models,

@@ -1,8 +1,11 @@
-"""Tests for d3job.py: checkpoint names torch.save accepts, uploads before one was timed, resume from S3.
+"""Tests for d3job.py: checkpoint names torch.save accepts, uploads before one was timed, resume from S3, MLflow on
+the group server.
 
 Run on the laptop: python3 evals/tests/test_d3job.py [path to d3job.py]   (default: the skill's scripts/d3job.py)
-A fake `aws` maps s3:// to a local folder; nothing connects to a bucket. Needs bash and Python 3.10+.
+A fake `aws` maps s3:// to a local folder; nothing connects to a bucket. Needs bash and Python 3.10+; the MLflow
+checks need uv (they fetch MLflow 3 into uv's cache) and are skipped without it.
 """
+import getpass
 import os
 import shutil
 import subprocess
@@ -46,6 +49,16 @@ JOB = textwrap.dedent('''\
     if mode == "resume":
         ck = ctx.latest_checkpoint()
         print("RESUMED", ck.name if ck else None, ck.read_bytes()[:3] if ck else b"")
+    elif mode == "server":
+        import mlflow
+        rid = ctx.mlflow(server=True)
+        mlflow.log_metric("m", ctx.attempt, step=ctx.attempt)
+        exp = mlflow.get_experiment(mlflow.active_run().info.experiment_id)
+        print("RID", rid)
+        print("URI", ctx.mlflow_uri())
+        print("EXP", exp.name)
+        print("ARTIFACTS", exp.artifact_location)
+        ctx.mark("interrupted", progress=0.5)
     else:
         ctx.mark("running")
         print("STOP", ctx.should_stop())
@@ -79,6 +92,53 @@ def case(elapsed_s: float, limit_s: int, mode: str, *extra, keep: Path | None = 
     return tmp, r.stdout + r.stderr
 
 
+def mlflow_case(tmp: Path, attempt: int, server_uri: str | None):
+    """A job with ctx.mlflow(server=True) under uv with MLflow 3; a SQLite store outside the run folder stands in
+    for the group server (MLFLOW_TRACKING_URI as preset on the cluster)."""
+    run_dir = tmp / "runs" / "r1"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "run.json").write_text('{"project": "proj"}')
+    (tmp / "job.py").write_text(JOB)
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("SLURM_", "D3RUN_", "MLFLOW_"))}
+    env.update({"D3RUN_ID": "r1", "D3RUN_DIR": str(run_dir), "D3RUN_ATTEMPT": str(attempt)})
+    if server_uri:
+        env["MLFLOW_TRACKING_URI"] = server_uri
+    r = subprocess.run(["uv", "run", "--quiet", "--no-project", "--with", "mlflow>=3,<4", "python",
+                        str(tmp / "job.py"), str(D3JOB.parent), "server"], cwd=tmp, env=env,
+                       capture_output=True, text=True)
+    out = r.stdout + r.stderr
+    got = {l.split()[0]: l.split(None, 1)[1] for l in r.stdout.splitlines() if l.split()[:1] and l.split()[0] in
+           ("RID", "URI", "EXP", "ARTIFACTS")}
+    return got, out
+
+
+def test_mlflow_server():
+    if not shutil.which("uv"):
+        print("skip ctx.mlflow(server=True): no uv on PATH")
+        return
+    # 5. on the server: the run lives in the server's store, keeps one MLflow run across segments
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "server").mkdir()
+    server = f"sqlite:///{tmp / 'server' / 'mlflow.db'}"
+    a1, out1 = mlflow_case(tmp, 1, server)
+    check("server: the run is created in the server's store", a1.get("URI") == server and
+          (tmp / "server" / "mlflow.db").is_file() and not (tmp / "runs/r1/mlflow/mlflow.db").exists(), out1)
+    check("server: experiment named <login>/<project> (names are shared on the server)",
+          a1.get("EXP") == f"{getpass.getuser()}/proj", out1)
+    check("server: artifacts not in the run folder (the server stores them)",
+          "runs/r1" not in (a1.get("ARTIFACTS") or "runs/r1"), out1)
+    a2, out2 = mlflow_case(tmp, 2, server)
+    check("server: attempt 2 resumes the same MLflow run", a1.get("RID") and a2.get("RID") == a1.get("RID"), out2)
+    a3, out3 = mlflow_case(tmp, 3, None)
+    check("server: a later segment stays on the server even without the variable",
+          a3.get("RID") == a1.get("RID") and a3.get("URI") == server, out3)
+    # 6. no MLFLOW_TRACKING_URI (the laptop): the run's own store, said in the log
+    tmp = Path(tempfile.mkdtemp())
+    b1, out = mlflow_case(tmp, 1, None)
+    check("no tracking URI: falls back to the run's own store", (b1.get("URI") or "").endswith("runs/r1/mlflow/mlflow.db")
+          and "own store" in out, out)
+
+
 def main():
     s3ck = Path("s3/bkt/proj/runs/r1/checkpoints")
     # 1. smoke: 5 min limit, 230 s gone, the stop checkpoint is the first one -> uploaded (small file)
@@ -100,6 +160,7 @@ def main():
     tmp, out = case(10, 3600, "stop")
     check("early checkpoint: not in the stop window", "STOP False" in out, out)
     check("early checkpoint: uploaded", (tmp / s3ck / "step-000000005").is_file(), out)
+    test_mlflow_server()
     print(f"\n{len(FAILS)} failed")
     sys.exit(1 if FAILS else 0)
 

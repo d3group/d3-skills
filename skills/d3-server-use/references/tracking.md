@@ -92,20 +92,28 @@ Facts as set up by the admin on 2026-11-05 (repository `d3group/ki-regio-server`
   `https://p086wiwi177011.wiwi.uni-wuerzburg.de/mlflow/` (import the server's CA first, as for the hub).
   `MLFLOW_TRACKING_URI` is preset in login shells (`/etc/profile.d`), in jobs (sbatch passes the environment on)
   and in hub notebooks.
-- **Login:** every server account has an MLflow account. Start password `<login>1234,.ml` (the hub's start
-  password plus `ml`; MLflow needs 12 characters). `mlflow-passwd` on the login host changes it and updates
-  `~/.mlflow/credentials`, from which jobs and notebooks log in without setup. Forgot it: the admin resets it.
+- **Login:** every server account has an MLflow account. Its start password is the hub's start password from the
+  admin's mail with `ml` appended (MLflow needs 12 characters). `mlflow-passwd` on the login host changes it and
+  updates `~/.mlflow/credentials`, from which jobs and notebooks log in without setup. Forgot it: the admin resets
+  it.
 - **Artifacts** go through the server to the NAS (bucket `mlflow-artifacts`): no S3 keys needed. Final model
   weights and small files yes; running checkpoints stay in the run folder (the NAS has two disks for everyone).
 - **Rights:** everyone reads every experiment; whoever creates one may change it and share it.
 - **Client:** `uv add "mlflow>=3,<4"` (the server runs MLflow 3).
-- **Effect on this skill:** `RunContext.mlflow()` sets its own tracking URI (the run's `mlflow.db`) and is not
-  affected by the preset variable; so are `d3track.py` and `mlflow ui --backend-store-uri`. Code that logs without
-  setting a URI (plain `mlflow.log_metric`, a Lightning `MLFlowLogger()` without `tracking_uri`) now logs to the
-  group server, no longer to an `mlflow.db` in the working directory. With tracking = "mlflow", ask once which
-  store the user wants: the group server (one UI for everyone's runs, no sync, needs the server up) or the run's
-  own store (section 3; works without the server, travels with the run folder). Remember it as
-  `mlflow_store = "server" | "run"` under `[projects.<name>]` in the site file.
+- **Which store:** with tracking = "mlflow", ask once which store the user wants: the group server (one UI for
+  everyone's runs, no sync, artifacts on the NAS; needs the server up) or the run's own store (section 3; works
+  without the server, travels with the run folder). Remember it as `mlflow_store = "server" | "run"` under
+  `[projects.<name>]` in the site file.
+- **On the server:** the code calls `ctx.mlflow(server=True)` instead of `ctx.mlflow()`. The first segment creates
+  the run on the server in the experiment `<login>/<project>` (experiment names are shared by everyone on the
+  server and another user's experiment is read-only; `experiment=` names one its owner shared) and keeps its ID in
+  `runs/<id>/mlflow/run_id`, the server's URI in `runs/<id>/mlflow/tracking_uri`. Later segments continue the same
+  run; `ctx.mlflow_uri()` returns the server's URI for framework loggers. A run keeps the store its first segment
+  chose. Without `MLFLOW_TRACKING_URI` (the laptop) it logs into the run's own store and the job log says so.
+- **Preset variable:** `ctx.mlflow()` without `server=True`, `d3track.py` and `mlflow ui --backend-store-uri` set
+  their own URI and are not affected by it. Code that logs without setting a URI (plain `mlflow.log_metric`, a
+  Lightning `MLFlowLogger()` without `tracking_uri`) logs to the group server, no longer to an `mlflow.db` in the
+  working directory.
 
 ## 4. In the training code
 
@@ -144,6 +152,8 @@ except Exception as exc:
 - **Frameworks:** call `ctx.mlflow()` first. Hugging Face's `MLflowCallback` logs into the active run.
   Lightning: `MLFlowLogger(tracking_uri=ctx.mlflow_uri(), run_id=ctx.mlflow())` (call `ctx.mlflow()` once and keep
   the ID). `MLFLOW_TRACKING_URI` and `MLFLOW_EXPERIMENT_NAME` are set for libraries that read them.
+- **Group server** (`mlflow_store = "server"`): `ctx.mlflow(server=True)` in place of `ctx.mlflow()`; the rest of
+  the code stays the same (section 3a).
 - **Frequent logging:** every metric call is a write to SQLite on NFS. Log per epoch or every N steps, or turn on
   `mlflow.config.enable_async_logging()`; d3job's end of a segment flushes the queue (end_run waits for it).
   A store written several times a second rarely holds still for a snapshot, so the project view catches up when
@@ -165,6 +175,7 @@ uv run tools/d3track.py where         # the commands to open the project's store
   (`where` prints it): `uvx --from 'mlflow==<v>' mlflow ui --backend-store-uri sqlite:///mlflow.db`.
 - With a bucket, `sync` uploads the store to `s3://<bucket>/<project>/mlflow/mlflow.db`; the laptop takes it from
   there (`aws s3 cp … --profile <laptop profile>`). Without one: `rsync -a <alias>:<proj>/runs/mlflow.db .`
+- Runs on the group server need no sync (`sync` skips them): their UI is the server's (section 3a).
 - Never run `mlflow ui` or `mlflow server` as a lasting process on the login host.
 
 ## 6. Weights & Biases
@@ -198,3 +209,9 @@ run given up after a hard death (RUNNING, then FAILED), repeated syncs (only new
 15,000 points (skipped while busy, then complete, no crash), async logging (all points stored), and `ctx.wandb()`
 over two offline segments. On the server: a compute node reached pypi.org, github.com, api.wandb.ai, the bucket
 and the login host; MLflow was not installed. Not tested: W&B against its service.
+
+On 2026-11-05 against the group server (MLflow 3.17.2, client 3.17.2, as a service account on the login host):
+`ctx.mlflow(server=True)` over two segments kept one MLflow run (metric points from both segments), named the
+experiment `<login>/<project>`, stored an artifact through the server (`mlflow-artifacts:/…`) and left the run
+SCHEDULED after the interruption. `evals/tests/test_d3job.py` covers the same on the laptop with a stand-in store,
+plus the fallback without `MLFLOW_TRACKING_URI`.

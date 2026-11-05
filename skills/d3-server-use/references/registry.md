@@ -67,7 +67,7 @@ Finished states stick; `submit --force` starts a run again.
 | `logs/gpu-<jobid>.csv` | job template | GPU memory per minute (read by `size`) |
 | `checkpoints/` | `d3job` | `step-…`, `LATEST.json`, `uploaded.json` |
 | `results/` | the job | metrics, predictions, figures |
-| `mlflow/` | the job (`ctx.mlflow()`) | the run's own MLflow store `mlflow.db`, `run_id`, `artifacts/` ([tracking.md](tracking.md)) |
+| `mlflow/` | the job (`ctx.mlflow()`) | the run's own MLflow store `mlflow.db`, `run_id`, `artifacts/`; a run on the group server only `run_id` and `tracking_uri` ([tracking.md](tracking.md)) |
 
 ## Fitting an existing orchestrator
 
