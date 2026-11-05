@@ -168,6 +168,9 @@ def main() -> None:
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(2)
+    if sys.argv[1] in ("-h", "--help"):
+        print(__doc__)
+        sys.exit(0)
     total = 0
     for arg in sys.argv[1:]:
         total += check(Path(arg))

@@ -1,4 +1,5 @@
-"""Tests for d3run.py: `queue`, `size` across widths, `scale`, `submit --after-tag` and the job-count warning.
+"""Tests for d3run.py: `queue`, `size` across widths, `scale`, `submit --after-tag`, the job-count warning and the
+GPU smoke guard.
 
 Run on the laptop: python3 evals/tests/test_d3run.py [path to d3run.py]   (default: the skill's scripts/d3run.py)
 Fake squeue/scontrol/sbatch on PATH replay a queue snapshot taken on the server on 2026-11-05; nothing connects to
@@ -99,10 +100,19 @@ def main():
     check("queue: two other users' GPU jobs waiting (dependency/held not counted)",
           "2 GPU" in out and "0 CPU" in out, out)
     check("queue: share applies while others wait", "share applies" in out, out)
+    check("queue: GPUs contested -> no separate GPU smoke, the first real job checks the GPU",
+          "no separate GPU smoke" in out and "no GPU free" in out and "first minutes" in out, out)
     (proj.parent / "squeue.txt").write_text("1001|vaha|R|cpu|N/A|4|None|18:33:11|\n")
     (proj.parent / "node.txt").write_text(SCONTROL_NODE.replace("gres/gpu=4\n", "gres/gpu=0\n"))
     r2 = run(proj, env, "queue")
     check("queue: no GPU job running -> all free now", "GPUs free up   4 free now" in r2.stdout, r2.stdout + r2.stderr)
+    check("queue: a GPU free, nobody waiting -> a separate GPU smoke is fine",
+          "GPU smoke" in r2.stdout and "starts now" in r2.stdout, r2.stdout + r2.stderr)
+    (proj.parent / "squeue.txt").write_text("1001|vaha|R|cpu|N/A|4|None|18:33:11|\n"
+                                            "1010|ving|PD|main|gres/gpu:1|1|Priority|1-00:00:00|\n")
+    r3 = run(proj, env, "queue")
+    check("queue: a GPU free but another user waits for one -> still no separate GPU smoke",
+          "no separate GPU smoke" in r3.stdout and "1 GPU job of other users waiting" in r3.stdout, r3.stdout + r3.stderr)
     check("queue changes nothing", not (proj.parent / "scontrol.log").exists() and not (proj.parent / "sbatch.log").exists(),
           out)
 
@@ -210,6 +220,30 @@ def main():
                        input="\n".join(ids))
     out = r.stdout + r.stderr
     check("submit: 520 jobs -> job-count warning", "520" in out and "bundle" in out, out[-1500:])
+
+    # ---------------------------------------- submit: no separate GPU smoke job while the GPUs are contested
+    proj, env = setup()                                      # the snapshot: 4 of 4 GPUs busy, ving waits for one
+    log = proj.parent / "sbatch.log"
+    smoke = add_run(proj, "smoke", None, "NEW", [])
+    real = add_run(proj, "r1-train", None, "NEW", [])
+    r = run(proj, env, "submit", smoke, "--script", "job.sbatch", "--time", "00:10:00", "--gpus", "1")
+    check("submit: GPU smoke refused while no GPU is free and others wait",
+          r.returncode != 0 and "first minutes" in r.stderr and "--allow-gpu-smoke" in r.stderr and not log.exists(),
+          r.stdout + r.stderr)
+    r = run(proj, env, "submit", smoke, "--script", "job.sbatch", "--time", "00:10:00")
+    check("submit: the CPU smoke goes through", r.returncode == 0 and log.exists(), r.stdout + r.stderr)
+    r = run(proj, env, "submit", real, "--script", "job.sbatch", "--time", "04:00:00", "--gpus", "1")
+    check("submit: the first real GPU job goes through", r.returncode == 0 and "--gres=gpu:1" in log.read_text(),
+          r.stdout + r.stderr)
+    smoke2 = add_run(proj, "smoke", None, "NEW", [])
+    r = run(proj, env, "submit", smoke2, "--script", "job.sbatch", "--time", "00:10:00", "--gpus", "1",
+            "--allow-gpu-smoke")
+    check("submit: --allow-gpu-smoke submits it anyway", r.returncode == 0, r.stdout + r.stderr)
+    (proj.parent / "squeue.txt").write_text("1001|vaha|R|cpu|N/A|4|None|18:33:11|\n")
+    (proj.parent / "node.txt").write_text(SCONTROL_NODE.replace("gres/gpu=4\n", "gres/gpu=0\n"))
+    smoke3 = add_run(proj, "smoke", None, "NEW", [])
+    r = run(proj, env, "submit", smoke3, "--script", "job.sbatch", "--time", "00:10:00", "--gpus", "1")
+    check("submit: GPU smoke allowed when a GPU is free and nobody waits", r.returncode == 0, r.stdout + r.stderr)
 
     # ---------------------------------------- scale: local width measurement when the server has no room
     work = Path(tempfile.mkdtemp())

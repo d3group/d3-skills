@@ -11,7 +11,8 @@ at that moment.
 3. How wide each job is
 4. Fitting the round to the queue
 5. Linking phases
-6. Examples
+6. The first server smoke while the queue is full
+7. Examples
 
 ## 1. Why it matters on this server
 
@@ -65,26 +66,28 @@ Request as many CPUs and GPUs as the job keeps busy, not the minimum.
   1 CPU for 16 h, and its result is there 15 h sooner. CPUs that the job's memory already pays for cost nothing
   extra: `--mem 128G` bills like 34 CPUs, so a 4-CPU job with 128 GB pays for 34. One GPU bills like 41.5 CPUs, so
   CPUs for its data loading cost no fair share; they are still missing for others' CPU jobs, so request what the
-  input pipeline uses (pilot: GPU busy %, `size` note), typically 4 to 8.
-- **Measure the scaling.** Run the pilot config at two widths (e.g. 4 and 16 CPUs; the second with
-  `d3run.py new --config <same> --allow-duplicate --tag <same pilot tag>`). `size` prints speed-up and efficiency
-  and sizes the round from the widest width at which each CPU still delivers 70 % of the narrow job's speed. Below
-  that the extra CPUs mostly wait, and below 60 % CPU use the monitoring flags the job. A GPU job is the exception:
-  its GPU pays for up to 41 CPUs, so `size` takes the wider width when it is at least 10 % faster. When a pilot
-  kept all its CPUs busy, `size` says so: the code may scale further.
-- **No room for the pilot** (`queue`: the GPUs busy for hours, or fewer free CPUs than the wider pilot needs): a
-  pilot would wait as long as the round. Instead:
+  input pipeline uses (first jobs: GPU busy %, `size` note), typically 4 to 8.
+- **Measure the scaling, locally first.**
   1. On your own computer, `d3run.py scale -- <command on a slice of 1 to 5 minutes>` runs the slice at 1, 2, 4, …
-     CPUs, each time in a fresh local run folder, and prints time, speed-up, efficiency and peak memory with the
-     same 70 % rule.
-  2. Submit the first units of the round at that width with about twice the local time for a full unit (the
-     server's CPUs are slower or faster). Their results count.
-  3. `size` on those first jobs sets the flags for the rest.
+     CPUs, each time in a fresh local run folder, and prints time, speed-up, efficiency and peak memory. The width
+     is the widest at which each CPU still delivers 70 % of the narrow run's speed; below that the extra CPUs
+     mostly wait, and below 60 % CPU use the monitoring flags the job.
+  2. Submit a few first units of the round (the largest among them) at that width, up to what the share lets run
+     at once, with about twice
+     the local time for a full unit (the server's CPUs are slower or faster). They are the pilot, and their results
+     count. Long units get a first segment of about an hour: `size` extrapolates from the `progress` they report,
+     and they resume later.
+  3. `size` on those first jobs sets the flags for the rest. When they kept all their CPUs busy, `size` says so:
+     the code may scale further.
 
-  A laptop cannot measure a GPU job: start with 1 GPU and 4 CPUs (the partition's default per GPU) and let `size`
-  on the first jobs decide. The functional smoke test stays on the server, because only a job shows whether the
-  GPU is visible.
-- **A unit that fills only part of a GPU** (pilot GPU busy below about 50 %, little GPU memory): a GPU cannot be
+  A pilot at two widths on the server only when `scale` was still scaling at all of the laptop's CPUs and `queue`
+  shows room for the wider one: the same config at the laptop's width and twice that, the second with
+  `d3run.py new --config <same> --allow-duplicate --tag <same tag>`; `size` compares them by the same rule.
+- **GPU jobs:** a laptop cannot measure the GPU side, but `scale` on the code's CPU path still gives the peak
+  memory (`--mem`) and the CPUs the data loading keeps busy. Start with 1 GPU and 4 CPUs (the partition's default
+  per GPU); `size` on the first jobs decides. Their GPU pays for up to 41 CPUs, so `size` takes a wider width when it is
+  at least 10 % faster. While the queue is full, these first jobs also carry the GPU checks (section 6).
+- **A unit that fills only part of a GPU** (GPU busy below about 50 % in the first jobs, little GPU memory): a GPU cannot be
   shared between jobs, so several units share one 1-GPU job (processes, or one model vectorized over seeds), or the
   unit runs on CPUs.
 - **Memory:** what one unit needs (`size`). Units with very different memory needs go into separate jobs, each with
@@ -130,7 +133,53 @@ so they are upper bounds.
 
 - `archive --clean` only after the last phase that reads a run's results has finished.
 
-## 6. Examples
+## 6. The first server smoke while the queue is full
+
+A smoke job on the server is for the first time a project runs there; the local smoke test has passed before it
+(SKILL.md, step 5). Each job waits for its own turn: when a GPU frees up, it goes to the highest-priority job
+pending at that moment, and a job submitted later waits for the next one. While `queue` shows no GPU free or other
+users waiting for one (its `GPU smoke` line), a separate 10-minute GPU smoke therefore spends your turn, and the
+first real job waits for the GPU after it, often hours. Backfill does not help: it fills free GPUs, and there are none. `submit` refuses a
+GPU job tagged or named smoke then (`--allow-gpu-smoke` only when the user wants one anyway). One turn does both:
+
+1. **The server smoke on CPUs.** The tiny config end to end on the code's CPU path (`--gpus 0`; PyTorch on device `cpu`,
+   `JAX_PLATFORMS=cpu`), and the resume test ([interruptible-jobs.md](interruptible-jobs.md), section 8), on the
+   `cpu` partition. Code without a CPU path: what runs without the GPU (imports, configs, data paths, one batch).
+2. **The first real GPU jobs at the same time**, without waiting for the CPU smoke, so they catch the next free
+   GPU: the first units of the round, up to the share (`queue`, share line), 1 GPU and 4 CPUs unless `size` knows
+   better. They are smoke and pilot at once, and their results count.
+3. **The GPU checks in their first minutes**, so a failure ends the job early and frees the GPU. In the loop of
+   [interruptible-jobs.md](interruptible-jobs.md), section 2:
+
+   ```python
+   assert torch.cuda.is_available(), "no GPU visible in the job"   # JAX: jax.devices()[0].platform == "gpu"
+   print(f"[check] GPU {torch.cuda.get_device_name(0)}", flush=True)
+   checked = ckpt is not None                  # a resumed segment has loaded a checkpoint already
+   for step in range(start, n_steps):
+       train_one_step(state)                   # at full batch size: out of memory shows in the first steps
+       if ctx.should_checkpoint():             # the first one after 5 minutes
+           with ctx.checkpoint(step) as path:
+               save(state, step, path)
+           if not checked:                     # once: the resume path, on the GPU
+               load(ctx.latest_checkpoint())
+               checked = True
+               print("[check] checkpoint written and loaded on the GPU", flush=True)
+           ...
+   ```
+
+   The job template logs the GPU's use every minute (`logs/gpu-<job>.csv`). Keep the checks in the code: in later
+   rounds, which have no smoke job, they make a broken first job fail within minutes.
+4. **Look** when the CPU smoke has ended and about 10 minutes after the first GPU job started: `reconcile`, then
+   `grep -h "\[check\]" runs/<id>/logs/attempt-01-*.out`. A failure in either: `scancel` the GPU jobs, fix,
+   `git pull` (nothing of the project queued) and submit again. Cancelled jobs lose only their age, a small part
+   of the priority.
+5. **The rest of the round** after `size` on the first jobs (section 3). While others wait, `submit` would hold it
+   anyway.
+
+With a GPU free and nobody else waiting for one, a separate GPU smoke costs no turn: run it first. The same
+reasoning holds for CPU jobs when the `cpu` partition is full and others wait for it.
+
+## 7. Examples
 
 **Predict then optimize** (3 markets; an LSTM per market, about 2 h on a GPU; 365 day-ahead forecasts per market;
 1,095 battery MILPs of 2 to 10 minutes, single-threaded; an evaluation):
@@ -149,5 +198,5 @@ With one GPU free they run one after another, with four free side by side.
 
 **Scenario pool** (1,200 single-threaded scenarios of 10 to 20 minutes, written as one joblib pool of 64): 1,200
 jobs would be too many and one 64-CPU job waits for 64 free CPUs, then idles while its last scenarios run. Chunks
-of 40 scenarios give 30 runs; each runs a pool at the measured width (pilot at 4 and 16 workers), longest scenarios
+of 40 scenarios give 30 runs; each runs a pool at the width `scale` measured on a few scenarios, longest scenarios
 first so the pool's tail stays short, and writes one result file per scenario so it can resume.

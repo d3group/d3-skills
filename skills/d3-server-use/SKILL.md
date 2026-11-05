@@ -3,7 +3,7 @@ name: d3-server-use
 description: |
   Run compute jobs on the D3 group's KiRegio Slurm server the way the group agreed: Slurm for everything that
   computes, uv only, jobs of at most 24 h that checkpoint and resume, a quick submit for projects that are set up
-  and a smoke test and a pilot for new ones, run IDs and a registry that tie code, config, logs, checkpoints and
+  and local smoke tests and sizing for new ones, run IDs and a registry that tie code, config, logs, checkpoints and
   results together, and the S3 bucket as the store so the small server home stays clean. Use this skill when:
   (1) Running anything on the server: just submitting a project that is set up, sbatch or srun jobs, GPU or CPU,
       JupyterHub, the first login and ssh setup
@@ -49,7 +49,7 @@ A request to run work on the server takes one of two paths. Choose before readin
 When the message says which ("just submit", "like last time", "same as before": quick; "get it ready", "set it up",
 "make it survive the 24 h limit": full), take it. Otherwise ask once, recommending the path the project points to:
 "Quick submit (the code is ready: I check the group's rules and submit, a few minutes) or full setup (I read the
-project, make it interruptible, plan how to split it and how wide each job is, smoke test and pilot)?" Without a
+project, make it interruptible, plan how to split it and how wide each job is, smoke test and sizing)?" Without a
 user to ask, take the recommendation and say so. Alerts, cleanup, pending jobs and transfers need neither path.
 
 **Quick submit** uses only these steps:
@@ -132,7 +132,8 @@ the user (a test, a plan for later) list the questions instead of writing a site
   minutes that reuses the previous step's model in memory stays in its job; units under about 10 minutes are
   bundled ([references/splitting-and-sizing.md](references/splitting-and-sizing.md)).
 - **Each job as wide as it keeps busy.** Not the minimum: as many CPUs (and GPUs, if the code uses several) as the
-  job uses efficiently, measured at two widths. A job that scales costs the same fair share and ends sooner; CPUs
+  job uses efficiently, measured on the laptop (`scale`) and checked by `size` on the first jobs. A job that scales
+  costs the same fair share and ends sooner; CPUs
   that its memory or GPU already pays for are free. Shorter `--time` and fitting `--mem` start earlier (backfill).
 - **All GPUs or CPUs only while nobody else waits.** The cluster never preempts, so a running job keeps its GPU until
   it ends. `d3run.py queue` shows what is free, who waits and when GPUs free up; widths and job counts follow from
@@ -207,8 +208,10 @@ reuse one connection.
    `mlflow_store` (`server` or `run`). Later sessions read `<proj>` from there instead of asking.
 2. **Plan the cut** ([references/splitting-and-sizing.md](references/splitting-and-sizing.md)). Find the code's
    phases and loops and cut them as the rules say: each phase gets a tag, each unit a run, and the entry point runs
-   one unit (`--config`, `--chunk i/n`). Only code that computes on the GPU goes to a GPU; tree and linear models,
-   solvers, evaluation and figures run on CPUs (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Parallel work inside a
+   one unit (`--config`, `--chunk i/n`); without `--config` it reads the copy that `new` puts in its run folder
+   (`config.<ext>` under `ctx.run_dir`), because the arguments after `--` in `submit` are the same for every run. Only
+   code that computes on the GPU goes to a GPU; tree and linear models, solvers, evaluation and figures run on CPUs
+   (`JAX_PLATFORMS=cpu` for JAX code on CPUs). Parallel work inside a
    unit (threads, `n_jobs`, a pool, data loader workers) reads its count from `SLURM_CPUS_PER_TASK`. Estimate the
    runtime per unit; above about 20 h plan segments. Code without state it can save (one long solver call, a
    `fit()` without partial state) cannot resume: say so, never chain it into segments, and choose a way with the
@@ -223,21 +226,38 @@ reuse one connection.
    `bash jobs/push_inputs.sh` (dry run), then `--go`. With a bucket it uploads them and prints the
    `d3run.py pull … --checksum` to run in `<proj>` (`--submit` above 1 GB or 2,000 files); without one it rsyncs them
    into `<proj>`.
-5. **Smoke test.** Parse every config of the round once locally and check the types (YAML reads `seed: 08` as
-   text). Run the local resume test (references/interruptible-jobs.md, section 8). Then one tiny config per
-   resource class, `--time 00:10:00`, with `--allow-dirty` only if needed: imports, GPU visible from inside the job
-   (print `jax.devices()` or `torch.cuda.is_available()`), data paths, output written. Test the resume too:
-   `--segments 2 --time 00:05:00` on a config that needs about 8 minutes; the second attempt must log that it
-   started from a checkpoint. The login host has no GPU, so GPU checks only count inside a job.
-6. **Pilot and size.** First `d3run.py queue`. One run at full size per phase and resource class, generous limits,
-   tagged `pilot-<round>`; the code reports `progress` so a partial pilot extrapolates. Code that runs in parallel
-   inside the job: the same config at two widths (e.g. 4 and 16 CPUs, the second with `new --allow-duplicate`).
-   After it ends: `d3run.py reconcile`, then `d3run.py size --tag pilot-<round>` prints the flags (`--time`,
-   `--cpus`, `--mem`, segments) and the speed-up between the widths. No room for a pilot (GPUs busy for hours, or
-   fewer free CPUs than the wide pilot needs): `d3run.py scale -- <slice>` on the laptop instead, and the first
-   units of the round serve as the pilot ([references/splitting-and-sizing.md](references/splitting-and-sizing.md),
-   section 3).
-7. **Submit the round.** Widths and job counts from `d3run.py queue`
+5. **Smoke test: locally always, on the server the first time.** On the laptop: parse every config of the round
+   and check the types (YAML reads `seed: 08` as text), run the tiny config end to end in local mode (GPU code
+   through a device switch on its CPU path), and run the local resume test
+   ([references/interruptible-jobs.md](references/interruptible-jobs.md), section 8). That shows whether the code
+   works at all before anything waits in the queue. A smoke job on the server only the first time the project runs
+   there (`d3run.py list --status DONE` shows no run yet): it adds the environment, the data paths, the GPU and the
+   resume through Slurm and S3. Later rounds skip it; a broken first job fails within minutes. The `GPU smoke` line
+   of `d3run.py queue` says how:
+   - Room (a GPU free and nobody else waiting for one; for CPU jobs, free CPUs): a smoke job, `--time 00:10:00`,
+     `--allow-dirty` only if needed: imports, data paths, output written, GPU visible (`jax.devices()`,
+     `torch.cuda.is_available()`). The resume: `--segments 2 --time 00:05:00` on a config that needs about 5
+     minutes (a 5-minute segment does about 3 after start and stop margin); the second attempt must log that it
+     started from a checkpoint.
+   - Queue full (no GPU free, or others waiting for one): no separate GPU job for testing. Each GPU job waits for
+     its own free GPU, so a test job spends your turn and the first real job waits for the next free GPU, often
+     hours. The server smoke runs on CPUs (`--gpus 0`), and the first real GPU jobs go in at the same time and check
+     the GPU in their first minutes ([references/splitting-and-sizing.md](references/splitting-and-sizing.md),
+     section 6). `submit` refuses a GPU job tagged or named smoke then.
+6. **Size: locally first, then the first units.** On the laptop, `d3run.py scale -- <command on a slice of 1 to 5
+   minutes>` prints time, speed-up, efficiency and peak memory at 1, 2, 4, … CPUs. The width is the widest at which
+   each CPU still delivers 70 % of the narrow run's speed, `--mem` follows from the peak, and about twice the local
+   time of a full unit is the first `--time` (the server's CPUs are slower or faster). GPU code: `scale` on its CPU
+   path still gives the peak memory (`--mem`) and the CPUs its data loading keeps busy; the GPU time comes from the
+   first jobs, which start with 1 GPU and 4 CPUs. Then a few first units of the round (the largest among them), up
+   to what the share lets run at once, go to the server at that size: they are the pilot, and their results count.
+   Long units get a first segment of about an hour; the code reports `progress`, so `size` extrapolates, and the
+   runs resume later. After
+   they end: `d3run.py reconcile`, then `d3run.py size --tag <round>-<phase>` sets `--time`, `--cpus`, `--mem` and
+   segments for the rest. A pilot at two widths on the server only when `scale` was still scaling at all the
+   laptop's CPUs and `queue` shows room for the wider one
+   ([references/splitting-and-sizing.md](references/splitting-and-sizing.md), section 3).
+7. **Submit the rest of the round** with the flags from `size`. Widths and job counts from `d3run.py queue`
    ([references/splitting-and-sizing.md](references/splitting-and-sizing.md), section 4).
    `d3run.py new --config configs/round/*.yaml --tag <round>-<phase>` creates one run per config;
    `d3run.py submit <ids…> --script jobs/train.sbatch <flags from size>`. A later phase gets
@@ -280,13 +300,13 @@ read the alert itself (search the channel for the user's login), but never post 
 |---|---|
 | `init --user <login> --s3-uri s3://<bucket>/<prefix>`, `settings` | create `runs/registry.db` and store login and S3 location; show them (read-only) |
 | `new --config a.yaml b.yaml --tag <round>` | one run ID per config; records commit, config hash, parameters; refuses duplicates |
-| `submit <ids…> --script <sbatch> --time --cpus --mem [--gpus 1] [--segments k] [--after-tag <phase>] [-- args]` | one attempt per segment, chained with `afterany`; after another phase's runs; logs in `runs/<id>/logs/` |
-| `queue` | read-only: free CPUs and GPUs, who waits, when the running GPU jobs end at the latest |
+| `submit <ids…> --script <sbatch> --time --cpus --mem [--gpus 1] [--segments k] [--after-tag <phase>] [-- args]` | one attempt per segment, chained with `afterany`; after another phase's runs; logs in `runs/<id>/logs/`; refuses a GPU smoke job while the GPUs are contested |
+| `queue` | read-only: free CPUs and GPUs, who waits, when the running GPU jobs end at the latest, whether a separate GPU smoke may run |
 | `scale [--widths …] -- <command>` | on your own computer: time, speed-up, efficiency and peak memory of a slice at 1, 2, 4, … CPUs |
 | `reconcile` | job states and usage from one `sacct` call; run status from `status.json`; one fair-use pass |
 | `feed [--loop \| --submit]` | fair use: release held jobs when nobody else waits, hold back pending ones when others wait |
 | `show <id>`, `list [--tag] [--status]`, `find-job <slurm id>` | what ran where, with which code and logs |
-| `size --tag <pilot>` | `--time`, `--cpus`, `--mem`, segments from measured usage (margin 1.3); speed-up between widths |
+| `size --tag <round>-<phase>` | `--time`, `--cpus`, `--mem`, segments from measured usage (margin 1.3); speed-up between widths |
 | `archive`, `push`, `pull` (`--clean`, `--submit`) | S3 transfers; sizes, and before deleting MD5 against the ETag; large ones run as a Slurm job |
 | `manifest`, `clean --manifest` | without a bucket: files, sizes and SHA-256 of a copy; delete on the server only what it holds |
 | `usage`, `mark <id> <STATUS>` | disk use of run folders; set a status by hand |
@@ -311,7 +331,7 @@ existing orchestrator: [references/registry.md](references/registry.md).
 | `assets/site.example.toml` | template of the user's site file (no secrets) |
 | `references/first-time-setup.md` | account, ssh key and Host block, JupyterHub password, certificate |
 | `references/cluster.md` | partitions, submit filter, limits, priority and backfill, monitoring, JupyterHub |
-| `references/splitting-and-sizing.md` | where to cut a round into jobs (phases, units), how wide each job is, fitting it to the queue, linking phases |
+| `references/splitting-and-sizing.md` | where to cut a round into jobs (phases, units), how wide each job is, fitting it to the queue, linking phases, smoke test and pilot while the queue is full |
 | `references/interruptible-jobs.md` | checkpoint and resume patterns (PyTorch, JAX/Orbax, work lists), segments |
 | `references/data-and-storage.md` | quota and NFS, S3 with the AWS CLI, layout, cleanup, the interim route |
 | `references/registry.md` | schema, statuses, run files, fitting an existing orchestrator |

@@ -57,7 +57,7 @@ and November 2026 and have changed before (the CPU window was one hour at first)
 
 ## Catching it before the alert
 
-- The pilot of a round runs with the job template, which logs GPU memory and utilization once a minute.
+- The first jobs of a round run with the job template, which logs GPU memory and utilization once a minute.
 - `d3run.py reconcile` and `d3run.py size` flag attempts that come close to these alerts: more than one CPU below
   60 % after 30 minutes, or a GPU below 15 % on average after an hour. Both are stricter than the alerts (which count
   only CPU-only jobs and need 2.5 idle CPUs per user, or a GPU below 10 %), so a flag is a warning, not a sure

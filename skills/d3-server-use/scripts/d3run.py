@@ -34,6 +34,8 @@ Design:
   112 of 150 CPUs in `cpu`) are submitted held. `feed` (also run by `reconcile`, or looping as a 1-CPU
   feeder job) releases them when nobody waits and holds back pending ones when others start waiting.
   Running jobs are never touched (the cluster does not preempt).
+- GPU turns: while no GPU is free or others wait for one, `submit` refuses a GPU job tagged or named smoke
+  (each GPU job waits for its own turn); the smoke runs on CPUs and the first real GPU jobs check the GPU.
 """
 from __future__ import annotations
 
@@ -591,6 +593,26 @@ def share_budget(jobs: list[dict], me: str, st: dict) -> dict:
             "cap_gpus": cap_g, "cap_cpus": cap_c, "free_gpus": cap_g - use_g, "free_cpus": cap_c - use_c}
 
 
+def gpu_contention(jobs: list[dict], me: str, st: dict) -> tuple[int, str]:
+    """Free GPUs now, and why a new GPU job would have to wait for its turn ('' if it would not)."""
+    total = int(st.get("gpus_total") or GPUS_TOTAL)
+    free = max(0, total - sum(max(1, j["gpus"]) for j in jobs if j["state"] in ("R", "CG") and j["partition"] == "main"))
+    waiting = sum(1 for j in jobs if j["user"] != me and is_waiting(j) and j["partition"] == "main")
+    why = ([] if free else ["no GPU free"]) + \
+          ([f"{waiting} GPU job{'s' * (waiting != 1)} of other users waiting"] if waiting else [])
+    return free, " and ".join(why)
+
+
+GPU_SMOKE_ADVICE = ("each GPU job waits for its own free GPU, so a separate test job would spend your next turn on "
+                    "minutes of checks and the first real job would wait for the GPU after it, often hours. Run the "
+                    "smoke on CPUs and submit the first real GPU jobs now: they check the GPU in their first minutes "
+                    "(references/splitting-and-sizing.md, section 6)")
+
+
+def is_smoke(run) -> bool:
+    return "smoke" in f"{run['tag'] or ''} {run['name'] or ''}".lower()
+
+
 def budget_line(b: dict) -> str:
     who = [x for x, flag in (("GPU", b["others_gpu"]), ("CPU", b["others_cpu"])) if flag]
     return (f"GPUs {b['use_gpus']}/{b['cap_gpus']}, CPUs {b['use_cpus']}/{b['cap_cpus']} "
@@ -815,6 +837,12 @@ def cmd_submit(a) -> None:
     if budget:
         info("fair use: " + budget_line(budget))
     run_ids = read_ids(a.run_ids)
+    if a.gpus and queue is not None and not a.allow_gpu_smoke:
+        _, why = gpu_contention(queue, me, st)
+        smokes = [rid for rid in run_ids if is_smoke(get_run(conn, rid))]
+        if why and smokes:
+            die(f"a separate GPU smoke test ({', '.join(smokes)}) while {why}: {GPU_SMOKE_ADVICE}. "
+                "--allow-gpu-smoke only if the user wants the test job anyway")
     queued = sum(1 for j in queue or [] if j["user"] == me)
     if queued + len(run_ids) * a.segments > JOBS_WARN:
         info(f"warning: {queued + len(run_ids) * a.segments} of your jobs would be in the queue ({queued} now, "
@@ -1615,6 +1643,9 @@ def cmd_queue(a) -> None:
     print(f"yours          {sum(1 for j in mine if j['state'] in ('R', 'CG'))} running, "
           f"{sum(1 for j in mine if j['state'] == 'PD')} pending ({held} held); {len(jobs)} jobs in the queue in all")
     print("share          " + budget_line(share_budget(jobs, me, st)))
+    _, why = gpu_contention(jobs, me, st)
+    print("GPU smoke      " + (f"no separate GPU smoke job ({why}): {GPU_SMOKE_ADVICE}" if why else
+                               "a GPU is free and nobody else waits for one: a separate 10-minute GPU smoke starts now"))
 
 
 def tree_rss_kb(pgid: int) -> int:
@@ -1632,7 +1663,7 @@ def tree_rss_kb(pgid: int) -> int:
 
 
 def cmd_scale(a) -> None:
-    """On your own computer: how a command speeds up with more CPUs, for when the server has no room for a pilot."""
+    """On your own computer: how a command speeds up with more CPUs, the first sizing step before the first jobs."""
     if in_job() or shutil.which("sbatch"):
         die("`scale` measures on your own computer, not on the server: the login host gives each user 4 CPUs and "
             "8 GB for light commands, and a pilot there belongs in a job. Run it in the project on the laptop")
@@ -1749,6 +1780,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--sbatch-arg", action="append", help="extra sbatch flag, e.g. --sbatch-arg=--nice=100")
     s.add_argument("--force", action="store_true", help="submit even if DONE or still queued")
     s.add_argument("--no-throttle", action="store_true", help="skip the fair-use check (nobody else uses the server)")
+    s.add_argument("--allow-gpu-smoke", action="store_true",
+                   help="submit a GPU job tagged or named smoke although no GPU is free or others wait for one")
     s.add_argument("--dry-run", action="store_true", help="print the sbatch commands only")
     s.set_defaults(func=cmd_submit)
 
@@ -1829,7 +1862,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(func=cmd_feed)
 
     s = sub.add_parser("scale", parents=[common],
-                       help="on your own computer: speed-up of a command at 1, 2, 4, ... CPUs (no room for a pilot)",
+                       help="on your own computer: speed-up of a command at 1, 2, 4, ... CPUs (sizing before the first jobs)",
                        description="The command after -- runs once per width with SLURM_CPUS_PER_TASK set, each time "
                                    "in a fresh local run folder (D3RUN_LOCAL_DIR). Give it a slice of 1 to 5 minutes.")
     s.add_argument("--widths", type=int, nargs="+", help="CPU counts to try (default 1, 2, 4, ... up to this computer's)")

@@ -164,7 +164,8 @@ lose at most one checkpoint interval when something fails.
 
 Locally first, without Slurm (local mode works in `runs/local/`): give the run less time than it needs and start it
 twice, e.g. `rm -rf runs/local; D3RUN_TIME_LIMIT_S=120 uv run python src/train.py --small` two times. The first run
-must end `interrupted` with a checkpoint, the second must log that it resumed from it.
+must end `interrupted` with a checkpoint, the second must log that it resumed from it. The first time the project
+runs on the server, also through Slurm (SKILL.md, step 5):
 
 ```bash
 RID=$(uv run tools/d3run.py new --name resume-smoke --config configs/smoke.yaml --tag smoke)
@@ -175,6 +176,7 @@ grep -h "start\|checkpoint" runs/$RID/logs/attempt-0*
 ```
 
 Pass: attempt 1 ends `interrupted` with a checkpoint, attempt 2 logs that it started from it and ends `done`.
+Give it a config of about 5 minutes: a 5-minute segment does about 3 after start-up and its stop margin.
 
 With S3, check once that a segment can resume from the bucket alone. A chain starts attempt 2 right after attempt
 1, so submit the two attempts one by one and delete the local checkpoints in between:

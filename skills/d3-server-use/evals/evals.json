@@ -1,6 +1,6 @@
 {
   "skill_name": "d3-server-use",
-  "note": "No eval may connect to a real server or bucket. Runs use `claude -p` from a neutral folder outside any project (no CLAUDE.md, no user plugins, hooks or memory), with a copy of the skill for the with-skill configuration, a sandbox HOME and outputs folder per run. Inputs in evals/files are copied, never edited in place. No eval gets a site file unless its prompt says so (first use). Graders run neutral too (claude -p from a neutral folder), never inside a project checkout. The scripts have their own tests, run on the laptop with fakes for Slurm and S3: python3 evals/tests/test_d3run.py and python3 evals/tests/test_d3job.py.",
+  "note": "No eval may connect to a real server or bucket. Runs use `claude -p` from a neutral folder outside any project (no CLAUDE.md, no user plugins, hooks or memory), with a copy of the skill for the with-skill configuration, a sandbox HOME and outputs folder per run. Inputs in evals/files are copied, never edited in place. No eval gets a site file unless its prompt says so (first use). Graders run neutral too (claude -p from a neutral folder), never inside a project checkout. The scripts have their own tests, run on the laptop with fakes for Slurm and S3: python3 evals/tests/test_d3run.py, python3 evals/tests/test_d3job.py and python3 evals/tests/test_check_sbatch.py.",
   "evals": [
     {
       "id": 1,
@@ -94,8 +94,8 @@
         "Training and prediction run as GPU jobs and the MILP solves and the evaluation as CPU-only jobs: no job holds a GPU while it solves, evaluates or writes figures",
         "The solves are split into units or chunks that run side by side (several jobs, or a pool inside a job), and finished solves are kept so a resumed job does not repeat them",
         "A later phase starts only after the earlier one (a dependency such as --after-tag/--after, or submission after reconcile shows it done), and checks that its inputs exist and are done before it uses them",
-        "The number of CPUs per CPU job comes from a measurement (a pilot at two widths compared by `size`) or is tied to what `d3run.py queue` shows, not only from a fixed guess",
-        "The GPU jobs request the CPUs their data loading uses (more than one, or measured by the pilot), not the minimum by default",
+        "The number of CPUs per CPU job comes from a measurement (`d3run.py scale` on the laptop and `size` on the first jobs, or a pilot at two widths) or is tied to what `d3run.py queue` shows, not only from a fixed guess",
+        "The GPU jobs request the CPUs their data loading uses (more than one, or measured in the first jobs), not the minimum by default",
         "The plan runs `d3run.py queue` (or reads the queue) before choosing how wide and how many jobs to submit"
       ]
     },
@@ -103,12 +103,12 @@
       "id": 7,
       "name": "scenario-pool-width",
       "prompt": "I need to run src/evaluate.py (project in <copy of evals/files/scenario-eval>) on KiRegio: 1,200 scenarios, roughly 300 CPU-hours. It already runs in parallel with joblib, I'd just set it to 64 processes. Prepare whatever is needed and the exact commands. I'm not connected right now. Login abcd, alias kiregio, bucket yes. data/scenarios.parquet is small and already on the server.",
-      "expected_output": "Not one 64-CPU job and not 1,200 jobs: chunks of scenarios (tens of runs), each a resumable work list whose pool size comes from SLURM_CPUS_PER_TASK, longest scenarios first, a timeout per scenario, one result per scenario kept; pilot of one chunk at two widths, `size` compares them; `d3run.py queue` decides how many chunk jobs run at once; results merged at the end.",
+      "expected_output": "Not one 64-CPU job and not 1,200 jobs: chunks of scenarios (tens of runs), each a resumable work list whose pool size comes from SLURM_CPUS_PER_TASK, longest scenarios first, a timeout per scenario, one result per scenario kept; width from `d3run.py scale` on a few scenarios on the laptop, the first chunks at that width, `size` on them for the rest; `d3run.py queue` decides how many chunk jobs run at once; results merged at the end.",
       "files": [],
       "assertions": [
         "The 1,200 scenarios are not run as one job holding 64 CPUs, and not as one job per scenario: they are bundled into chunks that run as separate jobs",
         "The number of worker processes in a job comes from SLURM_CPUS_PER_TASK, not from a constant in the code",
-        "The CPUs per job are measured (a pilot at two widths compared by `size`, or the pilot's CPU use) or tied to what `d3run.py queue` shows",
+        "The CPUs per job are measured (`d3run.py scale` on a few scenarios on the laptop and `size` on the first chunks, or a pilot at two widths) or tied to what `d3run.py queue` shows",
         "Finished scenarios are kept per scenario or per checkpoint, so a crash or the time limit does not lose the finished work, and a resumed job skips them",
         "Every scenario has a time limit, and a scenario that fails or runs out is recorded while the others go on",
         "The results of all chunks are merged into one table at the end"
@@ -124,7 +124,7 @@
         "Does not rewrite the code for DDP or multi-GPU jobs: each of the 48 trainings runs as its own 1-GPU job",
         "Uses the pasted queue output in the reasoning: all GPUs are busy and free up one at a time, so 1-GPU jobs start sooner than a job that needs all 4 at once",
         "Notes that other users are waiting for GPUs, so the user's jobs stay within the share (fewer than 4 GPUs) and the rest is held or released later",
-        "The GPU jobs request the CPUs their data loading uses (more than one, or measured in the pilot), not the minimum by default",
+        "The GPU jobs request the CPUs their data loading uses (more than one, or measured in the first jobs), not the minimum by default",
         "Each grid point is one run with its own ID, config and result path"
       ]
     },
@@ -192,6 +192,54 @@
         "Recommends or takes the full setup, and names what the project lacks (d3run tools, job scripts, a site entry, checkpoints)",
         "Does not submit pipeline.py as one job",
         "Its plan splits the study at the hardware phases (GPU training and prediction, CPU solves and evaluation)"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "gpu-smoke-busy-queue",
+      "prompt": "Get the sweep in <copy of evals/files/grid-sweep> ready for KiRegio and give me the exact commands for the smoke test and the first submission; I'll run them myself, I'm not connected right now. Login abcd, alias kiregio, bucket yes, data/processed/load.npy is already on the server. We want to be efficient: the GPUs are packed today. This is what I saw five minutes ago:\n\n```\n$ uv run tools/d3run.py queue\nnode compute   CPUs 28 of 166 in use, GPUs 4 of 4, memory 210 of 624 GB\ncpu partition  24 of 150 CPUs in use by CPU-only jobs\nGPUs free up   none free now; they free up within 0.3 h, 2.5 h, 8.0 h, 20.0 h (time limits of the running jobs; many end earlier)\nwaiting        other users: 3 GPU jobs, 1 CPU job (pending for resources or priority; held jobs and dependencies not counted)\nyours          0 running, 0 pending (0 held); 14 jobs in the queue in all\nshare          GPUs 0/3, CPUs 0/112 (others waiting for GPU and CPU: share applies)\n```",
+      "expected_output": "Reads the queue: no GPU free and three GPU jobs of others waiting, so a separate GPU smoke would take the GPU that frees up in about 20 minutes and the first real training would wait for the next one (2.5 h or more). No separate GPU smoke job: the smoke (tiny config end to end, resume over two segments) runs on CPUs on the cpu partition, and the first real sweep units (up to the share of 3 GPUs) are submitted at the same time. They check the GPU in their first minutes (CUDA visible, first steps at full batch size, first checkpoint loaded back) and fail fast; the user looks at their [check] lines and cancels and fixes on a failure. The rest of the sweep follows after `size` on the first jobs.",
+      "files": [],
+      "assertions": [
+        "Reads the pasted queue and concludes that a separate GPU smoke job would use up the next free GPU and make the first real training wait for the one after it",
+        "Plans no separate GPU smoke job (no GPU job whose only purpose is testing), unless it asks the user and the user wants one",
+        "A local smoke test runs first (the tiny config end to end on the laptop, and the local resume test); the server smoke runs on CPUs (`--gpus 0`, device cpu, the cpu partition), including the resume test",
+        "The first real GPU jobs of the sweep are submitted at the same time as the CPU smoke, not after it has passed",
+        "The first real GPU jobs check the GPU in their first minutes (CUDA visible, first steps, the first checkpoint written and loaded back) and stop with an error if a check fails",
+        "Says to look at the first GPU job's log soon after it starts and to cancel the GPU jobs, fix and resubmit if a check or the CPU smoke fails",
+        "Submits only the first units (within the share of 3 GPUs) first and the rest after `size` on them",
+        "Nothing heavy runs on the login host; no ssh or aws commands are run by the agent"
+      ]
+    },
+    {
+      "id": 15,
+      "name": "first-run-room-local-first",
+      "prompt": "Get the sweep in <copy of evals/files/grid-sweep> ready for KiRegio and give me the exact commands for the first submission; I'll run them myself, I'm not connected right now. It has never run on the server. Login abcd, alias kiregio, bucket yes, data/processed/load.npy is already on the server. The server is quiet today, this is what I saw five minutes ago:\n\n```\n$ uv run tools/d3run.py queue\nnode compute   CPUs 30 of 166 in use, GPUs 2 of 4, memory 180 of 624 GB\ncpu partition  22 of 150 CPUs in use by CPU-only jobs\nGPUs free up   2 free now; the others free up within 6.5 h, 19.0 h (time limits of the running jobs; many end earlier)\nwaiting        other users: 0 GPU jobs, 0 CPU jobs (pending for resources or priority; held jobs and dependencies not counted)\nyours          0 running, 0 pending (0 held); 9 jobs in the queue in all\nshare          GPUs 0/4, CPUs 0/150 (nobody else waiting)\nGPU smoke      a GPU is free and nobody else waits for one: a separate 10-minute GPU smoke starts now\n```",
+      "expected_output": "Local first: the configs parsed, the tiny config end to end on the laptop (the CPU path), the local resume test, and `d3run.py scale -- <slice>` for the CPU side and the memory. The project has never run on the server and a GPU is free with nobody waiting, so a separate 10-minute smoke job on the server is fine (environment, data paths, GPU visible, resume through Slurm and S3). Then the first units of the sweep, 1 GPU and a few CPUs each, as the pilot whose results count; `size` on them sets the flags for the other runs. No pilot at two widths on the server unless `scale` still scaled at all the laptop's CPUs.",
+      "files": [],
+      "assertions": [
+        "Runs a local smoke test (the tiny config end to end on the laptop, on the CPU path) and the local resume test before anything goes to the server",
+        "Measures locally with `d3run.py scale` (or timing a slice at several widths) before the first server jobs",
+        "Reads the queue: a GPU is free and nobody waits, and the project has never run on the server, so a separate short smoke job on the server (GPU visible, resume through Slurm) is planned",
+        "The first units of the sweep (not all 48) go to the server as the pilot, and their results count",
+        "`size` on the first units sets --time, --cpus and --mem for the rest of the sweep",
+        "No separate pilot at two widths on the server, unless `scale` was still scaling at all of the laptop's CPUs",
+        "Nothing heavy runs on the login host; no ssh or aws commands are run by the agent"
+      ]
+    },
+    {
+      "id": 16,
+      "name": "later-round-no-server-smoke",
+      "prompt": "Project is <copy of evals/files/ready-sweep as a git repository with everything committed, with scripts/d3run.py and scripts/d3job.py copied into its tools/; evals/files/site-ready.toml as ~/.config/d3-server/site.toml in the sandbox HOME> (on the server it's ~/grid-sweep). We ran the sweep there last week, round tag sweep1-train, all 48 runs done. Now I want early stopping on a validation split (10 % of the rows) in the training, and an evaluation phase after it that collects all results into one table and draws the loss curves (write src/evaluate.py). Set it up properly and give me the exact commands for the new round with configs/sweep2/; I'm offline, don't run anything on the server.",
+      "expected_output": "Full setup (code changes and a new phase), but the project has run on the server before (sweep1-train done): no smoke job on the server. Local smoke test: the tiny config end to end with the early stopping, the local resume test, and evaluate.py on a few result files. Local sizing with `scale` where it matters (evaluate.py on CPUs). The training round on 1-GPU jobs, the first units as pilot, `size` on them; the evaluation as a CPU job with `--after-tag` that checks its inputs are done.",
+      "files": [],
+      "assertions": [
+        "Treats the request as a full setup (code changes and a new phase), not a quick submit",
+        "Runs a local smoke test of the changed training (tiny config end to end, early stopping exercised) and of evaluate.py before submitting",
+        "Plans no smoke job on the server, because the project has run there before (the first real jobs fail fast if something broke)",
+        "The evaluation phase is a CPU-only job submitted with `--after-tag` on the training tag, and it checks that its inputs are done",
+        "Sizing comes from local `scale` or from `size` on the previous round or the first units, not from a fixed guess",
+        "Nothing heavy runs on the login host; no ssh or aws commands are run by the agent"
       ]
     }
   ]

@@ -41,7 +41,7 @@ Skills are then invoked as `/d3-explainer:d3-explainer`, or simply by asking. Up
 | [d3-explainer](#explaining-a-project-to-its-own-authors-d3-explainer) | 0.12.1 | Interactive HTML explainer of a research repo (code, paper, vault) for its own authors and co-authors: concepts, derivations, research gap, paper-to-code map, open points | Build and check engine, worked example |
 | [d3-scientific-wording](#wording-of-research-texts-d3-scientific-wording) | 0.1.1 | The wording layer of all D3 skills, also for papers, rebuttals and proposals: direct claims, neutral related work, claims within the evidence, short sentences, wording adapted to outlet and field, optional Simplified Technical English (ASD-STE100), optional removal of invisible AI marks | Rules with examples, outlet guides, STE guide, wording lint, corpus profiler |
 | [d3-marimo](#teaching-apps-in-the-browser-d3-marimo) | 0.1.2 | Teaching apps as marimo notebooks that run in the browser (WASM) on the chair website: port Colab, Jupyter or molab notebooks, SciPy HiGHS instead of PuLP, university look, deploy and check | App template, look stylesheet and style-cell generator, headless browser check, pitfalls |
-| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.8.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, a quick submit for projects that are set up, run IDs and a registry that tie code, config, logs, checkpoints and results together, rounds split at their phases and units with each job as wide as it keeps busy and fitted to the queue, jobs that checkpoint and resume within the 24 h limit, smoke test and sizing before a round, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
+| [d3-server-use](#running-jobs-on-the-group-server-d3-server-use) | 0.9.0 | Compute jobs on the group's KiRegio Slurm server: first login and ssh, uv only, a quick submit for projects that are set up, run IDs and a registry that tie code, config, logs, checkpoints and results together, rounds split at their phases and units with each job as wide as it keeps busy and fitted to the queue, jobs that checkpoint and resume within the 24 h limit, a local smoke test and sizing for a new setup, a server smoke only the first time and never one that spends a GPU turn while the queue is full, fair use of the GPUs, the S3 bucket (or the user's own computer) as the store with verified cleanup, inputs and results through the bucket or, until there is one, by rsync, help with the admin's monitoring alerts, experiment tracking with MLflow or W&B where a project uses or wants it | Registry and S3 transfer CLI, job-side checkpoint and tracking helper, MLflow sync, job template, laptop input script, sbatch lint |
 
 Each skill has a section below: what its folder contains, how a run goes from the first question to the delivery, and
 what it checks. The folders are under [`skills/`](skills/). Design and review depth apply to several skills and come
@@ -1559,7 +1559,7 @@ answers live in a local site file (`~/.config/d3-server/site.toml`), never in th
 
 ```
 skills/d3-server-use/
-├── SKILL.md                 first use · rules · a round in 9 steps
+├── SKILL.md                 quick submit or full setup · first use · rules · the full setup in 9 steps
 ├── scripts/
 │   ├── d3run.py             login host: run IDs, registry, submit, fair use, sizing, S3, verified cleanup
 │   ├── d3job.py             inside the job: end time, stop margin, checkpoints, resume, MLflow/W&B run
@@ -1635,13 +1635,14 @@ project-specific.
 ```
  ①setup ─▶ ②plan ─▶ ③interruptible ─▶ ④deploy ─▶ ⑤smoke ─▶ ⑥pilot+size ─▶ ⑦submit ─▶ ⑧watch ─▶ ⑨archive+clean
    │          │          │                │          │            │              │           │          │
- read repo, cut at    d3job +           commit,    tiny job,    full-size,    queue, new  reconcile  verified copy,
- clone,     phases,   check_sbatch      git pull   GPU check,   two widths,   --tag; CPU  every 15+  then delete;
- uv sync,   units;                      (queue     resume       `size`        part first; min        `usage`
- init       CPU/GPU                     empty)     test                       fair use
+ read repo, cut at    d3job +           commit,    local run,   `scale` on    queue, new  reconcile  verified copy,
+ clone,     phases,   check_sbatch      git pull   resume test, the laptop;   --tag; CPU  every 15+  then delete;
+ uv sync,   units;                      (queue     server smoke first units,  part first; min        `usage`
+ init       CPU/GPU                     empty)     first time   then `size`   fair use
 
  data with a bucket:   ④ inputs laptop ─▶ bucket ─▶ server (push_inputs.sh, pull --checksum) · ⑨ results ─▶ laptop
  without a bucket yet: ④ push_inputs.sh rsyncs the inputs into the checkout · ⑨ results come back by rsync
+ queue full:           ⑤ the first server smoke on CPUs · the first real GPU jobs check the GPU in minutes
 ```
 
 ### Run IDs
@@ -1670,8 +1671,8 @@ gets as many CPUs and GPUs as it keeps busy, chosen against the queue of the mom
  │ the GPU idles through the solver hours   │          train+predict NL ─┘   CPU chunks        1 CPU job
  └──────────────────────────────────────────┘          1 GPU each            --after-tag       --after-tag
 
- width   pilot at 4 and 16 CPUs ─▶ `size`: speed-up, efficiency ≥ 70 % ─▶ --cpus 16
-         no room for a pilot: `d3run.py scale -- <slice>` on the laptop, same rule; `size` on the first jobs
+ width   `d3run.py scale -- <slice>` on the laptop: speed-up, efficiency ≥ 70 % ─▶ --cpus 8
+         first units at that width ─▶ `size` on them ─▶ the rest; two widths on the server only past the laptop
          billing per second = max(CPUs, 0.266 × GB, 41.5 × GPUs): a job that scales costs the same and ends
          sooner; CPUs that its memory or GPU already pays for are free
  queue   `d3run.py queue` ─▶ nobody waits: wide and many · others wait: the share · busy for hours: what is free now
@@ -1770,21 +1771,22 @@ for everyone, no sync); the skill asks once which store a project uses.
 | ⛔ | pip / conda / venv, `#SBATCH` after the first command, secrets in scripts | linter |
 | ⛔ | sending an input outside the project's allowed folders (into the bucket or by rsync), a path with `..` or a symbolic link (data an agreement keeps on the laptop never matches) | `push_inputs.sh` |
 | ⛔ | `d3track.py sync` inside a job (one writer for the project's MLflow store) | `d3track.py` |
+| ⛔ | a GPU job tagged or named smoke while no GPU is free or others wait for one (except `--allow-gpu-smoke`) | `submit` |
 | ⚙️ **automatic** | run ID before `sbatch`; commit, config hash and logs per run | `new`, `submit` |
 | ⚙️ | fair-use hold and release | `submit`, `feed`, `reconcile` |
 | ⚙️ | chained segments; later segments exit if the run is done or failed, also after two hard crashes in a row | `submit`, `d3job` |
 | ⚙️ | measured stop margin, deferred uploads, resume from the server or S3 | `d3job` |
 | ⚙️ | `--time` / `--mem` / `--cpus` / segments from measured usage; speed-up between two pilot widths; notes when more CPUs cost no extra fair share, when a pilot kept all its CPUs busy, when runs are too short | `size` |
 | ⚙️ | a phase waits for the runs of the previous phase | `submit --after-tag` |
-| ⚙️ | free CPUs and GPUs, who waits, when the GPUs free up | `queue` |
-| ⚙️ | width measured on your own computer when the server has no room for a pilot: time, speed-up, efficiency, peak memory per width | `scale` (refuses on the cluster) |
+| ⚙️ | free CPUs and GPUs, who waits, when the GPUs free up, whether a separate GPU smoke may run | `queue` |
+| ⚙️ | width measured on your own computer before the first jobs: time, speed-up, efficiency, peak memory per width | `scale` (refuses on the cluster) |
 | ⚙️ | a warning above 500 queued jobs | `submit` |
 | ⚙️ | flags finished jobs that would trigger the admin's alerts (CPUs below 60 %, GPU below 15 %) | `reconcile`, `size` |
 | ⚙️ | one MLflow run across all segments, tags from `run.json`, status SCHEDULED, FINISHED or FAILED from the run's state | `d3job` (`ctx.mlflow()`) |
 | ⚙️ | the project's MLflow store from snapshots of the runs' stores, only new points, uploaded to the bucket | `d3track.py sync` |
 | 📖 **guides** | light commands only on the login host | `SKILL.md` |
 | 📖 | quick submit for a project that is set up, full setup otherwise; asked once unless the message says which | `SKILL.md` |
-| 📖 | smoke test and pilot before every full setup; CPU part first | `SKILL.md` |
+| 📖 | every full setup: a local smoke test and local sizing (`scale`), the first units as the pilot, CPU part first; a server smoke only for a project's first run, and while the queue is full on CPUs, with the GPU checks in the first real GPU jobs | `SKILL.md`, splitting and sizing |
 | 📖 | a round split at its hardware phases, then its units; each job as wide as it keeps busy, fitted to the queue | `SKILL.md`, splitting and sizing |
 | 📖 | code that cannot save its state is never chained into segments; the ways out (fit into 24 h, the solver's time limit and best solution, libraries that continue, splitting the problem) are chosen with the user | `SKILL.md`, interruptible jobs |
 | 📖 | never pull while a round is queued | `SKILL.md` |
