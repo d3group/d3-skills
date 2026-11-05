@@ -437,7 +437,7 @@ class RunContext:
         """Yield a temporary path; on success publish it as checkpoints/step-<n>, upload, prune."""
         t_start = time.monotonic()
         name = f"step-{step:09d}"
-        tmp = self.checkpoints_dir / f".d3tmp-{name}"
+        tmp = self.checkpoints_dir / f"{name}.d3tmp"     # not a leading dot: torch.save rejects ".d3tmp-step-…"
         if tmp.exists():
             shutil.rmtree(tmp) if tmp.is_dir() else tmp.unlink()
         try:
